@@ -36,6 +36,21 @@
     
     --color-base-100: #FFFFFF;
     --color-base-200: #F8FAFC;
+
+    /* Utility Colors - Light Mode */
+    --color-info: #0EA5E9;            /* Sky Blue */
+    --color-info-content: #FFFFFF;
+    
+    --color-success: #10B981;         /* Emerald Green */
+    --color-success-content: #FFFFFF;
+    
+    --color-warning: #F59E0B;         /* Amber */
+    --color-warning-content: #FFFFFF;
+    
+    --color-error: #EF4444;           /* Rose Red */
+    --color-error-content: #FFFFFF;
+
+    /* --color-error: #FF0000; */
 }
 
 /* 3. Define the Dark Theme (The 'Midnight Academy') */
@@ -57,5 +72,19 @@
     --color-neutral: #F8FAFC;
     --color-base-100: #0F172A;
     --color-base-200: #1E293B;
+
+    /* Utility Colors - Dark Mode (Slightly desaturated for eye comfort) */
+    --color-info: #38BDF8;            
+    --color-info-content: #0F172A;
+    
+    --color-success: #34D399;         
+    --color-success-content: #0F172A;
+    
+    --color-warning: #FBBF24;         
+    --color-warning-content: #0F172A;
+    
+    --color-error: #FB7185;           
+    --color-error-content: #0F172A;
+    /* --color-error: #FF0000; */
 }
 
