@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* 1. Tell Tailwind how to handle the 'dark:' variant manually */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@plugin "daisyui" {
+  /* Default to our custom light theme, auto-switch to dark on system pref */
+  themes: edunexus --default, edunexus_dark --prefersdark;
+}
+
+/* 2. Define the Light Theme */
+/* app.css */
+
+@plugin "daisyui/theme" {
+    name: "edunexus";
+    default: true;
+    prefersdark: false;
+    color-scheme: light;
+    
+    --color-primary: #3B35B8;         /* Edu Indigo */
+    --color-primary-content: #FFFFFF; /* FORCE WHITE TEXT HERE */
+    
+    --color-secondary: #2DD4BF;       /* Electric Mint */
+    --color-secondary-content: #000000; /* Mint usually looks better with dark text */
+    
+    --color-accent: #FB923C;          /* Soft Apricot */
+    --color-accent-content: #FFFFFF;
+    
+    --color-neutral: #0F172A;         /* Inkwell */
+    --color-neutral-content: #FFFFFF;
+    
+    --color-base-100: #FFFFFF;
+    --color-base-200: #F8FAFC;
+}
+
+/* 3. Define the Dark Theme (The 'Midnight Academy') */
+/* Update the Dark Theme as well for consistency */
+@plugin "daisyui/theme" {
+    name: "edunexus_dark";
+    prefersdark: true;
+    color-scheme: dark;
+    
+    --color-primary: #6C6FF6; 
+    --color-primary-content: #FFFFFF; /* High contrast white for dark mode */
+    
+    --color-secondary: #2DD4BF;
+    --color-secondary-content: #0F172A;
+    
+    --color-accent: #FDBA74;
+    --color-accent-content: #0F172A;
+    
+    --color-neutral: #F8FAFC;
+    --color-base-100: #0F172A;
+    --color-base-200: #1E293B;
+}
+
