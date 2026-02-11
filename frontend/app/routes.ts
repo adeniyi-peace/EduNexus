@@ -38,7 +38,7 @@ export default [
 
     // Nested Dashboard sections
     route("dashboard/courses", "routes/dashboard/courses.tsx"),
-    // route("dashboard/courses/:id", "routes/dashboard/course-player.tsx"),
+    route("dashboard/courses/:id", "routes/dashboard/CoursePlayer.tsx"),
     // route("dashboard/paths", "routes/dashboard/paths.tsx"),
     // route("dashboard/mentors", "routes/dashboard/mentors.tsx"),
     // route("dashboard/settings", "routes/dashboard/settings.tsx"),

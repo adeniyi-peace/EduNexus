@@ -85,3 +85,44 @@ export const DUMMY_COURSES: Course[] = [
         isEnrolled: true
     }
 ];
+
+export const MOCK_CURRICULUM = [
+    {
+        title: "Module 1: System Fundamentals",
+        lessons: [
+            { 
+                id: "101", 
+                title: "Introduction to Nexus Nodes", 
+                duration: "00:15", 
+                completed: true,
+                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            },
+            { 
+                id: "102", 
+                title: "Configuring the Uplink", 
+                duration: "00:12", 
+                completed: true,
+                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" 
+            },
+        ]
+    },
+    {
+        title: "Module 2: Advanced Architecture",
+        lessons: [
+            { 
+                id: "201", 
+                title: "Distributed Consensus Protocols", 
+                duration: "00:10", 
+                completed: false,
+                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
+            },
+            { 
+                id: "202", 
+                title: "Fault Tolerance in Nexus", 
+                duration: "00:18", 
+                completed: false,
+                videoUrl: "https://player.vimeo.com/external/494356011.sd.mp4?s=d010775d79679199c0e4876932a32c668b57700e&profile_id=165&oauth2_token_id=57447761" 
+            },
+        ]
+    }
+];
