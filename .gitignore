@@ -1,3 +1,6 @@
 tbd.txt
 tbd2.txt
 tbd3.txt
+.env
+__pycache__
+venv

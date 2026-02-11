@@ -93,6 +93,7 @@ export const MOCK_CURRICULUM = [
             { 
                 id: "101", 
                 title: "Introduction to Nexus Nodes", 
+                type: "video",
                 duration: "00:15", 
                 completed: true,
                 videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
@@ -100,10 +101,37 @@ export const MOCK_CURRICULUM = [
             { 
                 id: "102", 
                 title: "Configuring the Uplink", 
+                type: "video",
                 duration: "00:12", 
                 completed: true,
                 videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" 
             },
+            {
+                id: "103",
+                title: "Fundamentals Checkpoint",
+                type: "quiz",
+                duration: "5 mins",
+                completed: false,
+                timeLimit: 120, // 2 minutes
+                questions: [
+                    {
+                        text: "Which protocol is primarily used for Nexus Node synchronization?",
+                        options: [
+                            { text: "Lattice-based Sync", isCorrect: true },
+                            { text: "Standard HTTP Polling", isCorrect: false },
+                            { text: "Manual Uplink", isCorrect: false },
+                            { text: "UDP Broadcast", isCorrect: false }
+                        ]
+                    },
+                    {
+                        text: "A Nexus Node can operate without an active Uplink configuration.",
+                        options: [
+                            { text: "True", isCorrect: false },
+                            { text: "False", isCorrect: true }
+                        ]
+                    }
+                ]
+            }
         ]
     },
     {
@@ -112,6 +140,7 @@ export const MOCK_CURRICULUM = [
             { 
                 id: "201", 
                 title: "Distributed Consensus Protocols", 
+                type: "video",
                 duration: "00:10", 
                 completed: false,
                 videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
@@ -119,10 +148,30 @@ export const MOCK_CURRICULUM = [
             { 
                 id: "202", 
                 title: "Fault Tolerance in Nexus", 
+                type: "video",
                 duration: "00:18", 
                 completed: false,
                 videoUrl: "https://player.vimeo.com/external/494356011.sd.mp4?s=d010775d79679199c0e4876932a32c668b57700e&profile_id=165&oauth2_token_id=57447761" 
             },
+            {
+                id: "203",
+                title: "Architecture Final Exam",
+                type: "quiz",
+                duration: "10 mins",
+                completed: false,
+                timeLimit: 300, // 5 minutes
+                questions: [
+                    {
+                        text: "In the event of a cluster failure, what is the primary recovery mechanism?",
+                        options: [
+                            { text: "Shard Migration", isCorrect: false },
+                            { text: "Consensus Re-election", isCorrect: true },
+                            { text: "Cold Reboot", isCorrect: false },
+                            { text: "Data Purge", isCorrect: false }
+                        ]
+                    }
+                ]
+            }
         ]
     }
 ];

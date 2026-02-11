@@ -1,28 +1,10 @@
+import { MOCK_CURRICULUM } from "~/utils/mockData";
+
+const allLessons = MOCK_CURRICULUM.flatMap(module => module.lessons);
 interface SidebarProps {
-    curriculum: {
-        title: string;
-        lessons: {
-            id: string;
-            title: string;
-            duration: string;
-            completed: boolean;
-            videoUrl: string;
-        }[];
-    }[];
-    currentLesson: {
-        id: string;
-        title: string;
-        duration: string;
-        completed: boolean;
-        videoUrl: string;
-    };
-    allLessons: {
-        id: string;
-        title: string;
-        duration: string;
-        completed: boolean;
-        videoUrl: string;
-    }[];
+    curriculum: typeof MOCK_CURRICULUM,
+    currentLesson: typeof allLessons[0],
+    allLessons: typeof allLessons,
     onLessonSelect: (lesson: any) => void;
 }
 
