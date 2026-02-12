@@ -37,6 +37,17 @@ export default function CoursePlayer() {
         }
     };
 
+
+    // mighr remov the lines of code below
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const jumpToTime = (seconds: number) => {
+        if (videoRef.current) {
+            videoRef.current.currentTime = seconds;
+            videoRef.current.play();
+        }
+    };
+
     
 
     return (
@@ -71,7 +82,7 @@ export default function CoursePlayer() {
                         </div>
 
                         {/* Bottom Utility Tabs */}
-                        <TabSystem currentLesson={currentLesson} />
+                        <TabSystem currentLesson={currentLesson} videoRef={videoRef} onJumpToTime={jumpToTime} />
                     </>
                         
                     )}

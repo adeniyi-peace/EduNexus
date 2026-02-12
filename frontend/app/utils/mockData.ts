@@ -175,3 +175,48 @@ export const MOCK_CURRICULUM = [
         ]
     }
 ];
+
+
+// src/utils/mockChat.ts
+
+export const MOCK_CHAT_MESSAGES = [
+    {
+        sender: "System",
+        message: "Secure connection established. Welcome to the Node 101 Discussion.",
+        timestamp: "2026-02-11T10:00:00Z",
+        isMe: false,
+        role: "System"
+    },
+    {
+        sender: "Dr. Nexus",
+        message: "Welcome everyone! Please review the architectural overview before we begin the live stream.",
+        timestamp: "2026-02-11T10:05:00Z",
+        isMe: false,
+        role: "Instructor"
+    },
+    {
+        sender: "Dr. Nexus",
+        message: "Here is the blueprint for the Uplink configuration.",
+        timestamp: "2026-02-11T10:06:00Z",
+        isMe: false,
+        role: "Instructor",
+        attachmentUrl: "https://images.unsplash.com/photo-1558494949-ef010cbdcc51?q=80&w=2000",
+        attachmentType: "image/jpeg",
+        attachmentName: "uplink_blueprint.jpg"
+    },
+    {
+        sender: "Student_Alpha",
+        message: "Got it! I'm having trouble with the local setup though. Does anyone have the requirements file?",
+        timestamp: "2026-02-11T10:10:00Z",
+        isMe: false
+    },
+    {
+        sender: "You",
+        message: "I have it right here. Make sure you're using Python 3.10+.",
+        timestamp: "2026-02-11T10:12:00Z",
+        isMe: true,
+        attachmentUrl: "#", // Placeholder
+        attachmentType: "text/plain",
+        attachmentName: "requirements.txt"
+    }
+];
