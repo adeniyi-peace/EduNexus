@@ -220,3 +220,20 @@ export const MOCK_CHAT_MESSAGES = [
         attachmentName: "requirements.txt"
     }
 ];
+
+export const MOCK_ACHIEVEMENTS = {
+    badges: [
+        { id: '1', name: 'Nexus Pioneer', icon: 'ShieldCheck', date: '2026-01-10', description: 'First 10 hours of synchronized learning.' },
+        { id: '2', name: 'Logic Master', icon: 'Code', date: '2026-02-05', description: 'Completed all advanced logic quizzes.' },
+        { id: '3', name: 'Data Architect', icon: 'Database', date: '2026-02-11', description: 'Finished the Backend Systems module.' },
+    ],
+    certificates: [
+        { 
+            id: 'cert_001', 
+            courseTitle: 'Full-Stack Nexus Engineering', 
+            issueDate: '2026-02-01', 
+            credentialId: 'NEX-882-X9',
+            previewUrl: '/certs/preview-sample.jpg' 
+        }
+    ]
+};

@@ -40,6 +40,7 @@ export default [
     route("dashboard/courses", "routes/dashboard/courses.tsx"),
     route("dashboard/courses/:id", "routes/dashboard/CoursePlayer.tsx"),
     route("dashboard/community", "routes/dashboard/CommunityHub.tsx"),
+    route("/dashboard/achievements", "routes/dashboard/AchievementsPage.tsx"),
     // route("dashboard/paths", "routes/dashboard/paths.tsx"),
     // route("dashboard/mentors", "routes/dashboard/mentors.tsx"),
     // route("dashboard/settings", "routes/dashboard/settings.tsx"),

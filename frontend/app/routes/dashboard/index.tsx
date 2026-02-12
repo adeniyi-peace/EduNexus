@@ -39,12 +39,18 @@ export async function loader() {
         deadlines: [
             { id: 1, task: "Distributed Systems Lab 04", due: "Tomorrow", priority: "high" },
             { id: 2, task: "Cloud Scalability Quiz", due: "In 3 days", priority: "medium" },
-        ]
+        ],
+        achievements: [
+            { id: '1', name: 'Nexus Pioneer', icon: 'ShieldCheck', color: 'text-blue-400' },
+            { id: '2', name: 'Logic Master', icon: 'Code', color: 'text-primary' },
+            { id: '3', name: 'Data Architect', icon: 'Database', color: 'text-purple-400' },
+            { id: '4', name: 'Speed Runner', icon: 'Flame', color: 'text-orange-400' },
+        ],
     };
 }
 
 export default function StudentDashboard() {
-    const { enrolledCourses, notifications, deadlines } = useLoaderData<typeof loader>();
+    const { enrolledCourses, notifications, deadlines, achievements } = useLoaderData<typeof loader>();
     const continueLearning = enrolledCourses[0];
 
     return (
@@ -145,6 +151,52 @@ export default function StudentDashboard() {
                             </div>
                         </div>
                     ))}
+                </div>
+            </section>
+
+            {/* --- NEW: ACHIEVEMENT SHOWCASE --- */}
+            <section className="animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                <div className="flex justify-between items-end mb-6 px-2">
+                    <div>
+                        <h2 className="text-2xl font-black tracking-tight italic">Achievement <span className="text-primary">Node</span></h2>
+                        <p className="text-xs opacity-50 font-medium font-mono uppercase tracking-widest">Unlocked Milestones</p>
+                    </div>
+                    <Link 
+                        to="/dashboard/achievements" 
+                        className="text-[10px] font-black uppercase tracking-widest text-primary hover:tracking-[0.2em] transition-all flex items-center gap-2 group"
+                    >
+                        View Full Gallery <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {achievements.slice(0, 5).map((badge) => (
+                        <div 
+                            key={badge.id} 
+                            className="bg-base-100 border border-base-content/5 p-4 rounded-3xl hover:border-primary/40 transition-all duration-500 group relative overflow-hidden flex items-center gap-4"
+                        >
+                            {/* Background Glow */}
+                            <div className="absolute -right-2 -bottom-2 w-12 h-12 bg-primary/5 blur-xl group-hover:bg-primary/20 transition-all" />
+                            
+                            <div className="w-12 h-12 rounded-2xl bg-base-200 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-all duration-500 shrink-0 shadow-lg">
+                                {/* Reusing icons or specific badge SVGs */}
+                                <DashboardIcons.XP /> 
+                            </div>
+                            
+                            <div className="min-w-0">
+                                <p className="text-[11px] font-black uppercase tracking-tight truncate">{badge.name}</p>
+                                <p className="text-[9px] opacity-30 font-bold truncate">Verified Achievement</p>
+                            </div>
+                        </div>
+                    ))}
+                    
+                    {/* Quick "Empty Slot" or "More" card for UX */}
+                    <Link 
+                        to="/dashboard/achievements"
+                        className="hidden lg:flex bg-base-100/30 border border-dashed border-base-content/10 p-4 rounded-3xl items-center justify-center group hover:bg-base-100 transition-all"
+                    >
+                        <p className="text-[10px] font-black opacity-20 group-hover:opacity-100 uppercase tracking-[0.2em]">+ {achievements.length > 5 ? achievements.length - 5 : 0} More</p>
+                    </Link>
                 </div>
             </section>
 
