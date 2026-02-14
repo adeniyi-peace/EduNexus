@@ -2,7 +2,7 @@
 import { CloudCheck, CloudUpload, Loader2, AlertCircle } from "lucide-react";
 
 interface SyncStatusProps {
-    status: 'idle' | 'saving' | 'error';
+    status: 'idle' | 'saving' | 'error' | "initializing";
     lastSaved?: Date;
 }
 

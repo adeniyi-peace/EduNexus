@@ -3,45 +3,15 @@ import apiClient from "~/utils/api.client";
 import type { CourseData, Module, Lesson, Resource, QuizQuestion } from "~/types/course";
 import { v4 as uuidv4 } from "uuid";
 
-export type SyncStatus = "idle" | "saving" | "error";
+export type SyncStatus = "idle" | "saving" | "error" | "initializing";
 
 export function useCourseBuilder(initialData: CourseData) {
     const [course, setCourse] = useState<CourseData>(initialData);
     const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+    const [isReady, setIsReady] = useState(initialData.modules.length > 0); // Controls UI editability
 
     // Use a ref to ensure this only runs once per mount
     const hasCheckedExistence = useRef(false);
-
-    // --- 0. INITIALIZATION CHECK ---
-    useEffect(() => {
-        const ensureCourseExists = async () => {
-            if (hasCheckedExistence.current) return;
-            hasCheckedExistence.current = true;
-
-            try {
-                // Check if course exists
-                await apiClient.get(`/courses/${course.id}`);
-            } catch (error) {
-                // If 404 (or other error), assume it doesn't exist and create the shell
-                console.log("Course not found, creating shell...");
-                try {
-                    await apiClient.post(`/courses`, {
-                        id: course.id,
-                        title: course.title,
-                        price: course.price || 0,
-                        // ... any other initial fields
-                    });
-                } catch (createError) {
-                    console.error("Failed to create initial course shell", createError);
-                    setSyncStatus("error");
-                }
-            }
-        };
-
-        if (course.id) {
-            ensureCourseExists();
-        }
-    }, [course.id]);
 
     // Generic wrapper to handle status changes and API calls
     const syncToBackend = async (operation: () => Promise<any>) => {
@@ -56,12 +26,42 @@ export function useCourseBuilder(initialData: CourseData) {
         }
     };
 
-    // --- 1. COURSE LEVEL UPDATES (Title, Price, etc.) ---
+    // --- COURSE ACTIONS ---  COURSE UPDATES (Title, Price, etc.)
     const updateCourse = async (fields: Partial<CourseData>) => {
         setCourse(prev => ({ ...prev, ...fields }));
-        // Debounce this in production!
-        await syncToBackend(() => apiClient.patch(`/courses/${course.id}`, fields));
+        // 1. Update local state immediately
+        const updatedCourse = { ...course, ...fields };
+        setCourse(updatedCourse);
+
+        try {
+            if (!isReady) {
+                setSyncStatus("initializing");
+                // FIRST TIME: Create the course (POST)
+                await syncToBackend(() => apiClient.post(`/courses`, updatedCourse));
+                setIsReady(true); // Unlock the rest of the UI
+            } else {
+                // SUBSEQUENT TIMES: Update the course (PATCH)
+                await syncToBackend(() => apiClient.patch(`/courses/${course.id}`, fields));
+            }
+            setSyncStatus("idle");
+        } catch (err) {
+            console.error("Failed to create initial course shell", err);
+            setSyncStatus("error");
+        } 
     };
+
+    const deleteCourse = async () => {
+        setSyncStatus("saving");
+        try {
+            await apiClient.delete(`/courses/${course.id}`);
+            // Redirect logic would go here, e.g., router.push('/dashboard')
+            window.location.href = "/dashboard"; 
+        } catch (error) {
+            console.error("Failed to delete course", error);
+            setSyncStatus("error");
+        }
+    };
+
 
     // --- 2. MODULE UPDATES (Renaming) ---
     const updateModule = async (moduleId: string, fields: Partial<Module>) => {
@@ -292,7 +292,9 @@ export function useCourseBuilder(initialData: CourseData) {
     return { 
         course, 
         syncStatus,
+        isReady, // New Flag
         updateCourse,
+        deleteCourse,  // New Function
         updateModule,
         updateLesson,
         reorderLessons,
