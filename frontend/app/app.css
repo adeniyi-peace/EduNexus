@@ -6,7 +6,7 @@
 }
 
 /* 1. Tell Tailwind how to handle the 'dark:' variant manually */
-@custom-variant dark (&:where(.dark, .dark *));
+/* @custom-variant dark (&:where(.dark, .dark *)); */
 
 @plugin "daisyui" {
   /* Default to our custom light theme, auto-switch to dark on system pref */

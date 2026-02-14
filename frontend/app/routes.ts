@@ -46,6 +46,15 @@ export default [
     // route("dashboard/settings", "routes/dashboard/settings.tsx"),
   ]),
 
+  layout("routes/_cmsLayout.tsx", [
+    route("/cms", "routes/cms/CMSDashboard.tsx"),
+    route("/cms/builder", "routes/cms/CourseBuilder.tsx"),
+    // route("/cms/library", ""),
+    // route("/cms/students", ""),
+    // route("/cms/analytics", ""),
+    // route("cms/question-bank", ""),
+  ])
+
   // --- 4. CATCH-ALL / ERROR ---
   // route("*", "routes/not-found.tsx"),
 ] satisfies RouteConfig;
