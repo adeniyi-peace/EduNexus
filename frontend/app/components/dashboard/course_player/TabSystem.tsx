@@ -1,18 +1,17 @@
 import { useState, type RefObject } from "react";
-import { ChatWindow } from "~/components/chat/ChatWindow"; // Adjust path as needed
-import { Clock, Play, Save, Code, MessageSquareText } from "lucide-react";
+import { ChatWindow } from "~/components/chat/ChatWindow";
+import { Clock, Play, Save, Code, Download, FileText, Maximize2, Minimize2 } from "lucide-react";
 
 interface TabSystemProps {
     currentLesson: any;
     videoRef: RefObject<HTMLVideoElement | null>;
     onJumpToTime: (seconds: number) => void;
+    isExpanded: boolean;           // New prop
+    onToggleExpand: () => void;    // New prop
 }
 
-
-export const TabSystem = ({ currentLesson, videoRef, onJumpToTime }: TabSystemProps) => {
+export const TabSystem = ({ currentLesson, videoRef, onJumpToTime,isExpanded, onToggleExpand }: TabSystemProps) => {
     const [activeTab, setActiveTab] = useState("resources");
-
-    // this logic allow saved notes to act like video bookmarks
     const [noteText, setNoteText] = useState("");
     const [isCodeMode, setIsCodeMode] = useState(false);
     const [savedNotes, setSavedNotes] = useState<{time: number, text: string, isCode: boolean}[]>([]);
@@ -25,64 +24,73 @@ export const TabSystem = ({ currentLesson, videoRef, onJumpToTime }: TabSystemPr
 
     const handleSaveNote = () => {
         if (!noteText.trim()) return;
-        
         const currentTime = videoRef.current?.currentTime || 0;
-        const newNote = {
-            time: currentTime,
-            text: noteText,
-            isCode: isCodeMode
-        };
-
-        setSavedNotes([newNote, ...savedNotes]);
+        setSavedNotes([{ time: currentTime, text: noteText, isCode: isCodeMode }, ...savedNotes]);
         setNoteText("");
-        setIsCodeMode(false); // Reset after saving
+        setIsCodeMode(false);
     };
 
     return (
-        /* Increased height to h-96 or h-[500px] to give the chat enough room to breathe */
-        <div className="h-96 bg-base-100 border-t border-base-content/5 flex flex-col transition-all duration-500">
+        <div className="flex flex-col h-full bg-base-100">
             {/* Tab Headers */}
-            <div className="flex border-b border-base-content/5 px-6 bg-base-100/50 backdrop-blur-md sticky top-0 z-10">
-                {["resources", "q&a", "notes"].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all relative
-                        ${activeTab === tab ? "text-primary" : "text-base-content/40 hover:text-base-content"}`}
-                    >
-                        {tab === "q&a" ? "Live Discussion" : tab}
-                        {activeTab === tab && (
-                            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in zoom-in duration-300" />
-                        )}
-                    </button>
-                ))}
+            <div className="flex items-center justify-between border-b border-base-content/5 px-4 md:px-6 bg-base-100/80 backdrop-blur-md sticky top-0 z-20">
+                <div className="flex">
+                    {["resources", "q&a", "notes"].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap
+                            ${activeTab === tab ? "text-primary" : "text-base-content/40 hover:text-base-content"}`}
+                        >
+                            {tab === "q&a" ? "Discussion" : tab}
+                            {activeTab === tab && (
+                                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Expand/Collapse Button */}
+                <button 
+                    onClick={onToggleExpand}
+                    className="btn btn-ghost btn-xs gap-2 text-base-content/50 hover:text-primary"
+                    title={isExpanded ? "Show Video" : "Focus Mode"}
+                >
+                    {isExpanded ? (
+                        <> <Minimize2 size={14} /> <span className="hidden sm:inline">Exit Focus</span> </>
+                    ) : (
+                        <> <Maximize2 size={14} /> <span className="hidden sm:inline">Focus Mode</span> </>
+                    )}
+                </button>
             </div>
 
-            {/* Tab Panels */}
-            <div className="flex-1 overflow-hidden flex flex-col">
+            {/* Tab Panels - Scrollable Content */}
+            <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                
+                {/* 1. RESOURCES TAB */}
                 {activeTab === "resources" && (
-                    <div className="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-500">
-                        <div className="p-4 bg-base-200 rounded-2xl flex items-center justify-between group hover:bg-primary/5 transition-colors cursor-pointer border border-transparent hover:border-primary/20">
+                    <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                        {/* Mock Resource Card */}
+                        <div className="p-4 bg-base-200/50 rounded-xl border border-base-content/5 flex items-center justify-between group hover:border-primary/20 transition-all cursor-pointer">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-base-300 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14.5 2 14.5 8 20 8"/></svg>
+                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <FileText size={20} />
                                 </div>
-                                <div>
-                                    <p className="text-sm font-bold">System_Architecture.pdf</p>
-                                    <p className="text-[10px] opacity-40 uppercase font-black">2.4 MB • PDF Document</p>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold truncate">Project_Starter_Files.zip</p>
+                                    <p className="text-[10px] opacity-50 uppercase font-black">12 MB • Zip Archive</p>
                                 </div>
                             </div>
-                            <button className="btn btn-ghost btn-sm btn-circle text-primary">↓</button>
+                            <button className="btn btn-ghost btn-sm btn-square text-base-content/40 group-hover:text-primary">
+                                <Download size={16} />
+                            </button>
                         </div>
                     </div>
                 )}
 
-                {/* Live Chat Integration */}
+                {/* 2. CHAT TAB */}
                 {activeTab === "q&a" && (
-                    <div className="flex-1 flex flex-col min-h-0 animate-in slide-in-from-right-4 duration-500">
-                        {/* We use the lesson ID as the room name so chat is lesson-specific. 
-                           Change to `course-global` if you want one chat for the whole course.
-                        */}
+                    <div className="h-full flex flex-col min-h-75">
                         <ChatWindow 
                             roomName={`lesson-${currentLesson.id}`} 
                             title={`Discussion: ${currentLesson.title}`} 
@@ -90,71 +98,60 @@ export const TabSystem = ({ currentLesson, videoRef, onJumpToTime }: TabSystemPr
                     </div>
                 )}
 
+                {/* 3. NOTES TAB */}
                 {activeTab === "notes" && (
-                    <div className="p-6 h-full flex flex-col gap-4 animate-in fade-in duration-500">
-                        {/* Note Input Area */}
-                        <div className="space-y-3">
-                            <div className="relative group">
+                    <div className="p-4 md:p-6 space-y-4 animate-in fade-in duration-300">
+                        {/* Input Area */}
+                        <div className="bg-base-200/50 p-1 rounded-2xl border border-base-content/5 focus-within:border-primary/30 transition-colors">
+                            <div className="relative">
                                 <textarea 
                                     value={noteText}
                                     onChange={(e) => setNoteText(e.target.value)}
-                                    className={`textarea w-full bg-base-200 rounded-2xl p-4 pr-12 focus:outline-primary border-none text-sm resize-none h-28 transition-all
-                                        ${isCodeMode ? "font-mono text-primary bg-slate-950" : "font-sans"}
-                                    `}
-                                    placeholder={isCodeMode ? "paste_code_here();" : "Synchronize thoughts..."}
+                                    className={`w-full bg-transparent p-3 text-sm resize-none h-24 focus:outline-hidden ${isCodeMode ? 'font-mono text-xs' : ''}`}
+                                    placeholder={isCodeMode ? "// Paste your snippet here..." : "Jot down a thought..."}
                                 />
-                                
-                                {/* Mode Toggles */}
-                                <div className="absolute right-3 top-3 flex flex-col gap-2">
+                                <div className="absolute bottom-2 right-2 flex gap-1">
                                     <button 
                                         onClick={() => setIsCodeMode(!isCodeMode)}
-                                        className={`p-2 rounded-lg transition-colors ${isCodeMode ? 'bg-primary text-black' : 'bg-white/5 text-white/40 hover:text-white'}`}
+                                        className={`btn btn-xs ${isCodeMode ? 'btn-primary' : 'btn-ghost'}`}
                                         title="Toggle Code Mode"
                                     >
-                                        <Code size={14} />
+                                        <Code size={12} />
                                     </button>
-                                    <div className="flex flex-col items-center text-primary/40 pt-1">
-                                        <Clock size={12} />
-                                        <span className="text-[8px] font-mono mt-0.5">{formatTime(videoRef.current?.currentTime || 0)}</span>
-                                    </div>
                                 </div>
                             </div>
-                            <div className="flex justify-end">
-                                <button onClick={handleSaveNote} className="btn btn-primary btn-sm rounded-xl px-4 flex items-center gap-2">
-                                    <Save size={14} /> 
-                                    <span className="text-[10px] font-black uppercase">Sync to Cloud</span>
+                            <div className="flex justify-between items-center px-3 pb-2 pt-1 border-t border-base-content/5">
+                                <span className="text-[10px] font-mono opacity-50 flex items-center gap-1">
+                                    <Clock size={10} /> {formatTime(videoRef.current?.currentTime || 0)}
+                                </span>
+                                <button onClick={handleSaveNote} className="btn btn-xs btn-primary rounded-lg">
+                                    <Save size={12} /> Save Note
                                 </button>
                             </div>
                         </div>
 
                         {/* Saved Notes List */}
-                        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                        <div className="space-y-3">
+                            {savedNotes.length === 0 && (
+                                <div className="text-center py-10 opacity-30">
+                                    <p className="text-xs font-bold uppercase tracking-widest">No notes taken yet</p>
+                                </div>
+                            )}
                             {savedNotes.map((note, idx) => (
                                 <div 
                                     key={idx}
-                                    className="p-4 bg-base-200/50 border border-white/5 rounded-xl group hover:border-primary/30 transition-all cursor-pointer"
                                     onClick={() => onJumpToTime(note.time)}
+                                    className="p-3 bg-base-100 border border-base-content/10 rounded-xl hover:border-primary/40 cursor-pointer group transition-all"
                                 >
-                                    <div className="flex justify-between items-start mb-3">
-                                        <span className="flex items-center gap-1.5 text-primary text-[10px] font-black bg-primary/10 px-2 py-1 rounded-md">
-                                            <Play size={10} fill="currentColor" /> {formatTime(note.time)}
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                                            <Play size={8} fill="currentColor" /> {formatTime(note.time)}
                                         </span>
-                                        {note.isCode && (
-                                            <span className="text-[9px] text-primary/60 font-mono uppercase tracking-widest bg-primary/5 px-2 py-1 rounded border border-primary/20">
-                                                Snippet
-                                            </span>
-                                        )}
+                                        {note.isCode && <span className="text-[8px] uppercase tracking-wider opacity-50 font-bold border border-base-content/20 px-1 rounded-sm">Snippet</span>}
                                     </div>
-
-                                    {note.isCode ? (
-                                        <pre className="bg-slate-950 p-3 rounded-lg overflow-x-auto border border-white/5">
-                                            <code className="text-xs font-mono text-primary/80 leading-relaxed whitespace-pre">
-                                                {note.text}
-                                            </code>
-                                        </pre>
-                                    ) : (
-                                        <p className="text-sm text-base-content/80 leading-relaxed">{note.text}</p>
-                                    )}
+                                    <div className={`text-sm opacity-80 ${note.isCode ? 'font-mono text-xs bg-base-300 p-2 rounded-lg overflow-x-auto' : ''}`}>
+                                        {note.text}
+                                    </div>
                                 </div>
                             ))}
                         </div>

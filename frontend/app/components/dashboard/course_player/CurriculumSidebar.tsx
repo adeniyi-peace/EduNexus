@@ -1,3 +1,4 @@
+import { CheckCircle2, Lock, PlayCircle, Circle } from "lucide-react";
 import { MOCK_CURRICULUM } from "~/utils/mockData";
 
 const allLessons = MOCK_CURRICULUM.flatMap(module => module.lessons);
@@ -12,52 +13,72 @@ export const CurriculumSidebar = ({ curriculum, currentLesson, allLessons, onLes
     const progress = (allLessons.findIndex(l => l.id === currentLesson.id) / allLessons.length) * 100;
 
     return (
-        <aside className="w-full lg:w-96 bg-base-100 border-l border-base-content/5 flex flex-col shadow-2xl z-10">
-                        <div className="p-6 border-b border-base-content/5">
-                            <h3 className="font-black text-xs uppercase tracking-widest opacity-50">Curriculum Node</h3>
-                            <p className="text-sm font-bold mt-1 line-clamp-1">Advanced Distributed Systems</p>
-                            <div className="w-full bg-base-300 h-1.5 rounded-full mt-4 overflow-hidden">
-                                {/* Progress Bar Dynamic Width */}
-                                <div 
-                                    className="bg-primary h-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,53,184,0.5)]" 
-                                    style={{ width: `${progress}%` }}
-                                />
-                            </div>
+        <aside className="w-full h-full bg-base-100 flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-base-content/5 bg-base-100 shrink-0">
+                <h3 className="font-black text-xs uppercase tracking-widest opacity-50 mb-1">Curriculum</h3>
+                <h2 className="text-sm font-bold line-clamp-1">Fullstack Development Protocol</h2>
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-base-300 h-1.5 rounded-full mt-4 overflow-hidden relative">
+                    <div 
+                        className="bg-primary h-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--p),0.5)]" 
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+                <div className="flex justify-between mt-2 text-[10px] font-mono opacity-50">
+                    <span>{Math.round(progress)}% Complete</span>
+                    <span>{allLessons.findIndex(l => l.id === currentLesson.id) + 1}/{allLessons.length}</span>
+                </div>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                {curriculum.map((module, i) => (
+                    <div key={i} className="space-y-3">
+                        <div className="sticky top-0 bg-base-100/95 backdrop-blur-sm z-10 py-2 border-b border-base-content/5">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-primary/80 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary" /> {module.title}
+                            </h4>
                         </div>
-        
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                            {curriculum.map((module, i) => (
-                                <div key={i} className="space-y-2">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary/60 px-2 flex items-center gap-2">
-                                        <span className="w-4 h-px bg-primary/20" /> {module.title}
-                                    </h4>
-                                    <div className="space-y-1">
-                                        {module.lessons.map((lesson) => (
-                                            <button
-                                                key={lesson.id}
-                                                onClick={() => onLessonSelect(lesson)}
-                                                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all group
-                                                ${currentLesson.id === lesson.id ? "bg-primary text-primary-content shadow-lg scale-[1.02]" : "hover:bg-base-200 text-base-content/60 hover:text-base-content"}`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    {lesson.completed || allLessons.findIndex(l => l.id === lesson.id) < allLessons.findIndex(l => l.id === currentLesson.id) ? (
-                                                        <div className="w-5 h-5 rounded-full bg-success text-success-content flex items-center justify-center shrink-0">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                        </div>
-                                                    ) : (
-                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${currentLesson.id === lesson.id ? 'border-primary-content' : 'border-base-content/10'}`}>
-                                                            <span className="text-[8px] font-black">{lesson.id.slice(-1)}</span>
-                                                        </div>
-                                                    )}
-                                                    <span className="text-xs font-bold text-left leading-snug">{lesson.title}</span>
-                                                </div>
-                                                <span className={`text-[9px] font-black ${currentLesson.id === lesson.id ? 'opacity-100' : 'opacity-30'}`}>{lesson.duration}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
+                        
+                        <div className="space-y-1 pl-2 border-l border-base-content/10 ml-1">
+                            {module.lessons.map((lesson) => {
+                                const isCurrent = currentLesson.id === lesson.id;
+                                const isCompleted = allLessons.findIndex(l => l.id === lesson.id) < allLessons.findIndex(l => l.id === currentLesson.id);
+                                
+                                return (
+                                    <button
+                                        key={lesson.id}
+                                        onClick={() => onLessonSelect(lesson)}
+                                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all group relative overflow-hidden
+                                        ${isCurrent ? "bg-primary text-primary-content shadow-lg" : "hover:bg-base-200 text-base-content/60"}`}
+                                    >
+                                        <div className="shrink-0">
+                                            {isCompleted ? (
+                                                <CheckCircle2 size={16} className="text-success" />
+                                            ) : isCurrent ? (
+                                                <PlayCircle size={16} fill="currentColor" className="text-primary-content" />
+                                            ) : (
+                                                <Circle size={16} className="opacity-30" />
+                                            )}
+                                        </div>
+                                        
+                                        <div className="min-w-0 flex-1">
+                                            <p className={`text-xs font-bold truncate ${isCurrent ? "" : "group-hover:text-base-content"}`}>
+                                                {lesson.title}
+                                            </p>
+                                            <p className={`text-[9px] font-mono mt-0.5 ${isCurrent ? "text-primary-content/70" : "opacity-40"}`}>
+                                                {lesson.duration}
+                                            </p>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
-                    </aside>
+                    </div>
+                ))}
+            </div>
+        </aside>
     );
 };

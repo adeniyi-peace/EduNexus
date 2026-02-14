@@ -157,7 +157,7 @@ export default function DashboardLayout() {
                                     <img src="https://i.pravatar.cc/150?u=user" alt="Profile" />
                                 </div>
                             </label>
-                            <ul tabIndex={0} className="mt-4 z-[100] p-3 shadow-2xl menu menu-sm dropdown-content bg-base-100 rounded-3xl w-60 border border-base-content/5 space-y-1">
+                            <ul tabIndex={0} className="mt-4 z-100 p-3 shadow-2xl menu menu-sm dropdown-content bg-base-100 rounded-3xl w-60 border border-base-content/5 space-y-1">
                                 <li className="menu-title text-[10px] font-black uppercase opacity-30 px-4 py-2">Account Node</li>
                                 <li><Link className="rounded-xl py-2.5 font-bold" to="/dashboard/settings">Profile Settings</Link></li>
                                 <li><Link className="rounded-xl py-2.5 font-bold" to="/dashboard/billing">Access & Billing</Link></li>
