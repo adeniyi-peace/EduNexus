@@ -8,8 +8,12 @@ export interface CourseData {
     price?: number;
     category?: string;
     difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+    students?: number;
+    rating?: number;
+    status?: 'Published' | 'Draft' | 'Archived';
+    lastUpdated?: string;
     language?: string;
-    modules: Module[];
+    modules?: Module[];
 }
 
 export interface QuizOption {

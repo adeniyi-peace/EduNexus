@@ -1,5 +1,14 @@
 import { Link } from "react-router";
+import { Edit3, Trash2, MoreVertical } from "lucide-react";
 import type { Course } from "~/utils/mockData";
+
+// Extend the interface to handle instructor specific needs
+interface CourseCardProps extends Course {
+    isInstructorView?: boolean;
+    onEdit?: (id: string) => void;
+    onDelete?: (id: string) => void;
+    status?: 'Published' | 'Draft' | 'Archived';
+}
 
 export function CourseCard({ 
     id,
@@ -9,11 +18,14 @@ export function CourseCard({
     category, 
     price, 
     rating, 
-    students,
     duration,
     level,
-    isEnrolled 
-}: Course) {
+    isEnrolled,
+    isInstructorView = false,
+    onEdit,
+    onDelete,
+    status = 'Published'
+}: CourseCardProps) {
     return (
         <div className="card bg-base-100 shadow-sm hover:shadow-2xl transition-all duration-500 border border-base-content/5 group overflow-hidden h-full">
             {/* Thumbnail Area */}
@@ -27,6 +39,15 @@ export function CourseCard({
                     <span className="badge badge-primary font-black py-3 px-4 shadow-lg border-none text-[10px] uppercase tracking-widest bg-primary">
                         {category}
                     </span>
+                    
+                    {/* Instructor-only Status Badge */}
+                    {isInstructorView && (
+                        <span className={`badge font-black py-3 px-4 shadow-lg border-none text-[10px] uppercase tracking-widest 
+                            ${status === 'Published' ? 'bg-success text-success-content' : 
+                              status === 'Draft' ? 'bg-warning text-warning-content' : 'bg-base-300'}`}>
+                            {status}
+                        </span>
+                    )}
                 </div>
             </figure>
             
@@ -47,11 +68,10 @@ export function CourseCard({
                     </div>
                 </div>
 
-                <h3 className="card-title text-xl font-black leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
+                <h3 className="card-title text-xl font-black leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-14">
                     {title}
                 </h3>
                 
-                {/* Hardness Level Indicator */}
                 <div className="flex items-center gap-2 mt-2">
                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border 
                         ${level === 'Beginner' ? 'border-success text-success' : 
@@ -66,10 +86,38 @@ export function CourseCard({
                 
                 <div className="divider my-4 opacity-5"></div>
                 
-                {/* Conditional Footer: Market vs. Enrolled */}
+                {/* Conditional Footer: Instructor vs. Market vs. Enrolled */}
                 <div className="flex justify-between items-center">
-                    {isEnrolled ? (
-                        /* Case: User owns the course */
+                    {isInstructorView ? (
+                        /* Case: Instructor Management */
+                        <div className="flex w-full gap-2">
+                            <button 
+                                onClick={() => onEdit?.(id)}
+                                className="flex-1 btn btn-neutral btn-sm rounded-xl font-black uppercase tracking-widest text-[10px] gap-2"
+                            >
+                                <Edit3 size={14} /> Edit
+                            </button>
+                            <div className="dropdown dropdown-top dropdown-end">
+                                <button tabIndex={0} className="btn btn-ghost btn-sm btn-square rounded-xl border border-base-content/10">
+                                    <MoreVertical size={16} />
+                                </button>
+                                <ul tabIndex={0} className="dropdown-content z-50 menu p-2 shadow-2xl bg-base-100 rounded-box w-40 border border-base-content/5">
+                                    <li><a className="text-xs font-bold">View Analytics</a></li>
+                                    <li><a className="text-xs font-bold">Manage Students</a></li>
+                                    <li><div className="divider my-0 opacity-10"></div></li>
+                                    <li>
+                                        <button 
+                                            onClick={() => onDelete?.(id)}
+                                            className="text-xs font-bold text-error hover:bg-error/10"
+                                        >
+                                            <Trash2 size={14} /> Delete Course
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    ) : isEnrolled ? (
+                        /* Case: Student owns the course */
                         <div className="w-full">
                             <Link 
                                 to={`/dashboard/courses/${id}`}
