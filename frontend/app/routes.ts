@@ -55,6 +55,7 @@ export default [
     route("/cms/test", "routes/cms/StudentManager.tsx"),
     route("/cms/analytics", "routes/cms/InstructorAnalyticsPage.tsx"),
     route("/cms/settings", "routes/user/SettingsPage.tsx"),
+    route("/cms/notification", "routes/user/NotificationsPage.tsx"),
     // route("cms/question-bank", ""),
   ]),
 
