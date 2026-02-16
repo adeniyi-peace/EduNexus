@@ -64,3 +64,18 @@ export interface Module {
     isOpen: boolean; // UI state for accordion
 }
 
+export interface PendingCourse {
+    id: string;
+    title: string;
+    instructor: {
+        name: string;
+        avatar: string;
+        rating: number;
+    };
+    category: string;
+    price: number;
+    submittedAt: string;
+    thumbnail: string;
+    description: string;
+    modulesCount: number;
+}

@@ -1,4 +1,4 @@
-import type { Route } from "./+types/home";
+import type { Route } from "../+types/home";
 import { Hero } from "~/components/home/Hero";
 import { SectionHeader } from "~/components/ui/SectionHeader";
 import { CourseCard } from "~/components/ui/CourseCard";

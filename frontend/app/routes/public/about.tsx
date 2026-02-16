@@ -24,7 +24,7 @@ export default function AboutPage() {
             {/* --- HERO SECTION --- */}
             <section className="relative bg-neutral py-24 lg:py-32 overflow-hidden">
                 <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#3B35B8_1px,transparent_1px)] [background-size:40px_40px]" />
+                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#3B35B8_1px,transparent_1px)] bg-size-[40px_40px]" />
                 </div>
                 
                 <div className="container mx-auto px-4 relative z-10 text-center">

@@ -2,26 +2,25 @@ import { type RouteConfig, index, layout, route } from "@react-router/dev/routes
 
 export default [
     layout("routes/_public.tsx", [
-    index("routes/home.tsx"),
+    index("routes/public/home.tsx"),
 
     // Marketplace & Discovery
-    route("/courses", "routes/courses.tsx"),
-    route("/courses/course_id", "routes/courseDetail.tsx"),
-    // route("courses/:id", "routes/courses.$id.view.tsx"),
+    route("/courses", "routes/public/courses.tsx"),
+    route("/courses/course_id", "routes/public/courseDetail.tsx"),
+    // route("courses/:id", "routes/public/courses.$id.view.tsx"),
         
     // Mentorship & Community
-    route("mentors", "routes/mentors.tsx"),
-    route("/pricing", "routes/pricing.tsx"),
+    route("mentors", "routes/public/mentors.tsx"),
 
     // Information Pages
-    route("how-it-works", "routes/how-it-works.tsx"),
-    route("about", "routes/about.tsx"),
-    route("support", "routes/support.tsx"),
-    route("contact", "routes/contact.tsx"),
+    route("how-it-works", "routes/public/how-it-works.tsx"),
+    route("about", "routes/public/about.tsx"),
+    route("support", "routes/public/support.tsx"),
+    route("contact", "routes/public/contact.tsx"),
 
     // Legal Pages
-    route("privacy", "routes/privacy.tsx"),
-    route("terms", "routes/terms.tsx")
+    route("privacy", "routes/public/privacy.tsx"),
+    route("terms", "routes/public/terms.tsx")
   ]),
   
   // --- AUTHENTICATION (Standalone Layout) ---
@@ -56,6 +55,16 @@ export default [
     route("/cms/analytics", "routes/cms/InstructorAnalyticsPage.tsx"),
     route("/cms/settings", "routes/user/SettingsPage.tsx"),
     route("/cms/notification", "routes/user/NotificationsPage.tsx"),
+    // route("cms/question-bank", ""),
+  ]),
+
+  layout("routes/_admin.tsx", [
+    route("/admin", "routes/admin/Dashboard.tsx"),
+    route("/admin/users", "routes/admin/UserManagementPage.tsx"),
+    route("/admin/moderation", "routes/admin/CourseApprovalPage.tsx"),
+    route("/admin/finance", "routes/admin/FinancePage.tsx"),
+    route("/admin/analytics", "routes/admin/AnalyticsPage.tsx"),
+    route("/admin/courses", "routes/admin/AdminCoursesPage.tsx"),
     // route("cms/question-bank", ""),
   ]),
 

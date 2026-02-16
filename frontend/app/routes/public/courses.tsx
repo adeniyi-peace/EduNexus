@@ -9,7 +9,7 @@ import { CourseCard } from "~/components/ui/CourseCard";
 import { SectionHeader } from "~/components/ui/SectionHeader";
 import { DUMMY_COURSES } from "~/utils/mockData";
 import { MarketplaceSkeleton } from "~/components/ui/Skeletons";
-import type { Route } from "./+types/courses";
+import type { Route } from "../+types/courses";
 
 export async function loader({ request }: { request: Request }) {
     const url = new URL(request.url);
