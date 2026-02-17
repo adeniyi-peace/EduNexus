@@ -6,14 +6,16 @@ import {
     CreditCard, 
     Settings, 
     BarChart3,
-    LogOut
+    LogOut,
+    LibraryBig
 } from "lucide-react";
 import { NavLink } from "react-router";
 
 const ADMIN_LINKS = [
     { label: "Overview", href: "/admin", icon: LayoutDashboard },
     { label: "User Management", href: "/admin/users", icon: Users },
-    { label: "Course Approval", href: "/admin/courses", icon: BookOpenCheck },
+    { label: "Courses", href: "/admin/courses", icon: LibraryBig },
+    { label: "Course Approval", href: "/admin/courses-approval", icon: BookOpenCheck },
     { label: "Content Moderation", href: "/admin/moderation", icon: ShieldAlert },
     { label: "Revenue & Payouts", href: "/admin/finance", icon: CreditCard },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },

@@ -23,7 +23,6 @@ export default function PublicLayout() {
                                 <li><NavLink to="/courses">Courses</NavLink></li>
                                 <li><NavLink to="/mentors">Mentors</NavLink></li>
                                 <li><NavLink to="/how-it-works">How It Works</NavLink></li>
-                                <li><NavLink to="/pricing">Pricing</NavLink></li>
                                 <div className="divider my-1"></div>
                                 <li><NavLink to="/support">Help Center</NavLink></li>
                             </ul>
@@ -70,16 +69,6 @@ export default function PublicLayout() {
                                     }
                                 >
                                     Methodology
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink 
-                                    to="/pricing"
-                                    className={({ isActive }) => 
-                                        `hover:text-primary transition-colors ${isActive ? "text-primary font-bold" : ""}`
-                                    }
-                                >
-                                    Pricing
                                 </NavLink>
                             </li>
                         </ul>
@@ -134,7 +123,6 @@ export default function PublicLayout() {
                                 <li><Link to="/courses" className="link link-hover text-base-content/80 hover:text-primary transition-colors">Browse Catalog</Link></li>
                                 <li><Link to="/mentors" className="link link-hover text-base-content/80 hover:text-primary transition-colors">Find Mentors</Link></li>
                                 <li><Link to="/how-it-works" className="link link-hover text-base-content/80 hover:text-primary transition-colors">How It Works</Link></li>
-                                <li><Link to="/pricing" className="link link-hover text-base-content/80 hover:text-primary transition-colors">Plans & Pricing</Link></li>
                             </ul>
                         </div>
 

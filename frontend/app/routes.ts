@@ -7,7 +7,6 @@ export default [
     // Marketplace & Discovery
     route("/courses", "routes/public/courses.tsx"),
     route("/courses/course_id", "routes/public/courseDetail.tsx"),
-    // route("courses/:id", "routes/public/courses.$id.view.tsx"),
         
     // Mentorship & Community
     route("mentors", "routes/public/mentors.tsx"),
@@ -42,7 +41,8 @@ export default [
     route("/dashboard/achievements", "routes/dashboard/AchievementsPage.tsx"),
     route("dashboard/profile", "routes/user/ProfilePage.tsx"),
     // route("dashboard/mentors", "routes/dashboard/mentors.tsx"),
-    // route("dashboard/settings", "routes/user/SettingsPage.tsx"),
+    route("dashboard/settings", "routes/user/SettingsPage.tsx"),
+    route("/dashboard/notification", "routes/user/NotificationsPage.tsx"),
   ]),
 
   layout("routes/_cmsLayout.tsx", [
@@ -53,23 +53,27 @@ export default [
     route("/cms/course/students", "routes/cms/CourseStudentManager.tsx"),
     route("/cms/test", "routes/cms/StudentManager.tsx"),
     route("/cms/analytics", "routes/cms/InstructorAnalyticsPage.tsx"),
+    route("cms/profile", "routes/user/ProfilePage.tsx"),
     route("/cms/settings", "routes/user/SettingsPage.tsx"),
     route("/cms/notification", "routes/user/NotificationsPage.tsx"),
-    // route("cms/question-bank", ""),
   ]),
 
   layout("routes/_admin.tsx", [
     route("/admin", "routes/admin/Dashboard.tsx"),
     route("/admin/users", "routes/admin/UserManagementPage.tsx"),
-    route("/admin/moderation", "routes/admin/CourseApprovalPage.tsx"),
+    route("/admin/moderation", "routes/admin/ContentModerationPage.tsx"),
     route("/admin/finance", "routes/admin/FinancePage.tsx"),
     route("/admin/analytics", "routes/admin/AnalyticsPage.tsx"),
+    route("/admin/courses-approval", "routes/admin/CourseApprovalPage.tsx"),
     route("/admin/courses", "routes/admin/AdminCoursesPage.tsx"),
-    // route("cms/question-bank", ""),
+    route("/admin/settings", "routes/admin/AdminSettingsPage.tsx"),
+    route("admin/profile", "routes/user/ProfilePage.tsx"),
+    route("/admin/settings", "routes/user/SettingsPage.tsx"),
+    route("/admin/notification", "routes/user/NotificationsPage.tsx"),
   ]),
 
-  route("/resources/theme", "routes/resources.theme.ts")
+  route("/resources/theme", "routes/resources.theme.ts"),
 
   // --- 4. CATCH-ALL / ERROR ---
-  // route("*", "routes/not-found.tsx"),
+  route("*", "routes/not-found.tsx"),
 ] satisfies RouteConfig;
