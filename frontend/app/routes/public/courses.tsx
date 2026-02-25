@@ -5,11 +5,14 @@ import {
     Form, 
     useNavigation 
 } from "react-router";
+import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import { CourseCard } from "~/components/ui/CourseCard";
 import { SectionHeader } from "~/components/ui/SectionHeader";
 import { DUMMY_COURSES } from "~/utils/mockData";
 import { MarketplaceSkeleton } from "~/components/ui/Skeletons";
 import type { Route } from "../+types/courses";
+
+// ... loader function stays exactly the same as your logic is perfect ...
 
 export async function loader({ request }: { request: Request }) {
     const url = new URL(request.url);
@@ -19,12 +22,10 @@ export async function loader({ request }: { request: Request }) {
     const page = parseInt(url.searchParams.get("page") || "1", 10);
     const pageSize = 6;
 
-    // Simulate Network Latency
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
     let filtered = [...DUMMY_COURSES];
 
-    // 1. Filter Logic
     if (search) {
         filtered = filtered.filter(c => 
             c.title.toLowerCase().includes(search) || 
@@ -35,15 +36,13 @@ export async function loader({ request }: { request: Request }) {
         filtered = filtered.filter(c => c.category === category);
     }
 
-    // 2. Sort Logic (Production standard)
     filtered.sort((a, b) => {
         if (sort === "price") return parseFloat(a.price.replace('$', '')) - parseFloat(b.price.replace('$', ''));
         if (sort === "-price") return parseFloat(b.price.replace('$', '')) - parseFloat(a.price.replace('$', ''));
         if (sort === "-rating") return b.rating - a.rating;
-        return b.id - a.id; // Default newest
+        return b.id - a.id;
     });
 
-    // 3. Pagination Logic
     const totalCourses = filtered.length;
     const totalPages = Math.ceil(totalCourses / pageSize);
     const start = (page - 1) * pageSize;
@@ -72,48 +71,50 @@ export default function CourseMarketplace() {
     const submit = useSubmit();
     const navigation = useNavigation();
 
-    const isSearching = navigation.location && 
-        new URLSearchParams(navigation.location.search).has("q");
-
     const categories = ["Web Development", "Data Science", "Design", "Business", "Marketing"];
 
-    // Helper to change page without losing existing filters
     const handlePageChange = (newPage: number) => {
         const params = new URLSearchParams(searchParams);
         params.set("page", newPage.toString());
         submit(params);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
-        <div className="container mx-auto px-4 py-12 transition-opacity duration-500 ease-in-out">
-            <SectionHeader 
-                title="Explore Knowledge" 
-                subtitle="Expert-led courses designed for the next generation of engineers." 
-            />
+        <div className="container mx-auto px-4 py-16">
+            <div className="animate-slide-up">
+                <SectionHeader 
+                    title="Explore Knowledge" 
+                    subtitle="Expert-led courses designed for the next generation of engineers." 
+                />
+            </div>
 
-            <div className="flex flex-col lg:flex-row gap-10 mt-12">
+            <div className="flex flex-col lg:flex-row gap-12 mt-16">
                 {/* --- FILTERS SIDEBAR --- */}
-                <aside className="w-full lg:w-72">
-                    <div className="sticky top-24 space-y-8 bg-base-200/50 p-6 rounded-3xl border border-base-content/5">
+                <aside className="w-full lg:w-80 shrink-0">
+                    <div className="sticky top-28 p-8 rounded-4xl bg-base-200/50 backdrop-blur-md border border-base-content/5 shadow-sm space-y-10">
                         <Form 
                             method="get" 
                             onChange={(e) => {
-                                // Reset to page 1 on filter change
                                 const formData = new FormData(e.currentTarget);
                                 formData.set("page", "1"); 
                                 submit(formData, { replace: true });
                             }}
-                            className="space-y-6"
+                            className="space-y-10"
                         >
-                            <div>
-                                <label className="text-sm font-black uppercase tracking-widest opacity-50 mb-4 block">Search</label>
-                                <div className="relative">
+                            {/* Search Group */}
+                            <div className="space-y-4">
+                                <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-base-content/40">
+                                    <Search size={14} className="text-primary" />
+                                    Search Library
+                                </label>
+                                <div className="relative group">
                                     <input 
                                         type="text" 
                                         name="q"
                                         defaultValue={filters.search}
                                         placeholder="Keywords..." 
-                                        className="input input-bordered w-full bg-base-100 focus:outline-primary" 
+                                        className="input input-bordered w-full bg-base-100 rounded-xl focus:outline-primary transition-all pr-10" 
                                     />
                                     {navigation.state === "loading" && (
                                         <span className="loading loading-spinner loading-xs absolute right-3 top-4 opacity-30"></span>
@@ -121,45 +122,35 @@ export default function CourseMarketplace() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-sm font-black uppercase tracking-widest opacity-50 mb-4 block">Categories</label>
+                            {/* Categories Group */}
+                            <div className="space-y-4">
+                                <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-base-content/40">
+                                    <Filter size={14} className="text-primary" />
+                                    Subject Area
+                                </label>
                                 <div className="flex flex-col gap-1">
-                                    <label className="label cursor-pointer justify-start gap-3 py-2 px-3 rounded-xl hover:bg-base-300 transition-colors">
-                                        <input 
-                                            type="radio" 
-                                            name="category" 
-                                            value=""
-                                            checked={!filters.category}
-                                            className="radio radio-primary radio-sm" 
-                                        />
-                                        <span className={`text-sm ${!filters.category ? "font-bold text-primary" : ""}`}>All Categories</span>
-                                    </label>
+                                    <CategoryRadio label="All Categories" value="" current={filters.category} />
                                     {categories.map((cat) => (
-                                        <label key={cat} className="label cursor-pointer justify-start gap-3 py-2 px-3 rounded-xl hover:bg-base-300 transition-colors">
-                                            <input 
-                                                type="radio" 
-                                                name="category" 
-                                                value={cat}
-                                                checked={filters.category === cat}
-                                                className="radio radio-primary radio-sm" 
-                                            />
-                                            <span className={`text-sm ${filters.category === cat ? "font-bold text-primary" : ""}`}>{cat}</span>
-                                        </label>
+                                        <CategoryRadio key={cat} label={cat} value={cat} current={filters.category} />
                                     ))}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-sm font-black uppercase tracking-widest opacity-50 mb-4 block">Sort By</label>
+                            {/* Sort Group */}
+                            <div className="space-y-4">
+                                <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-base-content/40">
+                                    <SlidersHorizontal size={14} className="text-primary" />
+                                    Sort Results
+                                </label>
                                 <select 
                                     name="sort" 
-                                    className="select select-bordered w-full bg-base-100"
+                                    className="select select-bordered w-full bg-base-100 rounded-xl font-bold text-sm"
                                     defaultValue={filters.sort}
                                 >
-                                    <option value="-created_at">Newest First</option>
-                                    <option value="price">Price: Low to High</option>
-                                    <option value="-price">Price: High to Low</option>
-                                    <option value="-rating">Highest Rated</option>
+                                    <option value="-created_at">Newest Released</option>
+                                    <option value="price">Price: Lowest</option>
+                                    <option value="-price">Price: Highest</option>
+                                    <option value="-rating">Top Rated</option>
                                 </select>
                             </div>
                         </Form>
@@ -168,48 +159,50 @@ export default function CourseMarketplace() {
 
                 {/* --- COURSE GRID & PAGINATION --- */}
                 <main className="flex-1">
-                    <div className={`transition-opacity duration-300 ${navigation.state === "loading" ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+                    <div className={`transition-all duration-500 ${navigation.state === "loading" ? "opacity-30 blur-sm pointer-events-none" : "opacity-100 blur-0"}`}>
                         {courses.length > 0 ? (
                             <>
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 animate-fade-in">
                                     {courses.map((course: any) => (
                                         <CourseCard key={course.id} {...course} />
                                     ))}
                                 </div>
 
                                 {/* Pagination Controls */}
-                                <div className="mt-16 flex justify-center">
-                                    <div className="join border border-base-content/10 bg-base-100 shadow-sm">
+                                <div className="mt-20 flex justify-center">
+                                    <div className="join bg-base-100 p-1 rounded-2xl border border-base-content/5 shadow-xl">
                                         <button 
                                             disabled={!meta.hasPrevPage}
                                             onClick={() => handlePageChange(meta.currentPage - 1)}
-                                            className="join-item btn btn-md disabled:bg-base-200"
+                                            className="join-item btn btn-ghost btn-md rounded-xl disabled:opacity-20"
                                         >
-                                            «
+                                            ←
                                         </button>
-                                        <button className="join-item btn btn-md no-animation pointer-events-none px-8">
-                                            Page {meta.currentPage} of {meta.totalPages}
+                                        <button className="join-item btn btn-ghost btn-md no-animation pointer-events-none px-6 font-black text-xs uppercase tracking-widest">
+                                            {meta.currentPage} / {meta.totalPages}
                                         </button>
                                         <button 
                                             disabled={!meta.hasNextPage}
                                             onClick={() => handlePageChange(meta.currentPage + 1)}
-                                            className="join-item btn btn-md disabled:bg-base-200"
+                                            className="join-item btn btn-ghost btn-md rounded-xl disabled:opacity-20"
                                         >
-                                            »
+                                            →
                                         </button>
                                     </div>
                                 </div>
                             </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-32 bg-base-200/30 rounded-[3rem] border-2 border-dashed border-base-content/5 text-center">
-                                <div className="w-20 h-20 bg-base-300 rounded-full flex items-center justify-center text-4xl mb-6">🔍</div>
-                                <h3 className="text-2xl font-black">No courses found</h3>
-                                <p className="text-base-content/50 mt-2 max-w-xs">We couldn't find any results for "{filters.search}". Try different keywords or filters.</p>
+                            <div className="flex flex-col items-center justify-center py-40 bg-base-200/30 rounded-[3rem] border-2 border-dashed border-base-content/10 text-center animate-fade-in">
+                                <div className="w-24 h-24 bg-base-100 rounded-full flex items-center justify-center text-5xl mb-8 shadow-2xl">🕵️‍♂️</div>
+                                <h3 className="text-3xl font-black tracking-tight">Zero nodes found</h3>
+                                <p className="text-base-content/50 mt-3 max-w-sm font-medium">
+                                    We couldn't find any courses matching your specific filters. Try expanding your search horizons.
+                                </p>
                                 <button 
                                     onClick={() => submit({})} 
-                                    className="btn btn-primary mt-8 px-10 rounded-full"
+                                    className="btn btn-primary mt-10 px-12 rounded-2xl font-black uppercase tracking-widest text-xs"
                                 >
-                                    Reset Discovery
+                                    Reset All Filters
                                 </button>
                             </div>
                         )}
@@ -217,5 +210,23 @@ export default function CourseMarketplace() {
                 </main>
             </div>
         </div>
+    );
+}
+
+function CategoryRadio({ label, value, current }: { label: string; value: string; current: string }) {
+    const isActive = current === value;
+    return (
+        <label className={`label cursor-pointer justify-start gap-4 py-2.5 px-4 rounded-xl transition-all group ${isActive ? "bg-primary text-white shadow-lg shadow-primary/20" : "hover:bg-base-content/5"}`}>
+            <input 
+                type="radio" 
+                name="category" 
+                value={value}
+                checked={isActive}
+                className="hidden" 
+            />
+            <span className={`text-sm font-bold tracking-tight ${isActive ? "text-white" : "text-base-content/60 group-hover:text-base-content"}`}>
+                {label}
+            </span>
+        </label>
     );
 }

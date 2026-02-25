@@ -96,7 +96,8 @@ export const MOCK_CURRICULUM = [
                 type: "video",
                 duration: "00:15", 
                 completed: true,
-                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                isPreview: true,
             },
             { 
                 id: "102", 
@@ -104,7 +105,8 @@ export const MOCK_CURRICULUM = [
                 type: "video",
                 duration: "00:12", 
                 completed: true,
-                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" 
+                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", 
+                isPreview: true,
             },
             {
                 id: "103",
@@ -143,7 +145,8 @@ export const MOCK_CURRICULUM = [
                 type: "video",
                 duration: "00:10", 
                 completed: false,
-                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
+                videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4", 
+                isPreview: false,
             },
             { 
                 id: "202", 
@@ -151,7 +154,8 @@ export const MOCK_CURRICULUM = [
                 type: "video",
                 duration: "00:18", 
                 completed: false,
-                videoUrl: "https://player.vimeo.com/external/494356011.sd.mp4?s=d010775d79679199c0e4876932a32c668b57700e&profile_id=165&oauth2_token_id=57447761" 
+                videoUrl: "https://player.vimeo.com/external/494356011.sd.mp4?s=d010775d79679199c0e4876932a32c668b57700e&profile_id=165&oauth2_token_id=57447761",
+                isPreview: false, 
             },
             {
                 id: "203",

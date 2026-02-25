@@ -27,55 +27,49 @@ export interface QuizQuestion {
     options: QuizOption[];
 }
 
-export interface Lesson {
-    id: string;
-    title: string;
-    type: 'video' | 'article' | 'quiz';
-    description?: string; // Added description
-    isPublished: boolean;
-    
-    // Type-specific fields
-    videoUrl?: string;
-    duration?: number;
-    content?: string; // For Article (HTML/Markdown)
-    quizConfig?: {
-        timeLimit: number; // in minutes
-        questions: QuizQuestion[];
-    };
-    resources: Resource[];
-    isPreview?: boolean; // Add this
-    isHidden?: boolean;  // Add this
-}
-
-// ... Module and Resource interfaces remain the same
-
 export interface Resource {
     id: string;
     title: string;
-    url: string; // URL from S3/Backend
+    url: string; 
     size: string;
 }
 
+// Base lesson properties shared across all types
+interface BaseLesson {
+    id: string;
+    title: string;
+    description?: string;
+    isPublished: boolean;
+    isPreview?: boolean;
+    isHidden?: boolean;
+    resources: Resource[];
+}
+
+export interface VideoLesson extends BaseLesson {
+    type: 'video';
+    videoUrl: string;
+    duration: number;
+}
+
+export interface ArticleLesson extends BaseLesson {
+    type: 'article';
+    content: string; // HTML/Markdown
+}
+
+export interface QuizLesson extends BaseLesson {
+    type: 'quiz';
+    quizConfig: {
+        timeLimit: number;
+        questions: QuizQuestion[];
+    };
+}
+
+// Discriminated Union
+export type Lesson = VideoLesson | ArticleLesson | QuizLesson;
 
 export interface Module {
     id: string;
     title: string;
     lessons: Lesson[];
-    isOpen: boolean; // UI state for accordion
-}
-
-export interface PendingCourse {
-    id: string;
-    title: string;
-    instructor: {
-        name: string;
-        avatar: string;
-        rating: number;
-    };
-    category: string;
-    price: number;
-    submittedAt: string;
-    thumbnail: string;
-    description: string;
-    modulesCount: number;
+    isOpen: boolean; 
 }
