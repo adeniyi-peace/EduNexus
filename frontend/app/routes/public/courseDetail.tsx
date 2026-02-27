@@ -1,4 +1,5 @@
-import { useLoaderData } from "react-router";
+import { useLoaderData, Link  } from "react-router"; // Add this import at the top
+import { PlayCircle, Lock } from "lucide-react"; // Let's use icons to clarify access
 import { api } from "~/utils/api.client";
 import { Syllabus } from "~/components/course/Syllabus";
 import { InstructorBio } from "~/components/course/InstructorBio";
@@ -29,8 +30,20 @@ export async function loader({ params }: { params: { id: string } }) {
                 avatar: "https://i.pravatar.cc/150?u=aris",
             },
             syllabus: [
-                { title: "Foundation & Architecture", lessons: ["Monolith vs Microservices", "Database Schema Design"] },
-                { title: "Advanced Backend with Django", lessons: ["Custom Middleware", "Query Optimization"] },
+                { 
+                    title: "Foundation & Architecture", 
+                    lessons: [
+                        { id: "les_1", title: "Monolith vs Microservices", isPreview: true },
+                        { id: "les_2", title: "Database Schema Design", isPreview: true }
+                    ] 
+                },
+                { 
+                    title: "Advanced Backend with Django", 
+                    lessons: [
+                        { id: "les_3", title: "Custom Middleware", isPreview: false },
+                        { id: "les_4", title: "Query Optimization", isPreview: false }
+                    ] 
+                },
             ],
             reviews: [
                 { id: 1, user: "Sarah L.", rating: 5, comment: "The best architectural breakdown I've ever seen." },

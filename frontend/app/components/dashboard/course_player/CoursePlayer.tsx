@@ -1,16 +1,25 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import { CurriculumSidebar } from "~/components/dashboard/course_player/CurriculumSidebar";
 import { TabSystem } from "~/components/dashboard/course_player/TabSystem";
 import { VideoTheater } from "~/components/dashboard/course_player/VideoTheater";
 import { QuizContainer } from "~/components/dashboard/quiz/QuizContainer";
 import { MOCK_CURRICULUM } from "~/utils/mockData";
 import { ChevronRight, ChevronLeft, Menu } from "lucide-react";
+import { PaywallModal } from "~/components/course/PaywallModal";
 
-export default function CoursePlayer() {
+export default function CoursePlayer({ isEnrolled, initialLessonId }: { isEnrolled: boolean, initialLessonId: string | null }) {
+
     // Flatten lessons for easier "Next/Prev" navigation logic
     const allLessons = MOCK_CURRICULUM.flatMap(module => module.lessons);
+
+    const initialLesson = initialLessonId 
+        ? allLessons.find(l => l.id === initialLessonId) || allLessons[0] 
+        : allLessons[0];
+
     
     const [currentLesson, setCurrentLesson] = useState(allLessons[0]);
+    const [showPaywall, setShowPaywall] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
     
@@ -24,6 +33,12 @@ export default function CoursePlayer() {
         const nextLesson = allLessons[currentIndex + 1];
 
         if (nextLesson) {
+            // Guard clause for preview users hitting a paywall
+            if (!isEnrolled && !nextLesson.isPreview) {
+                console.log("Paywall triggered: User needs to enroll to continue.");
+                setShowPaywall(true);
+                return;
+            }
             setCurrentLesson(nextLesson);
             // In a real app, you'd send a "mark as completed" request to your Django backend here
             // Reset interaction state for new quizzes if you want them to start with a button
@@ -33,6 +48,21 @@ export default function CoursePlayer() {
             setIsPlaying(false);
             console.log("Course Complete");
         }
+    };
+
+    const handleLessonSelect = (targetLesson: any) => {
+        // Intercept the click!
+        if (!isEnrolled && !targetLesson.isPreview) {
+            setShowPaywall(true);
+            return; // Stop the video from changing
+        }
+
+        setCurrentLesson(targetLesson);
+        setShowPaywall(false);
+
+        if (!hasInteracted) setHasInteracted(true);
+        // Optional: Close sidebar on mobile select
+        if (window.innerWidth < 1024) setIsSidebarOpen(false);
     };
 
     const handleInitialPlay = () => {
@@ -55,6 +85,29 @@ export default function CoursePlayer() {
         // We use h-[calc(100vh-theme(spacing.header))] if the header is fixed, 
         // but flex-1 h-full is safer if the parent controls height.
         <div className="flex flex-col lg:flex-row w-full h-[calc(100vh-64px)] overflow-hidden bg-base-300 relative">
+
+            {/* Paywall Overlay */}
+            {/* {showPaywall && (
+                <div className="absolute inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-base-100 p-8 rounded-3xl max-w-md text-center border border-primary/20 shadow-2xl shadow-primary/10">
+                        <h3 className="text-2xl font-black mb-4 italic">Ready to Master the Architecture?</h3>
+                        <p className="opacity-70 mb-8">
+                            You've reached the end of the free preview. Enroll now to unlock the remaining modules, quizzes, and mentor feedback.
+                        </p>
+                        <button className="btn btn-primary btn-block mb-3 rounded-xl">Enroll Now - $199</button>
+                        <button className="btn btn-ghost btn-block rounded-xl" onClick={() => setShowPaywall(false)}>
+                            Keep Browsing Previews
+                        </button>
+                    </div>
+                </div>
+            )} */}
+            
+            <PaywallModal 
+                isOpen={showPaywall}
+                onClose={() => setShowPaywall(false)}
+                courseTitle={"react course"}
+                price={20000}
+            />
             
             {/* --- LEFT PANE --- */}
             <div className={`flex flex-col min-w-0 transition-all duration-300 ease-in-out relative ${isSidebarOpen ? 'lg:w-[calc(100%-24rem)]' : 'lg:w-full'}`}>
@@ -112,12 +165,7 @@ export default function CoursePlayer() {
                     curriculum={MOCK_CURRICULUM}
                     currentLesson={currentLesson}
                     allLessons={allLessons}
-                    onLessonSelect={(lesson) => {
-                        setCurrentLesson(lesson);
-                        if (!hasInteracted) setHasInteracted(true);
-                        // Optional: Close sidebar on mobile select
-                        if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                    }}
+                    onLessonSelect={handleLessonSelect}
                 />
 
                 {/* Mobile Close Button */}
