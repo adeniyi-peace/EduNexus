@@ -34,7 +34,7 @@ export default function GlobalStudentDirectory() {
     );
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen p-4 lg:p-8">
             {/* Page Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>

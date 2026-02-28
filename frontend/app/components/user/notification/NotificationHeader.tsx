@@ -17,7 +17,7 @@ export const NotificationHeader = ({ activeFilter, setFilter, onMarkAllRead, unr
     ];
 
     return (
-        <div className="sticky top-0 z-20 backdrop-blur-md pb-4 pt-2 border-b border-base-content/5 mb-6">
+        <div className="sticky top-0 z-10 backdrop-blur-md pb-4 pt-2 border-b border-base-content/5 mb-6">
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-4">
                 <div>
                     <h1 className="text-2xl font-black flex items-center gap-2">

@@ -8,7 +8,7 @@ import { TopPerformingCourses } from "~/components/cms/analytics/TopPerformingCo
 import { TrafficSources } from "~/components/cms/analytics/TrafficSources";
 export default function InstructorAnalyticsPage() {
     return (
-        <div className=" min-h-screen space-y-6 pb-20">
+        <div className=" min-h-screen space-y-6 p-4 lg:p-8">
             
             {/* Page Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">

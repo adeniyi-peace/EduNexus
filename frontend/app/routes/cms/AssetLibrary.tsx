@@ -39,7 +39,7 @@ export default function InstructorLibrary() {
     );
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen p-4 lg:p-8">
             
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -78,7 +78,7 @@ export default function InstructorLibrary() {
                         {filteredCourses.map((course) => (
                             <CourseCard 
                                 key={course.id} 
-                                course={course} 
+                                {...course} 
                                 onEdit={handleEdit} 
                                 isInstructorView={true}
                                 onDelete={setCourseToDelete} 

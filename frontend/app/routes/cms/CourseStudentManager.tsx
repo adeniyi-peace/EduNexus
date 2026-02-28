@@ -36,7 +36,7 @@ export default function CourseStudentManager() {
     const [searchQuery, setSearchQuery] = useState("");
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen p-4 lg:p-8">
             {/* Header with Context Switcher */}
             <div className="flex flex-col gap-4 mb-8">
                 <div className="text-sm font-bold opacity-40 uppercase tracking-widest">Course Manager</div>

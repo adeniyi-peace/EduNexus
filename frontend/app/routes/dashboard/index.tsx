@@ -84,7 +84,7 @@ export default function StudentDashboard() {
                 {/* Notifications & Deadlines Stack */}
                 <div className="space-y-6">
                     {/* Notifications */}
-                    <div className="bg-base-100 rounded-[2rem] p-6 border border-base-content/5">
+                    <div className="bg-base-100 rounded-sxl p-6 border border-base-content/5">
                         <h3 className="font-black text-[10px] uppercase tracking-[0.2em] mb-4 opacity-40 text-center">System Feed</h3>
                         <div className="space-y-3">
                             {notifications.map((n) => (
@@ -102,7 +102,7 @@ export default function StudentDashboard() {
                     </div>
 
                     {/* Deadlines */}
-                    <div className="bg-base-100 rounded-[2rem] p-6 border border-base-content/5">
+                    <div className="bg-base-100 rounded-4xl p-6 border border-base-content/5">
                         <h3 className="font-black text-[10px] uppercase tracking-[0.2em] mb-4 opacity-40 text-center">Upcoming Deadlines</h3>
                         <div className="space-y-3">
                             {deadlines.map((d) => (
@@ -134,7 +134,7 @@ export default function StudentDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {enrolledCourses.map((course) => (
-                        <div key={course.id} className="group bg-base-100 p-6 rounded-[2rem] border border-base-content/5 hover:border-primary/30 transition-all flex flex-col justify-between h-64">
+                        <div key={course.id} className="group bg-base-100 p-6 rounded-4xl border border-base-content/5 hover:border-primary/30 transition-all flex flex-col justify-between h-64">
                             <div>
                                 <div className={`w-12 h-12 ${course.color} rounded-2xl flex items-center justify-center text-white font-black shadow-lg mb-4`}>
                                     {course.title.charAt(0)}

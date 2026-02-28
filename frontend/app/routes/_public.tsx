@@ -19,7 +19,7 @@ export default function PublicLayout() {
             className="min-h-screen flex flex-col bg-base-100 text-base-content transition-colors duration-500 ease-in-out"
         >
             {isNavigating && (
-                <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-linear-to-r from-primary via-secondary to-accent animate-pulse" />
+                <div className="fixed top-0 left-0 right-0 z-100 h-1 bg-linear-to-r from-primary via-secondary to-accent animate-pulse" />
             )}
 
             {/* --- STICKY NAVBAR --- */}
@@ -52,7 +52,7 @@ export default function PublicLayout() {
                             <span className="text-2xl font-black tracking-tight hidden sm:block">
                                 {/* FIX: Explicitly applied text-base-content here */}
                                 <span className="text-base-content">Edu</span>
-                                <span className="bg-clip-text text-transparent bg-linear-to-br from-primary via-secondary to-primary bg-[length:200%_auto] animate-gradient-x">Nexus</span>
+                                <span className="bg-clip-text text-transparent bg-linear-to-br from-primary via-secondary to-primary bg-size-[200%_auto] animate-gradient-x">Nexus</span>
                             </span>
                         </Link>
                     </div>

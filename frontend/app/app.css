@@ -97,3 +97,46 @@
     --color-warning: #FBBF24;         
     --color-error: #FB7185;           
 }
+
+/* Custom Scrollbar for Sophisticated UI */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(108, 111, 246, 0.1); /* Primary color low opacity */
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(108, 111, 246, 0.3);
+}
+
+/* Ensure font weight for heavy tracking */
+.tracking-[0.3em], .tracking-[0.4em] {
+    font-weight: 900 !important;
+}
+
+/* fix for toggle class not working */
+@layer components {
+    .toggle {
+        /* Fix the squashed width calculation */
+        --border: 1px;
+        flex-shrink: 0 !important;
+        
+        /* Force the pill shape for the track */
+        border-radius: 9999px !important;
+        position: relative;
+    }
+
+    /* Target the internal knob/handle */
+    .toggle::before {
+        content: "";
+        border-radius: 9999px !important;
+    }
+}

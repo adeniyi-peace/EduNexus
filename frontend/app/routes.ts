@@ -35,7 +35,7 @@ export default [
     layout("routes/_dashboard.tsx", [
         route("dashboard", "routes/dashboard/index.tsx"),
         route("dashboard/courses", "routes/dashboard/courses.tsx"),
-        // route("dashboard/courses/:id", "routes/courses.$courseId.learn.tsx"),
+        // route("dashboard/courses/:id", "routes/public/courseDetail.tsx", {id: "registered-course"}),
         route("dashboard/community", "routes/dashboard/CommunityHub.tsx"),
         route("/dashboard/achievements", "routes/dashboard/AchievementsPage.tsx"),
         
@@ -52,7 +52,6 @@ export default [
         route("/cms/library", "routes/cms/AssetLibrary.tsx"),
         route("/cms/students", "routes/cms/GlobalStudentDirectory.tsx"),
         route("/cms/course/students", "routes/cms/CourseStudentManager.tsx"),
-        route("/cms/test", "routes/cms/StudentManager.tsx"),
         route("/cms/analytics", "routes/cms/InstructorAnalyticsPage.tsx"),
         
         // Shared components with Unique IDs

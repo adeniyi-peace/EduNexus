@@ -7,8 +7,9 @@ import { StructurePanel } from "~/components/cms/builder/StructurePanel";
 import { SyncStatus } from "~/components/cms/builder/SyncStatus";
 import { Workbench } from "~/components/cms/builder/Workbench";
 import { useCourseBuilder } from "~/hooks/useCourseBuilder";
+import { type CourseData } from "~/types/course";
 
-const INITIAL_DATA = { 
+const INITIAL_DATA: CourseData = { 
     id: "course-123", 
     title: "New Course Shell", 
     modules: [] 
@@ -34,8 +35,13 @@ export default function CourseBuilderLayout() {
         deleteResource,
     } = useCourseBuilder(INITIAL_DATA);
 
-    // --- LOCAL STATE FOR MODAL FORM (The Fix) ---
-    const [draftSettings, setDraftSettings] = useState({
+    // --- LOCAL STATE FOR MODAL FORM ---
+    // Strictly typed to match CourseData partials
+    const [draftSettings, setDraftSettings] = useState<{
+        title: string;
+        price: number;
+        difficulty: CourseData['difficulty'];
+    }>({
         title: "",
         price: 0,
         difficulty: "Beginner"
@@ -46,31 +52,27 @@ export default function CourseBuilderLayout() {
         setDraftSettings({
             title: course.title,
             price: course.price || 0,
-            difficulty: (course.difficulty || "Beginner") as string
+            difficulty: course.difficulty || "Beginner"
         });
     }, [course.title, course.price, course.difficulty]);
 
-    // Handle Saving
     const handleSaveSettings = () => {
         updateCourse({
             title: draftSettings.title,
             price: draftSettings.price,
-            difficulty: draftSettings.difficulty as any
+            difficulty: draftSettings.difficulty
         });
         (document.getElementById('course_settings_modal') as HTMLDialogElement)?.close();
     };
 
-    // Handle Cancel / Reset
     const handleCancelSettings = () => {
-        // Reset form to current actual course data
         setDraftSettings({
             title: course.title,
             price: course.price || 0,
-            difficulty: (course.difficulty || "Beginner") as string
+            difficulty: course.difficulty || "Beginner"
         });
         (document.getElementById('course_settings_modal') as HTMLDialogElement)?.close();
     };
-
 
     // UI State
     const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
@@ -78,26 +80,28 @@ export default function CourseBuilderLayout() {
     const [mobileView, setMobileView] = useState<'structure' | 'workbench' | 'properties'>('workbench');
     const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
-    const activeModule = course.modules.find(m => m.id === activeModuleId);
+    const activeModule = course.modules?.find(m => m.id === activeModuleId);
     const activeLesson = activeModule?.lessons.find(l => l.id === activeLessonId);
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden bg-[#09090b] text-white">
+        <div className="h-screen flex flex-col overflow-hidden bg-base-100 text-base-content font-sans">
             
             {/* --- BUILDER HEADER --- */}
-            <div className="h-14 lg:h-16 flex items-center justify-between px-4 lg:px-6 border-b border-white/5 bg-black/40 shrink-0 z-50">
-                <div className="flex items-center gap-3 lg:gap-4">
-                    <button className="btn btn-ghost btn-circle btn-sm text-white/40 hover:text-white">
+            <header className="h-16 flex items-center justify-between px-4 lg:px-6 border-b border-base-content/5 bg-base-200/50 backdrop-blur-md shrink-0 ">
+                <div className="flex items-center gap-4">
+                    <button className="btn btn-ghost btn-circle btn-sm text-base-content/40 hover:text-primary transition-colors">
                         <ArrowLeft size={18} />
                     </button>
                     
                     <div className="flex flex-col">
-                        <span className="text-[10px] text-white/40 uppercase tracking-wider font-bold hidden lg:block">Course Builder</span>
+                        <span className="text-[10px] text-base-content/40 uppercase tracking-widest font-black hidden lg:block">
+                            Engine // Course_Builder
+                        </span>
                         <button 
                             onClick={() => (document.getElementById('course_settings_modal') as HTMLDialogElement)?.showModal()}
-                            className="flex items-center gap-2 group"
+                            className="flex items-center gap-2 group text-left"
                         >
-                            <h1 className="text-sm font-bold truncate max-w-37.5 lg:max-w-xs group-hover:text-primary transition-colors">
+                            <h1 className="text-sm font-bold truncate max-w-37.5 lg:max-w-xs group-hover:text-primary transition-colors uppercase tracking-tight">
                                 {course.title}
                             </h1>
                             <Settings size={12} className="opacity-0 group-hover:opacity-50 transition-opacity" />
@@ -109,27 +113,29 @@ export default function CourseBuilderLayout() {
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                    <SyncStatus status={syncStatus} />
-                    <button className="btn btn-primary btn-sm h-9 px-4 lg:px-6 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20">
-                        Publish
+                <div className="flex items-center gap-3">
+                    <div className="lg:hidden">
+                        <SyncStatus status={syncStatus} />
+                    </div>
+                    <button className="btn btn-primary btn-sm h-9 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20">
+                        Publish_Changes
                     </button>
                 </div>
-            </div>
+            </header>
 
             {/* --- MAIN WORKSPACE --- */}
-            <div className={`
+            <main className={`
                 flex-1 flex overflow-hidden relative transition-all duration-500
-                ${!isReady ? "opacity-30 pointer-events-none grayscale blur-[1px]" : "opacity-100"}
+                ${!isReady ? "opacity-30 pointer-events-none grayscale blur-sm" : "opacity-100"}
             `}>
                 
-                {/* LEFT PANEL */}
-                <div className={`
-                    absolute inset-0 z-20 bg-[#09090b] lg:static lg:bg-transparent lg:z-auto lg:w-72 lg:shrink-0 lg:border-r border-white/5 lg:block
-                    ${mobileView === 'structure' ? 'block' : 'hidden'}
+                {/* LEFT PANEL: STRUCTURE */}
+                <aside className={`
+                    absolute inset-0 z-20 bg-base-100 lg:static lg:bg-transparent lg:z-auto lg:w-80 lg:shrink-0 lg:border-r border-base-content/5
+                    ${mobileView === 'structure' ? 'block' : 'hidden lg:block'}
                 `}>
                     <StructurePanel 
-                        modules={course.modules}
+                        modules={course.modules || []}
                         activeLessonId={activeLessonId}
                         onSelectLesson={(modId, lesId) => {
                             setActiveModuleId(modId);
@@ -143,12 +149,12 @@ export default function CourseBuilderLayout() {
                         onUpdateModule={updateModule} 
                         onReorderLessons={reorderLessons}
                     />
-                </div>
+                </aside>
 
-                {/* CENTER PANEL */}
-                <div className={`
-                    flex-1 min-w-0 bg-[#0c0c0e] lg:block
-                    ${mobileView === 'workbench' ? 'block' : 'hidden'}
+                {/* CENTER PANEL: WORKBENCH */}
+                <section className={`
+                    flex-1 min-w-0 bg-base-200/30
+                    ${mobileView === 'workbench' ? 'block' : 'hidden lg:block'}
                 `}>
                     <Workbench 
                         lesson={activeLesson} 
@@ -159,12 +165,12 @@ export default function CourseBuilderLayout() {
                         onAddQuizQuestion={addQuizQuestion}
                         onDeleteResource={deleteResource}
                     />
-                </div>
+                </section>
 
-                {/* RIGHT PANEL */}
-                <div className={`
-                    absolute inset-0 z-20 bg-[#09090b] lg:static lg:bg-transparent lg:z-auto lg:w-80 lg:shrink-0 lg:border-l border-white/5 lg:block
-                    ${mobileView === 'properties' ? 'block' : 'hidden'}
+                {/* RIGHT PANEL: PROPERTIES */}
+                <aside className={`
+                    absolute inset-0 z-20 bg-base-100 lg:static lg:bg-transparent lg:z-auto lg:w-80 lg:shrink-0 lg:border-l border-base-content/5
+                    ${mobileView === 'properties' ? 'block' : 'hidden lg:block'}
                 `}>
                     <PropertiesPanel 
                         lesson={activeLesson}
@@ -174,138 +180,127 @@ export default function CourseBuilderLayout() {
                             }
                         }}
                     />
-                </div>
-            </div>
+                </aside>
+            </main>
 
             {/* --- MOBILE NAV --- */}
-            <div className="lg:hidden h-16 border-t border-white/10 bg-[#09090b] shrink-0 grid grid-cols-3">
+            <nav className="lg:hidden h-16 border-t border-base-content/10 bg-base-200 shrink-0 grid grid-cols-3">
                 <button 
                     onClick={() => setMobileView('structure')}
-                    className={`flex flex-col items-center justify-center gap-1 ${mobileView === 'structure' ? 'text-primary' : 'text-white/20'}`}
+                    className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'structure' ? 'text-primary' : 'text-base-content/30'}`}
                 >
                     <Layers size={20} />
-                    <span className="text-[9px] font-bold uppercase">Outline</span>
+                    <span className="text-[9px] font-black uppercase tracking-tighter">Outline</span>
                 </button>
                 <button 
                     onClick={() => setMobileView('workbench')}
-                    className={`flex flex-col items-center justify-center gap-1 ${mobileView === 'workbench' ? 'text-primary' : 'text-white/20'}`}
+                    className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'workbench' ? 'text-primary' : 'text-base-content/30'}`}
                 >
                     <MonitorPlay size={20} />
-                    <span className="text-[9px] font-bold uppercase">Editor</span>
+                    <span className="text-[9px] font-black uppercase tracking-tighter">Editor</span>
                 </button>
                 <button 
                     onClick={() => setMobileView('properties')}
-                    className={`flex flex-col items-center justify-center gap-1 ${mobileView === 'properties' ? 'text-primary' : 'text-white/20'}`}
+                    className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'properties' ? 'text-primary' : 'text-base-content/30'}`}
                 >
                     <Settings size={20} />
-                    <span className="text-[9px] font-bold uppercase">Settings</span>
+                    <span className="text-[9px] font-black uppercase tracking-tighter">Config</span>
                 </button>
-            </div>
+            </nav>
 
-
-            {/* --- SETTINGS MODAL (UPDATED) --- */}
-            <dialog id="course_settings_modal" className="modal backdrop-blur-md">
-                <div className="modal-box bg-[#09090b] border border-white/10 max-w-md">
-                    <h3 className="font-bold text-lg mb-6">Course Settings</h3>
+            {/* --- SETTINGS MODAL --- */}
+            <dialog id="course_settings_modal" className="modal modal-bottom sm:modal-middle backdrop-blur-sm">
+                <div className="modal-box bg-base-100 border border-base-content/10 max-w-md p-8 rounded-4xl">
+                    <h3 className="font-black text-xl mb-6 italic uppercase tracking-tighter">Course_Settings</h3>
                     
                     <div className="space-y-6">
-                        {/* Basic Fields */}
                         <div className="space-y-4">
-                            <div>
-                                <label className="label text-xs opacity-50 uppercase font-bold">Course Title</label>
+                            <div className="form-control">
+                                <label className="label py-1">
+                                    <span className="label-text text-[10px] opacity-40 uppercase font-black tracking-widest">Course Title</span>
+                                </label>
                                 <input 
                                     type="text" 
-                                    className="input input-bordered w-full bg-white/5 border-white/10 focus:border-primary focus:outline-none" 
+                                    className="input input-bordered w-full bg-base-200 border-none focus:ring-2 ring-primary/20 transition-all font-bold" 
                                     value={draftSettings.title} 
                                     onChange={(e) => setDraftSettings(prev => ({ ...prev, title: e.target.value }))} 
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="label text-xs opacity-50 uppercase font-bold">Price ($)</label>
+                                <div className="form-control">
+                                    <label className="label py-1">
+                                        <span className="label-text text-[10px] opacity-40 uppercase font-black tracking-widest">Price ($)</span>
+                                    </label>
                                     <input 
                                         type="number" 
-                                        className="input input-bordered w-full bg-white/5 border-white/10" 
+                                        className="input input-bordered w-full bg-base-200 border-none font-bold" 
                                         value={draftSettings.price} 
                                         onChange={(e) => setDraftSettings(prev => ({ ...prev, price: parseFloat(e.target.value) }))} 
                                     />
                                 </div>
-                                <div>
-                                    <label className="label text-xs opacity-50 uppercase font-bold">Difficulty</label>
+                                <div className="form-control">
+                                    <label className="label py-1">
+                                        <span className="label-text text-[10px] opacity-40 uppercase font-black tracking-widest">Difficulty</span>
+                                    </label>
                                     <select 
-                                        className="select select-bordered w-full bg-white/5 border-white/10"
+                                        className="select select-bordered w-full bg-base-200 border-none font-bold"
                                         value={draftSettings.difficulty}
-                                        onChange={(e) => setDraftSettings(prev => ({ ...prev, difficulty: e.target.value }))}
+                                        onChange={(e) => setDraftSettings(prev => ({ ...prev, difficulty: e.target.value as any }))}
                                     >
-                                        <option>Beginner</option>
-                                        <option>Intermediate</option>
-                                        <option>Advanced</option>
+                                        <option value="Beginner">Beginner</option>
+                                        <option value="Intermediate">Intermediate</option>
+                                        <option value="Advanced">Advanced</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="divider before:bg-white/5 after:bg-white/5"></div>
+                        <div className="divider opacity-5"></div>
 
                         {/* Danger Zone */}
-                        <div className="rounded-xl border border-error/20 bg-error/5 p-4">
-                            <h4 className="text-error text-sm font-bold flex items-center gap-2 mb-2">
-                                <Trash2 size={14} /> Danger Zone
+                        <div className="rounded-2xl border border-error/20 bg-error/5 p-5">
+                            <h4 className="text-error text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mb-2">
+                                <Trash2 size={14} /> Critical_Zone
                             </h4>
-                            <p className="text-xs text-error/60 mb-4">
-                                This action cannot be undone. To confirm deletion, type <span className="font-mono bg-error/10 px-1 rounded select-all">DELETE</span> below.
+                            <p className="text-xs text-error/60 mb-4 leading-relaxed">
+                                Deleting this course will purge all associated modules and media. Type <span className="font-mono bg-error/10 px-1 rounded text-error font-bold">DELETE</span> to confirm.
                             </p>
                             <div className="flex gap-2">
                                 <input 
                                     type="text" 
                                     placeholder="Type DELETE"
-                                    className="input input-sm input-bordered flex-1 bg-black/20 border-error/20 text-error focus:border-error"
+                                    className="input input-sm input-bordered flex-1 bg-base-100 border-error/20 text-error focus:border-error placeholder:text-error/20 font-bold"
                                     value={deleteConfirmText}
                                     onChange={(e) => setDeleteConfirmText(e.target.value)}
                                 />
                                 <button 
                                     disabled={deleteConfirmText !== "DELETE"}
                                     onClick={deleteCourse}
-                                    className="btn btn-sm btn-error text-white disabled:bg-white/5 disabled:text-white/20"
+                                    className="btn btn-sm btn-error text-white px-4 rounded-lg disabled:opacity-20"
                                 >
-                                    Delete Course
+                                    Purge
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="modal-action">
-                        {/* Cancel Button */}
+                    <div className="modal-action gap-2">
                         <button 
                             type="button"
                             onClick={handleCancelSettings}
-                            className="btn btn-sm btn-ghost hover:bg-white/5"
+                            className="btn btn-ghost btn-sm uppercase text-[10px] font-black"
                         >
                             Cancel
                         </button>
-                        
-                        {/* Save Button */}
                         <button 
                             onClick={handleSaveSettings}
-                            className="btn btn-sm btn-primary text-white"
+                            className="btn btn-primary btn-sm px-6 rounded-xl uppercase text-[10px] font-black shadow-lg shadow-primary/20"
                         >
-                            Save Changes
+                            Save_Changes
                         </button>
                     </div>
                 </div>
             </dialog>
-
-            {/* LOADING OVERLAY */}
-            {/* {!isReady && (
-                <div className="absolute inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-3">
-                        <span className="loading loading-spinner text-primary loading-lg"></span>
-                        <span className="text-xs font-black uppercase tracking-widest text-white/50 animate-pulse">
-                            Initializing Workspace...
-                        </span>
-                    </div>
-                </div>
-            )} */}
         </div>
     );
 }
