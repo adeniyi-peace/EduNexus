@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect } from "react";
-import { useSearchParams } from "react-router";
+import { useState, useRef, useMemo } from "react";
 import { CurriculumSidebar } from "~/components/dashboard/course_player/CurriculumSidebar";
 import { TabSystem } from "~/components/dashboard/course_player/TabSystem";
 import { VideoTheater } from "~/components/dashboard/course_player/VideoTheater";
@@ -11,14 +10,14 @@ import { PaywallModal } from "~/components/course/PaywallModal";
 export default function CoursePlayer({ isEnrolled, initialLessonId }: { isEnrolled: boolean, initialLessonId: string | null }) {
 
     // Flatten lessons for easier "Next/Prev" navigation logic
-    const allLessons = MOCK_CURRICULUM.flatMap(module => module.lessons);
+    // Memoize to prevent unnecessary recalculations on every render
+    const allLessons = useMemo(() => MOCK_CURRICULUM.flatMap(module => module.lessons), []);
 
     const initialLesson = initialLessonId 
         ? allLessons.find(l => l.id === initialLessonId) || allLessons[0] 
         : allLessons[0];
 
-    
-    const [currentLesson, setCurrentLesson] = useState(allLessons[0]);
+    const [currentLesson, setCurrentLesson] = useState(initialLesson);
     const [showPaywall, setShowPaywall] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
@@ -26,6 +25,8 @@ export default function CoursePlayer({ isEnrolled, initialLessonId }: { isEnroll
     // UI States
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isTabExpanded, setIsTabExpanded] = useState(false);
+
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     // Auto-play logic
     const playNextLesson = () => {
@@ -70,7 +71,6 @@ export default function CoursePlayer({ isEnrolled, initialLessonId }: { isEnroll
         setIsPlaying(true);
     };
 
-    const videoRef = useRef<HTMLVideoElement>(null);
 
     const jumpToTime = (seconds: number) => {
         if (videoRef.current) {
@@ -84,23 +84,8 @@ export default function CoursePlayer({ isEnrolled, initialLessonId }: { isEnroll
         // Container fills the dashboard content area. 
         // We use h-[calc(100vh-theme(spacing.header))] if the header is fixed, 
         // but flex-1 h-full is safer if the parent controls height.
-        <div className="flex flex-col lg:flex-row w-full h-[calc(100vh-64px)] overflow-hidden bg-base-300 relative">
+        <div className="flex flex-col lg:flex-row w-full h-screen overflow-hidden bg-base-300 relative">
 
-            {/* Paywall Overlay */}
-            {/* {showPaywall && (
-                <div className="absolute inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-base-100 p-8 rounded-3xl max-w-md text-center border border-primary/20 shadow-2xl shadow-primary/10">
-                        <h3 className="text-2xl font-black mb-4 italic">Ready to Master the Architecture?</h3>
-                        <p className="opacity-70 mb-8">
-                            You've reached the end of the free preview. Enroll now to unlock the remaining modules, quizzes, and mentor feedback.
-                        </p>
-                        <button className="btn btn-primary btn-block mb-3 rounded-xl">Enroll Now - $199</button>
-                        <button className="btn btn-ghost btn-block rounded-xl" onClick={() => setShowPaywall(false)}>
-                            Keep Browsing Previews
-                        </button>
-                    </div>
-                </div>
-            )} */}
             
             <PaywallModal 
                 isOpen={showPaywall}
@@ -116,7 +101,7 @@ export default function CoursePlayer({ isEnrolled, initialLessonId }: { isEnroll
                 {/* We add a conditional opacity/visibility if tabs are expanded to save resources */}
                 <div className={`relative bg-black transition-all duration-500 ease-in-out 
                     ${isTabExpanded ? 'h-0 overflow-hidden' : ''} 
-                    ${currentLesson.type === 'quiz' ? 'flex-1 overflow-y-auto' : 'aspect-video lg:flex-1 lg:max-h-[60vh] xl:max-h-[70vh]'}`}>
+                    ${currentLesson.type === 'quiz' ? 'flex-1 overflow-y-auto' : 'aspect-video max-h-[70vh] lg:flex-1 lg:max-h-[60vh] xl:max-h-[70vh]'}`}>
                     
                     {currentLesson.type === "quiz" ? (
                         <div className="w-full h-full min-h-125 flex items-center justify-center bg-slate-950 p-4 lg:p-12">

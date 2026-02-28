@@ -97,7 +97,7 @@ export default function CourseLandingPage() {
                             </p>
                         </section>
 
-                        <Syllabus modules={course.syllabus} />
+                        <Syllabus modules={course.syllabus} courseId={course.id} />
                         
                         <InstructorBio instructor={course.instructor} />
 
