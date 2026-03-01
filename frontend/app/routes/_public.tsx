@@ -1,6 +1,9 @@
 import { Outlet, NavLink, Link, useRouteLoaderData, useNavigation } from "react-router";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import type { Route as RootRoute } from "./+types/root";
+import { ShoppingCart } from "lucide-react";
+import {  useCart } from "~/hooks/CartContext";
+import { useEffect } from "react";
 
 export default function PublicLayout() {
     const rootData = useRouteLoaderData("root") as RootRoute.ComponentProps["loaderData"];
@@ -8,12 +11,16 @@ export default function PublicLayout() {
     const currentTheme = rootData?.theme ?? "edunexus";
     const navigation = useNavigation();
 
+    // In a real app, get this from your Cart Context or Zustand store
+    const {cart} = useCart()
+    
     const isNavigating = navigation.state === "loading";
 
+    useEffect(() => {
+        useCart.persist.rehydrate();
+    }, []);
+
     return (
-        /* FIX: Added data-theme here so DaisyUI knows which variables to inject.
-           FIX: Added text-base-content to the root so all text inherits the correct color.
-        */
         <div 
             data-theme={currentTheme}
             className="min-h-screen flex flex-col bg-base-100 text-base-content transition-colors duration-500 ease-in-out"
@@ -50,7 +57,6 @@ export default function PublicLayout() {
                                 N
                             </div>
                             <span className="text-2xl font-black tracking-tight hidden sm:block">
-                                {/* FIX: Explicitly applied text-base-content here */}
                                 <span className="text-base-content">Edu</span>
                                 <span className="bg-clip-text text-transparent bg-linear-to-br from-primary via-secondary to-primary bg-size-[200%_auto] animate-gradient-x">Nexus</span>
                             </span>
@@ -65,7 +71,22 @@ export default function PublicLayout() {
                         </ul>
                     </div>
 
-                    <div className="navbar-end gap-3">
+                    <div className="navbar-end gap-2 md:gap-4">
+                        {/* --- CART BUTTON --- */}
+                        <Link 
+                            to="/cart" 
+                            className="btn btn-ghost btn-circle relative hover:bg-primary/10 transition-colors group"
+                        >
+                            <div className="indicator">
+                                {cart.length > 0 && (
+                                    <span className="indicator-item badge badge-secondary badge-sm font-black border-none scale-90 group-hover:scale-110 transition-transform p-2 rounded-full">
+                                        {cart.length}
+                                    </span>
+                                )}
+                                <ShoppingCart size={22} className="text-base-content/80 group-hover:text-primary transition-colors" />
+                            </div>
+                        </Link>
+
                         <ThemeToggle currentTheme={currentTheme} /> 
                         
                         <div className="hidden sm:flex items-center gap-1">

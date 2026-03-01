@@ -7,7 +7,11 @@ export default [
         // Marketplace & Discovery
         route("/courses", "routes/public/courses.tsx"),
         // Fixed: Added colon for dynamic parameter
-        route("/courses/:id", "routes/public/courseDetail.tsx"), 
+        route("/courses/:id", "routes/public/courseDetail.tsx"),
+        
+        route("cart", "routes/public/CartPage.tsx"),
+        route("checkout", "routes/public/CheckoutPage.tsx"),
+        route("/checkout/success", "routes/public/CheckoutSuccess.tsx"),
         
         // Mentorship & Community
         route("mentors", "routes/public/mentors.tsx"),

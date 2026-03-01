@@ -3,9 +3,11 @@
 export interface CourseData {
     id: string;
     title: string;
+    instructor: string;
     description?: string;
     thumbnail?: string;
     price?: number;
+    duration: string;
     category?: string;
     difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
     students?: number;
@@ -14,6 +16,7 @@ export interface CourseData {
     lastUpdated?: string;
     language?: string;
     modules?: Module[];
+    isEnrolled?: boolean;
 }
 
 export interface QuizOption {

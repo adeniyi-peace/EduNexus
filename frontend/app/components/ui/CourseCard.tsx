@@ -1,22 +1,41 @@
 import { Link } from "react-router";
-import { Edit3, Trash2, MoreVertical } from "lucide-react";
-import type { Course } from "~/utils/mockData";
+import { Edit3, Trash2, MoreVertical, ShoppingCart, Check } from "lucide-react";
+import type { Course as MockCourse } from "~/utils/mockData";
 import type { Dispatch, SetStateAction } from "react";
 import type { CourseData } from "~/types/course";
+import { useCart } from "~/hooks/CartContext"; // Import your new Zustand store
 
-// Extend the interface to handle instructor specific needs
-interface CourseCardProps extends Course {
+interface CourseCardProps extends MockCourse {
     isInstructorView?: boolean;
     onEdit?: (id: string) => void;
-    onDelete?: Dispatch<SetStateAction<CourseData | null>>;
+    onDelete?: (id: string) => void;
     status?: 'Published' | 'Draft' | 'Archived';
 }
-
 
 export function CourseCard({ 
     id, title, instructor, thumbnail, category, price, rating, duration, level, isEnrolled,
     isInstructorView = false, onEdit, onDelete, status = 'Published'
 }: CourseCardProps) {
+    // 1. Hook into the Zustand store
+    const { cart, addToCart } = useCart();
+    
+    // 2. Check if this specific course is already in the cart
+    const isInCart = cart.some((item) => item.id === id);
+
+    const handleAddToCart = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Match the data structure expected by your Store
+        addToCart({
+            id,
+            title,
+            instructor,
+            price: typeof price === 'string' ? parseFloat(price.replace('$', '')) : price,
+            image: thumbnail
+        });
+    };
+
     return (
         <div className="card bg-base-100 shadow-sm hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] transition-all duration-500 border border-base-content/5 group overflow-hidden h-full rounded-4xl">
             {/* Thumbnail Area */}
@@ -33,7 +52,6 @@ export function CourseCard({
                         {category}
                     </span>
                     
-                    {/* Instructor-only Status Badge */}
                     {isInstructorView && (
                         <span className={`badge font-black py-3 px-4 shadow-lg border-none text-xs uppercase tracking-widest 
                             ${status === 'Published' ? 'bg-success text-success-content' : 
@@ -61,7 +79,7 @@ export function CourseCard({
                     </div>
                 </div>
 
-                <h3 className="card-title text-xl font-black leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
+                <h3 className="card-title text-xl font-black leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-14">
                     {title}
                 </h3>
                 
@@ -79,13 +97,11 @@ export function CourseCard({
                 
                 <div className="divider my-4 opacity-5"></div>
                 
-                {/* Conditional Footer: Instructor vs. Market vs. Enrolled */}
                 <div className="flex justify-between items-center">
                     {isInstructorView ? (
-                        /* Case: Instructor Management */
                         <div className="flex w-full gap-2">
                             <button 
-                                onClick={() => onEdit?.(id)}
+                                onClick={() => onEdit?.(id.toString())}
                                 className="flex-1 btn btn-neutral btn-sm rounded-xl font-black uppercase tracking-widest text-xs gap-2"
                             >
                                 <Edit3 size={14} /> Edit
@@ -100,7 +116,7 @@ export function CourseCard({
                                     <li><div className="divider my-0 opacity-10"></div></li>
                                     <li>
                                         <button 
-                                            onClick={() => onDelete?.(id)}
+                                            onClick={() => onDelete?.(id.toString())}
                                             className="text-xs font-bold text-error hover:bg-error/10"
                                         >
                                             <Trash2 size={14} /> Delete Course
@@ -110,7 +126,6 @@ export function CourseCard({
                             </div>
                         </div>
                     ) : isEnrolled ? (
-                        /* Case: Student owns the course */
                         <div className="w-full">
                             <Link 
                                 to={`/dashboard/courses/${id}`}
@@ -121,19 +136,35 @@ export function CourseCard({
                             </Link>
                         </div>
                     ) : (
-                        /* Case: Market Place view */
-                        <>
+                        /* Market Place view with Cart Logic */
+                        <div className="flex items-center justify-between w-full">
                             <div className="flex flex-col">
                                 <span className="text-[10px] uppercase opacity-40 font-black tracking-widest">Price</span>
                                 <span className="text-2xl font-black text-base-content">{price}</span>
                             </div>
-                            <Link 
-                                to={`/courses/${id}`}
-                                className="btn btn-primary rounded-2xl px-8 font-black text-xs uppercase tracking-widest hover:shadow-lg hover:shadow-primary/20"
-                            >
-                                Details
-                            </Link>
-                        </>
+                            
+                            <div className="flex gap-2">
+                                <Link 
+                                    to={`/courses/${id}`}
+                                    className="btn btn-ghost btn-sm rounded-xl font-black text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100"
+                                >
+                                    Details
+                                </Link>
+
+                                {isInCart ? (
+                                    <Link to="/cart" className="btn btn-success btn-sm rounded-xl px-4 animate-fade-in shadow-lg shadow-success/20">
+                                        <Check size={16} className="text-white" />
+                                    </Link>
+                                ) : (
+                                    <button 
+                                        onClick={handleAddToCart}
+                                        className="btn btn-primary btn-sm rounded-xl px-4 hover:scale-105 transition-transform shadow-lg shadow-primary/20"
+                                    >
+                                        <ShoppingCart size={16} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
