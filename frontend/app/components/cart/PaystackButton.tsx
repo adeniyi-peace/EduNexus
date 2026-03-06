@@ -25,7 +25,7 @@ export const PaystackTrigger = ({ email, amount, metadata, onSuccessAction }: Pr
             const paystack = new PaystackPop();
 
             paystack.newTransaction({
-                key: "pk_test_your_public_key_here", 
+                key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY, 
                 email: email,
                 amount: Math.round(amount * 100),
                 metadata: metadata,
