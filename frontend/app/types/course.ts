@@ -37,38 +37,27 @@ export interface Resource {
     size: string;
 }
 
-// Base lesson properties shared across all types
-interface BaseLesson {
+export interface Lesson {
     id: string;
     title: string;
+    type: 'video' | 'article' | 'quiz';
     description?: string;
     isPublished: boolean;
     isPreview?: boolean;
     isHidden?: boolean;
+    allowDownload?: boolean;
     resources: Resource[];
-}
 
-export interface VideoLesson extends BaseLesson {
-    type: 'video';
-    videoUrl: string;
-    duration: number;
-}
-
-export interface ArticleLesson extends BaseLesson {
-    type: 'article';
-    content: string; // HTML/Markdown
-}
-
-export interface QuizLesson extends BaseLesson {
-    type: 'quiz';
-    quizConfig: {
-        timeLimit: number;
+    // Type-specific fields
+    videoUrl?: string;
+    duration?: number;
+    content?: string; // For Article (HTML/Markdown)
+    quizConfig?: {
+        timeLimit: number; // in minutes
         questions: QuizQuestion[];
-    };
+    }
+    
 }
-
-// Discriminated Union
-export type Lesson = VideoLesson | ArticleLesson | QuizLesson;
 
 export interface Module {
     id: string;
