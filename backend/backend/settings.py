@@ -24,6 +24,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES':[
         "rest_framework.permissions.IsAuthenticated",
     ],
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
@@ -31,6 +33,17 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1)
 }
 
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'EduNexus API',
+    'DESCRIPTION': 'API with detailed documentation',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False, # set to True if you want to include schema in Swagger UI/Redoc
+    # 'SECURITY': [{'BearerAuth': []}], # Example for JWT auth
+    # 'COMPONENTS': { 'securitySchemes': {'BearerAuth': {'type': 'http', ...}}},
+    'SWAGGER_UI_DIST': 'SIDECAR', # Use sidecar to bundle static files
+    'REDOC_UI_DIST': 'SIDECAR', # Use sidecar to bundle static files
+}
 
 # Application definition
 
@@ -46,10 +59,17 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+
+    # Documentation
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
+
+    "authentication",
+    "courses",
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware"
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -131,3 +151,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 CORS_ALLOWS_CREDENTIAL = True
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'

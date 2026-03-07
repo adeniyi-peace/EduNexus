@@ -63,6 +63,33 @@ export function useCourseBuilder(initialData: CourseData) {
     };
 
 
+    // --- MODULE ACTIONS ---
+    const addModule = async () => {
+        const newModule: Module = {
+            id: `mod-${uuidv4()}`,
+            title: "New Section",
+            lessons: [],
+            isOpen: true
+        };
+
+        setCourse(prev => ({ ...prev, modules: [...prev.modules, newModule] }));
+        
+        await syncToBackend(() => 
+            apiClient.post(`/courses/${course.id}/modules`, newModule)
+        );
+    };
+
+    const deleteModule = async (moduleId: string) => {
+        setCourse(prev => ({
+            ...prev,
+            modules: prev.modules.filter(m => m.id !== moduleId)
+        }));
+
+        await syncToBackend(() => 
+            apiClient.delete(`/courses/${course.id}/modules/${moduleId}`)
+        );
+    };
+
     // --- 2. MODULE UPDATES (Renaming) ---
     const updateModule = async (moduleId: string, fields: Partial<Module>) => {
         setCourse(prev => ({
@@ -72,7 +99,54 @@ export function useCourseBuilder(initialData: CourseData) {
         await syncToBackend(() => apiClient.patch(`/modules/${moduleId}`, fields));
     };
 
+    
+
     // --- 3. LESSON UPDATES (Renaming, Content, Quiz Data) ---
+    // --- LESSON ACTIONS ---
+    const addLesson = async (moduleId: string, type: "video" | "article" | "quiz") => {
+        
+        // dynamic title based on type
+        let defaultTitle = "Untitled Content";
+        if (type === "video") defaultTitle = "Untitled Video";
+        if (type === "article") defaultTitle = "Untitled Article";
+        if (type === "quiz") defaultTitle = "Untitled Quiz";
+
+        const newLesson: Lesson = {
+            id: `les-${uuidv4()}`,
+            title: defaultTitle,
+            type, // 'video' | 'article' | 'quiz'
+            duration: 0,
+            resources: [],
+            isPublished: false
+        };
+
+        setCourse(prev => ({
+            ...prev,
+            modules: prev.modules.map(m => 
+                m.id === moduleId ? { ...m, lessons: [...m.lessons, newLesson] } : m
+            )
+        }));
+
+        await syncToBackend(() => 
+            apiClient.post(`/modules/${moduleId}/lessons`, newLesson)
+        );
+    };
+
+    const deleteLesson = async (moduleId: string, lessonId: string) => {
+        setCourse(prev => ({
+            ...prev,
+            modules: prev.modules.map(m => 
+                m.id === moduleId 
+                    ? { ...m, lessons: m.lessons.filter(l => l.id !== lessonId) } 
+                    : m
+            )
+        }));
+
+        await syncToBackend(() => 
+            apiClient.delete(`/modules/${moduleId}/lessons/${lessonId}`)
+        );
+    };
+
     const updateLesson = async (moduleId: string, lessonId: string, fields: Partial<Lesson>) => {
         setCourse(prev => ({
             ...prev,
@@ -127,77 +201,6 @@ export function useCourseBuilder(initialData: CourseData) {
         });
     };
 
-    // --- MODULE ACTIONS ---
-    const addModule = async () => {
-        const newModule: Module = {
-            id: `mod-${uuidv4()}`,
-            title: "New Section",
-            lessons: [],
-            isOpen: true
-        };
-
-        setCourse(prev => ({ ...prev, modules: [...prev.modules, newModule] }));
-        
-        await syncToBackend(() => 
-            apiClient.post(`/courses/${course.id}/modules`, newModule)
-        );
-    };
-
-    const deleteModule = async (moduleId: string) => {
-        setCourse(prev => ({
-            ...prev,
-            modules: prev.modules.filter(m => m.id !== moduleId)
-        }));
-
-        await syncToBackend(() => 
-            apiClient.delete(`/courses/${course.id}/modules/${moduleId}`)
-        );
-    };
-
-    // --- LESSON ACTIONS ---
-    const addLesson = async (moduleId: string, type: "video" | "article" | "quiz") => {
-        
-        // dynamic title based on type
-        let defaultTitle = "Untitled Content";
-        if (type === "video") defaultTitle = "Untitled Video";
-        if (type === "article") defaultTitle = "Untitled Article";
-        if (type === "quiz") defaultTitle = "Untitled Quiz";
-
-        const newLesson: Lesson = {
-            id: `les-${uuidv4()}`,
-            title: defaultTitle,
-            type, // 'video' | 'article' | 'quiz'
-            duration: 0,
-            resources: [],
-            isPublished: false
-        };
-
-        setCourse(prev => ({
-            ...prev,
-            modules: prev.modules.map(m => 
-                m.id === moduleId ? { ...m, lessons: [...m.lessons, newLesson] } : m
-            )
-        }));
-
-        await syncToBackend(() => 
-            apiClient.post(`/modules/${moduleId}/lessons`, newLesson)
-        );
-    };
-
-    const deleteLesson = async (moduleId: string, lessonId: string) => {
-        setCourse(prev => ({
-            ...prev,
-            modules: prev.modules.map(m => 
-                m.id === moduleId 
-                    ? { ...m, lessons: m.lessons.filter(l => l.id !== lessonId) } 
-                    : m
-            )
-        }));
-
-        await syncToBackend(() => 
-            apiClient.delete(`/modules/${moduleId}/lessons/${lessonId}`)
-        );
-    };
 
     // --- VIDEO & METADATA LOGIC ---
     const uploadVideo = async (moduleId: string, lessonId: string, file: File) => {

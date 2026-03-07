@@ -1,6 +1,18 @@
 from django.db import models
+from uuid import uuid4
+from django.utils.text import slugify
+
+from .fields import OrderField
 
 # Create your models here.
+
+class Category(models.Model):
+    name = models.CharField(max_length=50)
+    slug = models.SlugField()
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        return super().save(*args, **kwargs)
 
 class Course(models.Model):
     DIFFICULTY_CHOICE = (
@@ -9,11 +21,86 @@ class Course(models.Model):
         ('Advanced','Advanced')
     )
 
+    STATUS = (
+        ('Published','Published'),
+        ('Draft','Draft'),
+        ('Archived','Archived')
+    )
+
     title = models.CharField(max_length=200)
-    instructor = models.ForeignKey("user", related_name="courses", on_delete=models.CASCADE)
+    # instructor = models.ForeignKey("user", related_name="courses", on_delete=models.CASCADE)
+    slug = models.SlugField(blank=True)
     description = models.TextField()
-    thumbnail = models.ImageField(upload_to="course thumbnail", height_field=None, width_field=None, max_length=None)
+    thumbnail = models.ImageField(upload_to=f"course thumbnail", height_field=None, width_field=None, max_length=None)
     price = models.DecimalField( max_digits=10, decimal_places=2)
     duration = models.DurationField()
-    category = models.ForeignKey("app.Model", related_name="courses", on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, related_name="courses", on_delete=models.CASCADE)
+    language = models.CharField(max_length=50, default='English')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICE, default=DIFFICULTY_CHOICE[0][0])
+    status = models.CharField( max_length=50, choices=STATUS)
+    lastUpdated = models.DateTimeField(auto_now=True, auto_now_add=False)
+    created_at = models.DateTimeField( auto_now=False, auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(f"{self.title} {self.instructor.fullname}")
+        return super().save(*args, **kwargs)
+    
+    class Meta:
+        ordering = ['-created_at']
+
+class Module(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    title = models.CharField(max_length=200)
+    isOpen = models.BooleanField()
+    course = models.ForeignKey(Course, related_name="modules", on_delete=models.CASCADE)
+
+class Lesson(models.Model):
+    TYPE =(
+        ('video','video'),
+        ('article','article'),
+        ('quiz','quiz')
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    module = models.ForeignKey(Module, related_name='lessons', on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    type = models.CharField( max_length=20, choices=TYPE)
+    description =models.TextField(blank=True, null=True)
+    isPublished = models.BooleanField(default=False)
+    isPreview = models.BooleanField(default=False)
+    isHidden = models.BooleanField(default=False)
+    allow_download = models.BooleanField(default=False)
+    order = OrderField(blank=True, for_fields=['module'])
+    lastUpdated = models.DateTimeField(auto_now=True, auto_now_add=False)
+    created_at = models.DateTimeField( auto_now=False, auto_now_add=True)
+
+    
+    # Type-specific fields
+    video_url = models.FileField(upload_to="videos", max_length=100)
+    duration = models.PositiveIntegerField(help_text="Duration in seconds", blank=True, null=True)
+    content = models.TextField(help_text="Markdown or HTML content", blank=True, null=True)
+    quiz_time_limit = models.PositiveIntegerField(help_text="In minutes", blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.order}. {self.title}'
+
+
+class Resource(models.Model):
+    lesson = models.ForeignKey(Lesson, related_name='resources', on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    url = models.FileField(upload_to="resources", max_length=100)
+    size = models.CharField(max_length=50) # e.g., "1.2MB"
+
+class QuizQuestion(models.Model):
+    lesson = models.ForeignKey(
+        Lesson, 
+        related_name='quiz_questions', 
+        on_delete=models.CASCADE,
+        limit_choices_to={'type': 'quiz'}
+    )
+    text = models.TextField()
+
+class QuizOption(models.Model):
+    question = models.ForeignKey(QuizQuestion, related_name='options', on_delete=models.CASCADE)
+    text = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=False)

@@ -15,7 +15,7 @@ export interface CourseData {
     status?: 'Published' | 'Draft' | 'Archived';
     lastUpdated?: string;
     language?: string;
-    modules?: Module[];
+    modules: Module[];
     isEnrolled?: boolean;
 }
 
