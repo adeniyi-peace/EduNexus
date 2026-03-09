@@ -5,8 +5,9 @@ export interface SocialLink {
 
 export interface UserProfileData {
     id: string;
-    name: string;
-    role: string;
+    firstName: string;
+    lastName: string;
+    role: "student" | "instructor" | "admin";
     location: string;
     joinedDate: string;
     bio: string;

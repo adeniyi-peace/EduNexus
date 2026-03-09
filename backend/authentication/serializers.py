@@ -1,5 +1,6 @@
 from django.contrib.auth import password_validation, authenticate
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from  user.models import User
 
@@ -62,3 +63,11 @@ class UserLoginSerializer(serializers.Serializer):
             return user
         else:
             raise serializers.ValidationError(f"Incorrect Credentials.")
+        
+class CustomTokenClaimsSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['role'] = user.role
+
+        return token

@@ -39,19 +39,11 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'nexus-access-token',
     'JWT_AUTH_REFRESH_COOKIE': 'nexus-refresh-token',
     'JWT_AUTH_HTTPONLY': True,
+    'TOKEN_MODEL': None,  # Disable default token model
+    'JWT_TOKEN_CLAIMS_SERIALIZER': 'authentication.serializers.CustomTokenClaimsSerializer',
     'USER_DETAILS_SERIALIZER': 'authentication.serializers.UserSerializer', # Use your app name
     "REGISTER_SERIALIZER": "authentication.serializers.RegisterUserSerializer",
 }
-
-REST_AUTH_TOKEN_MODEL = None
-# Tell dj-rest-auth to use JWT instead of Database Tokens
-REST_USE_JWT = True
-
-# Even if you aren't using cookies yet, the library requires these 
-# to be defined when REST_USE_JWT is True.
-# JWT_AUTH_COOKIE = 'nexus-access-token'
-# JWT_AUTH_REFRESH_COOKIE = 'nexus-refresh-token'
-# JWT_AUTH_HTTPONLY = True  # Recommended for security
 
 
 SPECTACULAR_SETTINGS = {
@@ -95,7 +87,6 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # social authentication
-    'rest_framework.authtoken',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
