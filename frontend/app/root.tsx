@@ -8,7 +8,8 @@ import {
   useLoaderData,
   useRouteError,
   redirect, 
-  type LoaderFunctionArgs
+  type LoaderFunctionArgs,
+  useNavigation
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -66,6 +67,9 @@ export async function loader({ request }: { request: Request }) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { theme } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const isNavigating = navigation.state === "loading";
+
   return (
     <html lang="en" data-theme={theme} className={theme === "edunexus_dark" ? "dark" : ""}>
       <head>
@@ -75,6 +79,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        {isNavigating && (
+                <div className="fixed top-0 left-0 right-0 z-100 h-1 bg-linear-to-r from-primary via-secondary to-accent animate-pulse" />
+            )}
         {children}
         <ScrollRestoration />
         <Scripts />

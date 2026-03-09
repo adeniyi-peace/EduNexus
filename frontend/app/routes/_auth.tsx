@@ -1,5 +1,6 @@
 import { Outlet, Link } from "react-router";
 import { Terminal, ShieldCheck, Activity, Users } from "lucide-react";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export default function AuthLayout() {
     return (
@@ -79,12 +80,12 @@ export default function AuthLayout() {
             </div>
 
             {/* --- RIGHT SIDE: CLEAN AUTH INTERFACE (5 cols) --- */}
-            <main className="lg:col-span-5 flex items-center justify-center p-8 lg:p-20 bg-base-100 relative overflow-hidden">
+            <main className="lg:col-span-5 flex flex-col items-center justify-center p-8 lg:p-20 bg-base-100 relative overflow-hidden">
                 {/* Background Ambient Glow for Right Side */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
                 
                 {/* Mobile Header Overlay */}
-                <div className="lg:hidden absolute top-8 left-8 right-8 flex justify-between items-center">
+                <div className="lg:hidden w-full right-8 flex justify-between items-center">
                     <Link to="/" className="flex items-center gap-2">
                         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-content font-black shadow-lg">N</div>
                         <span className="font-black tracking-tighter text-xl">EduNexus</span>
@@ -95,8 +96,10 @@ export default function AuthLayout() {
                 </div>
                 
                 <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com">
                     {/* The Outlet remains clean to allow forms to shine */}
                     <Outlet />
+                    </GoogleOAuthProvider>
                     
                     <footer className="mt-12 pt-8 border-t border-base-content/5 text-center">
                         <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-30 flex items-center justify-center gap-2">

@@ -12,6 +12,7 @@ import {
     Zap,
     AlertCircle
 } from "lucide-react";
+import { useSocialAuth } from "~/hooks/useSocialAuth";
 
 const registerSchema = z.object({
     firstName: z.string()
@@ -37,6 +38,8 @@ export default function Register() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [showPassword, setShowPassword] = useState(false);
     const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+    const {loginWithGoogle, loginWithApple} = useSocialAuth()
 
     useEffect(() => {
         const result = registerSchema.safeParse(formData);
@@ -79,11 +82,11 @@ export default function Register() {
 
             {/* --- SOCIAL AUTH --- */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <button type="button" className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
+                <button type="button" onClick={() =>{loginWithGoogle()}} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
                     <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="G" />
                     Google
                 </button>
-                <button type="button" className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
+                <button type="button" onClick={() => {loginWithApple()}} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
                     <img src="https://www.svgrepo.com/show/511330/apple-173.svg" className="w-5 h-5 dark:invert group-hover:scale-110 transition-transform" alt="A" />
                     Apple
                 </button>

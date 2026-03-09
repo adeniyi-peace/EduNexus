@@ -25,9 +25,6 @@ export default function PublicLayout() {
             data-theme={currentTheme}
             className="min-h-screen flex flex-col bg-base-100 text-base-content transition-colors duration-500 ease-in-out"
         >
-            {isNavigating && (
-                <div className="fixed top-0 left-0 right-0 z-100 h-1 bg-linear-to-r from-primary via-secondary to-accent animate-pulse" />
-            )}
 
             {/* --- STICKY NAVBAR --- */}
             <header className="sticky top-0 z-50 w-full border-b border-base-content/10 bg-base-100/70 backdrop-blur-xl">

@@ -1,87 +1,201 @@
-# Welcome to React Router!
+# EduNexus Frontend
 
-A modern, production-ready template for building full-stack React applications using React Router.
+## Introduction
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+**EduNexus** is a modern Learning Management System (LMS) designed to simplify online education by providing a platform where students, instructors, and administrators can manage courses, assignments, and learning materials efficiently.
+
+This repository contains the **frontend application** of EduNexus built using **React.js**. It provides an interactive user interface for course management, enrollment, assignments, and user authentication.
+
+---
+
+## Table of Contents
+
+* Introduction
+* Features
+* Tech Stack
+* Project Structure
+* Installation
+* Usage
+* Configuration
+* API Integration
+* Troubleshooting
+* Contributors
+* License
+
+---
 
 ## Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+### User Authentication
 
-## Getting Started
+* Login and registration system
+* Secure authentication
+* Role-based access (Student, Instructor, Admin)
 
-### Installation
+### Course Management
 
-Install the dependencies:
+* View available courses
+* Enroll in courses
+* Access course materials
+
+### Instructor Tools
+
+* Create and manage courses
+* Upload learning materials
+* Manage assignments
+
+### Student Tools
+
+* Submit assignments
+* Track learning progress
+* Access course content
+
+### Admin Panel
+
+* Manage users
+* Monitor courses
+* System configuration
+
+---
+
+## Tech Stack
+
+### Frontend
+
+* React.js
+* React Router
+* Axios
+* Redux (state management)
+* Material UI
+
+### Development Tools
+
+* Node.js
+* npm
+
+---
+
+## Project Structure
+
+```
+frontend/
+│
+├── public/                 # Static files
+├── src/
+│   ├── components/         # Reusable UI components
+│   ├── pages/              # Page-level components
+│   ├── services/           # API calls
+│   ├── store/              # Redux store
+│   ├── utils/              # Helper functions
+│   ├── App.js              # Main app component
+│   └── index.js            # Entry point
+│
+├── package.json
+└── README.md
+```
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/adeniyi-peace/EduNexus.git
+```
+
+### 2. Navigate to the Frontend Folder
+
+```bash
+cd EduNexus/frontend
+```
+
+### 3. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Development
-
-Start the development server with HMR:
+### 4. Start the Development Server
 
 ```bash
-npm run dev
+npm start
 ```
 
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
+The app will run at:
 
 ```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
+http://localhost:3000
 ```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
 
 ---
 
-Built with ❤️ using React Router.
+## Usage
+
+1. Register or log in as a user.
+2. Browse available courses.
+3. Enroll in courses.
+4. Access course materials and assignments.
+5. Track progress and submit coursework.
+
+---
+
+## Configuration
+
+Create a `.env` file in the frontend root directory.
+
+Example:
+
+```
+REACT_APP_API_URL=http://127.0.0.1:8000/api
+```
+
+This variable connects the frontend to the backend API.
+
+---
+
+## API Integration
+
+The frontend communicates with the backend via REST APIs.
+
+Example endpoints:
+
+```
+POST /api/auth/login
+POST /api/auth/register
+GET /api/courses
+POST /api/courses
+```
+
+---
+
+## Troubleshooting
+
+### Node Modules Error
+
+Delete `node_modules` and reinstall dependencies.
+
+```bash
+rm -rf node_modules
+npm install
+```
+
+### Port Already in Use
+
+Run:
+
+```bash
+npm start -- --port 3001
+```
+
+---
+
+## Contributors
+
+* Adeniyi Peace
+
+---
+
+## License
+
+This project is licensed under the **MIT License**.

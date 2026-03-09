@@ -34,16 +34,49 @@ SIMPLE_JWT = {
 }
 
 
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'nexus-access-token',
+    'JWT_AUTH_REFRESH_COOKIE': 'nexus-refresh-token',
+    'JWT_AUTH_HTTPONLY': True,
+    'USER_DETAILS_SERIALIZER': 'authentication.serializers.UserSerializer', # Use your app name
+    "REGISTER_SERIALIZER": "authentication.serializers.RegisterUserSerializer",
+}
+
+REST_AUTH_TOKEN_MODEL = None
+# Tell dj-rest-auth to use JWT instead of Database Tokens
+REST_USE_JWT = True
+
+# Even if you aren't using cookies yet, the library requires these 
+# to be defined when REST_USE_JWT is True.
+# JWT_AUTH_COOKIE = 'nexus-access-token'
+# JWT_AUTH_REFRESH_COOKIE = 'nexus-refresh-token'
+# JWT_AUTH_HTTPONLY = True  # Recommended for security
+
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'EduNexus API',
     'DESCRIPTION': 'API with detailed documentation',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False, # set to True if you want to include schema in Swagger UI/Redoc
-    # 'SECURITY': [{'BearerAuth': []}], # Example for JWT auth
-    # 'COMPONENTS': { 'securitySchemes': {'BearerAuth': {'type': 'http', ...}}},
+
+    'SECURITY': [{'BearerAuth': []}],
+    'APPEND_COMPONENTS': {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+
     'SWAGGER_UI_DIST': 'SIDECAR', # Use sidecar to bundle static files
     'REDOC_UI_DIST': 'SIDECAR', # Use sidecar to bundle static files
+    'COMPONENT_SPLIT_REQUEST': True,
 }
+
+
 
 # Application definition
 
@@ -54,18 +87,39 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "django.contrib.sites",
 
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 
+    # social authentication
+    'rest_framework.authtoken',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.apple',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+
     # Documentation
     'drf_spectacular',
     'drf_spectacular_sidecar',
 
+    "phonenumber_field",
+
     "authentication",
     "courses",
+    "user",
+]
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 MIDDLEWARE = [
@@ -77,6 +131,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -154,3 +209,24 @@ CORS_ALLOWS_CREDENTIAL = True
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Social Account Settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+    },
+    'apple': {
+        'APP': {
+            'client_id': 'com.nexus.app', # Your Service ID
+            'secret': 'YOUR_APPLE_CLIENT_SECRET', # Generated from .p8 key
+            'key_id': 'APPLE_KEY_ID',
+            'team_id': 'APPLE_TEAM_ID',
+        }
+    }
+}
+
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Form, Link, useNavigation } from "react-router";
 import { z } from "zod";
+import { useSocialAuth } from "~/hooks/useSocialAuth";
 
 // --- LOGIN SCHEMA ---
 const loginSchema = z.object({
@@ -16,6 +17,8 @@ export default function Login() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [showPassword, setShowPassword] = useState(false);
     const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+    const {loginWithGoogle, loginWithApple} = useSocialAuth()
 
     // --- LIVE VALIDATION ---
     useEffect(() => {
@@ -52,12 +55,12 @@ export default function Login() {
 
             {/* --- SOCIAL AUTH (Consistent with Signup) --- */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <button type="button" className="btn btn-outline border-base-content/10 hover:bg-base-200 rounded-2xl h-14 normal-case font-bold">
-                    <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-5 h-5" alt="G" />
+                <button type="button" onClick={() =>{loginWithGoogle()}} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
+                    <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="G" />
                     Google
                 </button>
-                <button type="button" className="btn btn-outline border-base-content/10 hover:bg-base-200 rounded-2xl h-14 normal-case font-bold">
-                    <img src="https://www.svgrepo.com/show/511330/apple-173.svg" className="w-5 h-5 dark:invert" alt="A" />
+                <button type="button" onClick={() => {loginWithApple()}} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
+                    <img src="https://www.svgrepo.com/show/511330/apple-173.svg" className="w-5 h-5 dark:invert group-hover:scale-110 transition-transform" alt="A" />
                     Apple
                 </button>
             </div>
