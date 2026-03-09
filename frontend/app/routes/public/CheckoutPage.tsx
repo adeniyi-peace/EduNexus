@@ -1,13 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "~/hooks/CartContext";
 import { ShieldCheck, Mail, Lock, ArrowLeft } from "lucide-react";
 import { Link } from "react-router";
 import { PaystackTrigger } from "~/components/cart/PaystackButton";
+import ProtectedRoute from "~/components/ProtectedRoute";
+import { useUserContext } from "~/hooks/useUserContext";
 
 export default function CheckoutPage() {
-    const { cart, removeFromCart, clearCart, getTotalPrice } = useCart();
+    const { cart, clearCart, getTotalPrice } = useCart();
+    const { user } = useUserContext();
     const totalPrice = getTotalPrice();
     const [email, setEmail] = useState("");
+
+    // Auto-fill email if user is populated
+    useEffect(() => {
+        if (user?.email) {
+            setEmail(user.email);
+        }
+    }, [user]);
 
     // Prepare metadata for Django (IDs of courses being bought)
     const metadata = {
@@ -18,7 +28,8 @@ export default function CheckoutPage() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto py-12 px-4 md:px-8 animate-fade-in">
+        <ProtectedRoute>
+            <div className="max-w-6xl mx-auto py-12 px-4 md:px-8 animate-fade-in">
             <Link to="/cart" className="btn btn-ghost btn-sm gap-2 mb-8 opacity-50 hover:opacity-100 font-bold">
                 <ArrowLeft size={16} /> Back to Cart
             </Link>
@@ -120,5 +131,6 @@ export default function CheckoutPage() {
                 </div>
             </div>
         </div>
+        </ProtectedRoute>
     );
 }

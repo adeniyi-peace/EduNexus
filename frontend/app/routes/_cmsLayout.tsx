@@ -17,6 +17,7 @@ import {
     Moon
 } from "lucide-react";
 import { ThemeToggle } from "~/components/ThemeToggle";
+import ProtectedRoute from "~/components/ProtectedRoute";
 
 export default function CMSLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -109,8 +110,8 @@ export default function CMSLayout() {
     );
 
     return (
-        // Changed bg-black text-slate-200 to bg-base-100 text-base-content
-        <div className="drawer lg:drawer-open min-h-screen bg-base-100 text-base-content selection:bg-primary/30">
+        <ProtectedRoute allowedRoles={["instructor"]}>
+            <div className="drawer lg:drawer-open min-h-screen bg-base-100 text-base-content selection:bg-primary/30">
             <input id="cms-drawer" type="checkbox" className="drawer-toggle" checked={isMobileOpen} onChange={() => setIsMobileOpen(!isMobileOpen)} />
             
             <div className="drawer-content flex flex-col min-w-0">
@@ -169,6 +170,7 @@ export default function CMSLayout() {
                     <Sidebar />
                 </div>
             </div>
-        </div>
+            </div>
+        </ProtectedRoute>
     );
 }

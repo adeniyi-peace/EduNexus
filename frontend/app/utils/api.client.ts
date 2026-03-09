@@ -36,7 +36,7 @@ api.interceptors.response.use(
                 if (!refreshToken) throw new Error("No refresh token available");
 
                 // Assuming your Django DRF simplejwt endpoint for refreshing
-                const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_API_HOST}/api/token/refresh/`, {
+                const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_API_HOST}/auth/token/refresh/`, {
                     refresh: refreshToken
                 });
 
@@ -48,9 +48,27 @@ api.interceptors.response.use(
                 
             } catch (refreshError) {
                 console.error("Session expired. Redirecting to login...");
-                // Handle logout logic here (e.g., clear storage, window.location.href = '/login')
+                // Clear tokens and reset auth state via the store
                 localStorage.removeItem(ACCESS_TOKEN);
                 localStorage.removeItem(REFRESH_TOKEN);
+
+                // Reset Zustand auth state if the store has been loaded
+                try {
+                    const { useUserContext } = await import("~/hooks/useUserContext");
+                    const state = useUserContext.getState();
+                    if (state.isAuthenticated) {
+                        // Don't call logout() to avoid infinite loop — just reset state
+                        useUserContext.setState({
+                            user: null,
+                            isAuthenticated: false,
+                            isLoading: false,
+                            error: null,
+                        });
+                    }
+                } catch {
+                    // Store not available yet — tokens already cleared above
+                }
+
                 return Promise.reject(refreshError);
             }
         }

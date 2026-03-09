@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { z } from "zod";
+import { useUserContext } from "~/hooks/useUserContext";
 
 // --- VALIDATION SCHEMA ---
 const resetSchema = z.object({
@@ -14,15 +15,20 @@ const resetSchema = z.object({
 });
 
 export default function ResetPassword() {
-    const navigation = useNavigation();
-    const isSubmitting = navigation.state !== "idle";
+    const { resetPassword, isLoading, error, clearError } = useUserContext();
+    const [searchParams] = useSearchParams();
+
+    // dj-rest-auth sends uid and token as URL parameters
+    const uid = searchParams.get("uid") || "";
+    const token = searchParams.get("token") || "";
 
     const [formData, setFormData] = useState({ password: "", confirmPassword: "" });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [showPassword, setShowPassword] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
-    // --- LIVE VALIDATION ---
+    // Live validation
     useEffect(() => {
         const result = resetSchema.safeParse(formData);
         if (!result.success) {
@@ -37,6 +43,11 @@ export default function ResetPassword() {
         }
     }, [formData, touched]);
 
+    // Clear store error on mount
+    useEffect(() => {
+        clearError();
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -44,6 +55,26 @@ export default function ResetPassword() {
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
         setTouched(prev => ({ ...prev, [e.target.name]: true }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const result = resetSchema.safeParse(formData);
+        if (!result.success) {
+            setTouched({ password: true, confirmPassword: true });
+            return;
+        }
+
+        const response = await resetPassword({
+            uid,
+            token,
+            new_password1: formData.password,
+            new_password2: formData.confirmPassword,
+        });
+
+        if (response.success) {
+            setIsSuccess(true);
+        }
     };
 
     // Calculate Strength (Simple visual feedback)
@@ -58,6 +89,23 @@ export default function ResetPassword() {
         return score;
     };
 
+    if (isSuccess) {
+        return (
+            <div className="animate-in fade-in zoom-in duration-500 text-center">
+                <div className="w-20 h-20 bg-success/10 text-success rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
+                    ✅
+                </div>
+                <h1 className="text-3xl font-black mb-4">Password Updated</h1>
+                <p className="text-base-content/60 mb-8 leading-relaxed">
+                    Your security key has been successfully updated. You can now login with your new credentials.
+                </p>
+                <Link to="/login" className="btn btn-primary rounded-2xl font-black uppercase tracking-widest text-xs">
+                    Continue to Login
+                </Link>
+            </div>
+        );
+    }
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <header className="mb-10">
@@ -67,7 +115,26 @@ export default function ResetPassword() {
                 </p>
             </header>
 
-            <Form method="post" className="space-y-6">
+            {/* Server Error Display */}
+            {error && (
+                <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-error text-sm font-bold">{error}</p>
+                </div>
+            )}
+
+            {/* Missing token/uid warning */}
+            {(!uid || !token) && (
+                <div className="mb-6 p-4 bg-warning/10 border border-warning/20 rounded-2xl">
+                    <p className="text-warning text-sm font-bold">
+                        Invalid or expired reset link. Please request a new password reset.
+                    </p>
+                    <Link to="/forgot-password" className="text-primary text-xs font-black uppercase mt-2 inline-block hover:underline">
+                        Request New Reset →
+                    </Link>
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
                 {/* New Password */}
                 <div className="form-control">
                     <label className="label text-[10px] font-black opacity-50 uppercase tracking-widest">
@@ -136,16 +203,16 @@ export default function ResetPassword() {
 
                 <button 
                     type="submit" 
-                    disabled={isSubmitting || Object.keys(errors).length > 0}
+                    disabled={isLoading || Object.keys(errors).length > 0 || !uid || !token}
                     className="btn btn-primary btn-block h-16 rounded-2xl shadow-xl shadow-primary/20 text-lg font-black uppercase italic mt-4"
                 >
-                    {isSubmitting ? (
+                    {isLoading ? (
                         <span className="loading loading-spinner"></span>
                     ) : (
                         "Override Security Key"
                     )}
                 </button>
-            </Form>
+            </form>
 
             <footer className="mt-10 text-center">
                 <Link to="/login" className="text-xs font-black opacity-40 hover:opacity-100 hover:text-primary transition-all uppercase tracking-widest">

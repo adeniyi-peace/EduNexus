@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Link } from "react-router";
 import { z } from "zod";
 import { 
     User, 
@@ -12,6 +12,7 @@ import {
     Zap,
     AlertCircle
 } from "lucide-react";
+import { useUserContext } from "~/hooks/useUserContext";
 import { useSocialAuth } from "~/hooks/useSocialAuth";
 
 const registerSchema = z.object({
@@ -31,16 +32,15 @@ const registerSchema = z.object({
 });
 
 export default function Register() {
-    const navigation = useNavigation();
-    const isSubmitting = navigation.state !== "idle";
+    const { register, isLoading, error, clearError } = useUserContext();
+    const { loginWithGoogle, loginWithApple } = useSocialAuth();
 
     const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", password: "" });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [showPassword, setShowPassword] = useState(false);
     const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-    const {loginWithGoogle, loginWithApple} = useSocialAuth()
-
+    // Live validation
     useEffect(() => {
         const result = registerSchema.safeParse(formData);
         if (!result.success) {
@@ -57,6 +57,11 @@ export default function Register() {
         }
     }, [formData, touched]);
 
+    // Clear store error on mount
+    useEffect(() => {
+        clearError();
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -64,6 +69,28 @@ export default function Register() {
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
         setTouched(prev => ({ ...prev, [e.target.name]: true }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const result = registerSchema.safeParse(formData);
+        if (!result.success) {
+            setTouched({ firstName: true, lastName: true, email: true, password: true });
+            return;
+        }
+
+        try {
+            await register({
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                email: formData.email,
+                password1: formData.password,
+                password2: formData.password,
+            });
+            // Redirect is handled inside the store
+        } catch {
+            // Error is set in the store
+        }
     };
 
     // Simple strength logic for UI feedback
@@ -80,13 +107,20 @@ export default function Register() {
                 <p className="text-base-content/50 font-medium">Provision your credentials for the Nexus architecture.</p>
             </header>
 
+            {/* Server Error Display */}
+            {error && (
+                <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-error text-sm font-bold">{error}</p>
+                </div>
+            )}
+
             {/* --- SOCIAL AUTH --- */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <button type="button" onClick={() =>{loginWithGoogle()}} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
+                <button type="button" onClick={() => loginWithGoogle()} disabled={isLoading} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
                     <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="G" />
                     Google
                 </button>
-                <button type="button" onClick={() => {loginWithApple()}} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
+                <button type="button" onClick={loginWithApple} disabled={isLoading} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
                     <img src="https://www.svgrepo.com/show/511330/apple-173.svg" className="w-5 h-5 dark:invert group-hover:scale-110 transition-transform" alt="A" />
                     Apple
                 </button>
@@ -98,7 +132,7 @@ export default function Register() {
                 <div className="grow border-t border-base-content/5"></div>
             </div>
 
-            <Form method="post" className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="form-control">
                         <label className="flex items-center gap-2 px-1 mb-2">
@@ -201,10 +235,10 @@ export default function Register() {
                 <div className="pt-4">
                     <button 
                         type="submit" 
-                        disabled={isSubmitting || Object.keys(errors).length > 0}
+                        disabled={isLoading || Object.keys(errors).length > 0}
                         className="btn btn-primary btn-block h-16 rounded-2xl shadow-2xl shadow-primary/20 text-lg font-black uppercase italic group"
                     >
-                        {isSubmitting ? (
+                        {isLoading ? (
                             <span className="loading loading-spinner"></span>
                         ) : (
                             <div className="flex items-center gap-2">
@@ -214,7 +248,7 @@ export default function Register() {
                         )}
                     </button>
                 </div>
-            </Form>
+            </form>
 
             <footer className="mt-8 flex flex-col items-center gap-6">
                 <p className="text-xs font-medium opacity-50">

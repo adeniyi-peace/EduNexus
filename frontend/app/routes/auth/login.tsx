@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Form, Link, useNavigate } from "react-router";
 import { z } from "zod";
+import { useUserContext } from "~/hooks/useUserContext";
 import { useSocialAuth } from "~/hooks/useSocialAuth";
 
 // --- LOGIN SCHEMA ---
@@ -10,15 +11,14 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
-    const navigation = useNavigation();
-    const isSubmitting = navigation.state !== "idle";
+    const { login, isLoading, error, clearError } = useUserContext();
+    const { loginWithGoogle, loginWithApple } = useSocialAuth();
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [showPassword, setShowPassword] = useState(false);
     const [touched, setTouched] = useState<Record<string, boolean>>({});
-
-    const {loginWithGoogle, loginWithApple} = useSocialAuth()
 
     // --- LIVE VALIDATION ---
     useEffect(() => {
@@ -37,6 +37,11 @@ export default function Login() {
         }
     }, [formData, touched]);
 
+    // Clear store error when component mounts
+    useEffect(() => {
+        clearError();
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -46,6 +51,23 @@ export default function Login() {
         setTouched(prev => ({ ...prev, [e.target.name]: true }));
     };
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        // Validate before submission
+        const result = loginSchema.safeParse(formData);
+        if (!result.success) {
+            setTouched({ email: true, password: true });
+            return;
+        }
+
+        try {
+            await login(formData.email, formData.password);
+            // Redirect is handled inside the store
+        } catch {
+            // Error is set in the store
+        }
+    };
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <header className="mb-10 text-center lg:text-left">
@@ -53,13 +75,20 @@ export default function Login() {
                 <p className="text-base-content/60">Re-establishing connection to the EduNexus grid.</p>
             </header>
 
-            {/* --- SOCIAL AUTH (Consistent with Signup) --- */}
+            {/* Server Error Display */}
+            {error && (
+                <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-error text-sm font-bold">{error}</p>
+                </div>
+            )}
+
+            {/* --- SOCIAL AUTH --- */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <button type="button" onClick={() =>{loginWithGoogle()}} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
+                <button type="button" onClick={() => loginWithGoogle()} disabled={isLoading} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
                     <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="G" />
                     Google
                 </button>
-                <button type="button" onClick={() => {loginWithApple()}} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
+                <button type="button" onClick={loginWithApple} disabled={isLoading} className="btn bg-base-200 border-none hover:bg-base-300 rounded-2xl h-14 normal-case font-bold group">
                     <img src="https://www.svgrepo.com/show/511330/apple-173.svg" className="w-5 h-5 dark:invert group-hover:scale-110 transition-transform" alt="A" />
                     Apple
                 </button>
@@ -67,7 +96,7 @@ export default function Login() {
 
             <div className="divider text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-8">Identity Verification</div>
 
-            <Form method="post" className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email Field */}
                 <div className="form-control">
                     <label className="label w-full text-[10px] font-black opacity-50 uppercase">Network Email</label>
@@ -129,12 +158,12 @@ export default function Login() {
 
                 <button 
                     type="submit" 
-                    disabled={isSubmitting || Object.keys(errors).length > 0}
+                    disabled={isLoading || Object.keys(errors).length > 0}
                     className="btn btn-primary btn-block h-16 rounded-2xl shadow-xl shadow-primary/20 text-lg font-black mt-4 uppercase italic"
                 >
-                    {isSubmitting ? <span className="loading loading-spinner"></span> : "Unlock Dashboard"}
+                    {isLoading ? <span className="loading loading-spinner"></span> : "Unlock Dashboard"}
                 </button>
-            </Form>
+            </form>
 
             <footer className="mt-10 text-center">
                 <p className="text-sm opacity-60">

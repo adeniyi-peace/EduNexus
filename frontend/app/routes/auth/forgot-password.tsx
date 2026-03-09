@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Link } from "react-router";
 import { z } from "zod";
+import { useUserContext } from "~/hooks/useUserContext";
 
 // --- VALIDATION SCHEMA ---
 const forgotPasswordSchema = z.object({
@@ -8,35 +9,41 @@ const forgotPasswordSchema = z.object({
 });
 
 export default function ForgotPassword() {
-    const navigation = useNavigation();
-    const isSubmitting = navigation.state !== "idle";
+    const { forgotPassword, isLoading, error, clearError } = useUserContext();
 
     const [email, setEmail] = useState("");
-    const [error, setError] = useState<string | null>(null);
+    const [validationError, setValidationError] = useState<string | null>(null);
     const [touched, setTouched] = useState(false);
     const [isSent, setIsSent] = useState(false);
 
-    // --- LIVE VALIDATION ---
+    // Live validation
     useEffect(() => {
         if (touched) {
             const result = forgotPasswordSchema.safeParse({ email });
             if (!result.success) {
-                setError(result.error.issues[0].message);
+                setValidationError(result.error.issues[0].message);
             } else {
-                setError(null);
+                setValidationError(null);
             }
         }
     }, [email, touched]);
 
-    // Mock submission handler (In production, this would be handled by a Remix Action)
-    const handleSubmit = (e: React.FormEvent) => {
-        if (error || email === "") {
-            e.preventDefault();
+    // Clear store error on mount
+    useEffect(() => {
+        clearError();
+    }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (validationError || email === "") {
             setTouched(true);
             return;
         }
-        // For demo purposes, we'll simulate a successful send
-        // setIsSent(true); 
+
+        const result = await forgotPassword(email);
+        if (result.success) {
+            setIsSent(true);
+        }
     };
 
     if (isSent) {
@@ -69,7 +76,14 @@ export default function ForgotPassword() {
                 </p>
             </header>
 
-            <Form method="post" onSubmit={handleSubmit} className="space-y-6">
+            {/* Server Error Display */}
+            {error && (
+                <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-error text-sm font-bold">{error}</p>
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="form-control">
                     <label className="label text-[10px] font-black opacity-50 uppercase tracking-widest">
                         Recovery Email
@@ -77,16 +91,16 @@ export default function ForgotPassword() {
                     <input 
                         name="email"
                         type="email" 
-                        className={`input bg-base-200/50 border-none rounded-2xl h-16 focus:outline-primary transition-all text-lg ${error ? 'ring-2 ring-error/50' : ''}`}
+                        className={`input bg-base-200/50 border-none rounded-2xl h-16 focus:outline-primary transition-all text-lg ${validationError ? 'ring-2 ring-error/50' : ''}`}
                         placeholder="engineer@nexus.io"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         onBlur={() => setTouched(true)}
                         required
                     />
-                    {error && (
+                    {validationError && (
                         <span className="text-[10px] text-error mt-2 font-bold px-1 animate-in fade-in slide-in-from-top-1">
-                            {error}
+                            {validationError}
                         </span>
                     )}
                 </div>
@@ -100,16 +114,16 @@ export default function ForgotPassword() {
 
                 <button 
                     type="submit" 
-                    disabled={isSubmitting || (touched && !!error)}
+                    disabled={isLoading || (touched && !!validationError)}
                     className="btn btn-primary btn-block h-16 rounded-2xl shadow-xl shadow-primary/20 text-lg font-black uppercase italic"
                 >
-                    {isSubmitting ? (
+                    {isLoading ? (
                         <span className="loading loading-spinner"></span>
                     ) : (
                         "Send Reset Protocol"
                     )}
                 </button>
-            </Form>
+            </form>
 
             <footer className="mt-12 pt-8 border-t border-base-content/5 text-center">
                 <p className="text-xs opacity-50 font-medium">

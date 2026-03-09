@@ -1,45 +1,79 @@
 import { useGoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
 import { appleAuthHelpers } from 'react-apple-signin-auth';
+import { useUserContext } from '~/hooks/useUserContext';
+
+/**
+ * Ensures the Apple Sign-In SDK is loaded onto the document.
+ */
+const ensureAppleScript = () => {
+    if ((window as any).AppleID) return Promise.resolve();
+    
+    return new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+        script.async = true;
+        script.onload = () => {
+            console.log("Nexus Security: Apple SDK loaded successfully.");
+            resolve();
+        };
+        script.onerror = () => {
+            console.error("Nexus Security: Failed to load Apple SDK.");
+            reject(new Error("Apple SDK load failure"));
+        };
+        document.head.appendChild(script);
+    });
+};
 
 export const useSocialAuth = () => {
-    // This MUST be inside the function body
+    const { loginWithGoogle: contextGoogleLogin, loginWithApple: contextAppleLogin } = useUserContext();
+
+    // 1. Google Setup
     const googleLogin = useGoogleLogin({
-        // This is the "Encrypted Handshake"
         onSuccess: async (tokenResponse) => {
             try {
-                const response = await axios.post('/api/auth/google/', {
-                    access_token: tokenResponse.access_token 
-                });
-                // Store tokens in localStorage and update your Auth Context
-                console.log("Nexus Identity Initialized:", response.data);
-                // Handle success (save tokens, redirect, etc.)
+                await contextGoogleLogin(tokenResponse.access_token);
             } catch (err) {
-                console.error("Google Handshake Failed", err);
+                // error is handled in the zustand context store and automatically displayed to user
             }
         },
-        onError: () => console.log('Google Handshake Failed'),
+        onError: () => console.error('Google Handshake Failed'),
     });
 
-    const loginWithApple = async () => {
+    // 2. Apple Setup
+    // 2. Apple Setup
+    const handleAppleLogin = async () => {
+        console.log("Nexus Security: Initializing Apple Handshake...");
+        
         try {
-            const res = await appleAuthHelpers.signIn({
+            // Ensure script is present before attempting sign-in
+            await ensureAppleScript();
+
+            const res: any = await appleAuthHelpers.signIn({
                 authOptions: {
-                    clientId: 'com.nexus.service.id',
+                    clientId: 'com.nexus.app', // Matched with backend settings
                     scope: 'email name',
                     redirectURI: window.location.origin + '/auth/callback',
                     usePopup: true,
                 },
             });
             
-            // Send res.authorization.id_token to your backend here
-        } catch (err) {
-            console.error("Apple Handshake Failed", err);
+            if (res?.authorization?.id_token) {
+                console.log("Nexus Identity: Apple Handshake Success.");
+                await contextAppleLogin(
+                    res.authorization.id_token,
+                    res.authorization.code
+                );
+            } else {
+                console.warn("Nexus Security: Apple Handshake returned no token.");
+            }
+        } catch (err: any) {
+            console.error("Nexus Security: Apple Handshake Critical Failure:", err);
+            // error is handled in the zustand store
         }
     };
 
     return { 
-        loginWithGoogle: googleLogin, // Return the trigger function
-        loginWithApple 
+        loginWithGoogle: googleLogin,
+        loginWithApple: handleAppleLogin 
     };
 };
