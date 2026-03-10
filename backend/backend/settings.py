@@ -104,6 +104,7 @@ INSTALLED_APPS = [
     "authentication",
     "courses",
     "user",
+    "payments",
 ]
 
 SITE_ID = 1
@@ -217,7 +218,12 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+# AUTH_USER_MODEL = "user.User"
+
+# Paystack Settings
+PAYSTACK_PUBLIC_KEY = 'pk_test_your_public_key'
+PAYSTACK_SECRET_KEY = 'sk_test_your_secret_key'
+PAYSTACK_WEBHOOK_SECRET = 'your_webhook_secret'

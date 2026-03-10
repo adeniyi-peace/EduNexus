@@ -25,6 +25,7 @@ urlpatterns = [
 
     path("", include("courses.urls")),
     path("auth/", include("authentication.urls")),
+    path("payments/", include("payments.urls")),
 
     # OpenAPI schema endpoint
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

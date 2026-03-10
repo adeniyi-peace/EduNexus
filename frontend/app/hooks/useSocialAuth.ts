@@ -40,7 +40,6 @@ export const useSocialAuth = () => {
     });
 
     // 2. Apple Setup
-    // 2. Apple Setup
     const handleAppleLogin = async () => {
         console.log("Nexus Security: Initializing Apple Handshake...");
         
@@ -50,7 +49,7 @@ export const useSocialAuth = () => {
 
             const res: any = await appleAuthHelpers.signIn({
                 authOptions: {
-                    clientId: 'com.nexus.app', // Matched with backend settings
+                    clientId: 'com.nexus.service.id', // REPLACE WITH YOUR ACTUAL SERVICE ID
                     scope: 'email name',
                     redirectURI: window.location.origin + '/auth/callback',
                     usePopup: true,

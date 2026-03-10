@@ -1,10 +1,12 @@
 from django.db import models
 from uuid import uuid4
 from django.utils.text import slugify
+from django.contrib.auth import get_user_model
+
 
 from .fields import OrderField
 
-# Create your models here.
+User = get_user_model()
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
@@ -28,7 +30,7 @@ class Course(models.Model):
     )
 
     title = models.CharField(max_length=200)
-    # instructor = models.ForeignKey("user", related_name="courses", on_delete=models.CASCADE)
+    instructor = models.ForeignKey(User, related_name="courses", on_delete=models.CASCADE)
     slug = models.SlugField(blank=True)
     description = models.TextField()
     thumbnail = models.ImageField(upload_to=f"course thumbnail", height_field=None, width_field=None, max_length=None)
@@ -104,3 +106,15 @@ class QuizOption(models.Model):
     question = models.ForeignKey(QuizQuestion, related_name='options', on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=False)
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(User, related_name='enrollments', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name='enrollments', on_delete=models.CASCADE)
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('student', 'course')
+
+    def __str__(self):
+        return f"{self.student.email} - {self.course.title}"
