@@ -14,8 +14,8 @@ const Icons = {
     Paths: () => (
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
     ),
-    Mentors: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Wishlist: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5L12 21l7-7Z" /></svg>
     ),
     Forum: () => (
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -53,7 +53,7 @@ export default function DashboardLayout() {
         { to: "/dashboard/courses", label: "My Courses", icon: <Icons.Courses /> },
         { to: "/dashboard/paths", label: "Learning Paths", icon: <Icons.Paths /> },
         { to: "/dashboard/achievements", label: "Achievements", icon: <Icons.Achievements /> },
-        { to: "/dashboard/mentors", label: "My Mentors", icon: <Icons.Mentors /> },
+        { to: "/dashboard/wishlist", label: "My Wishlist", icon: <Icons.Wishlist /> },
         { to: "/dashboard/community", label: "Nexus Forum", icon: <Icons.Forum /> },
     ];
 
@@ -83,8 +83,8 @@ export default function DashboardLayout() {
                         aria-label={link.label}
                         className={({ isActive }) => `
                             flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all group overflow-hidden
-                            ${isActive 
-                                ? "bg-primary text-primary-content shadow-xl shadow-primary/20" 
+                            ${isActive
+                                ? "bg-primary text-primary-content shadow-xl shadow-primary/20"
                                 : "hover:bg-base-200 text-base-content/50 hover:text-primary"}
                         `}
                     >
@@ -102,7 +102,7 @@ export default function DashboardLayout() {
 
             {/* Sidebar Footer */}
             <div className="hidden lg:block p-4 border-t border-base-content/5">
-                <button 
+                <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
                     className="btn btn-ghost btn-block justify-start gap-4 rounded-2xl opacity-40 hover:opacity-100 hover:bg-base-200 transition-all"
@@ -122,100 +122,100 @@ export default function DashboardLayout() {
 
     return (
         <ProtectedRoute allowedRoles={["student"]}>
-            <div className="drawer lg:drawer-open min-h-screen bg-base-200">
-                <input 
-                    id="sidebar-drawer" 
-                    type="checkbox" 
-                    className="drawer-toggle" 
-                    checked={isMobileOpen} 
-                    onChange={() => setIsMobileOpen(!isMobileOpen)} 
-                    aria-label="Toggle mobile sidebar"
-                />
-                
-                {/* --- MAIN INTERFACE --- */}
-                <div className="drawer-content flex flex-col min-w-0 overflow-hidden">
-                    {/* Top Utility Bar */}
-                    <header className="h-20 bg-base-100/50 backdrop-blur-xl border-b border-base-content/5 flex items-center justify-between px-4 lg:px-8 z-20 shrink-0">
-                        <div className="flex items-center gap-4">
-                            <label htmlFor="sidebar-drawer" className="btn btn-ghost btn-circle lg:hidden" aria-label="Open menu">
-                                <Icons.Menu />
-                            </label>
-                            
-                            <h2 className="font-black text-[10px] opacity-30 uppercase tracking-[0.2em] hidden sm:block">
-                                System / {location.pathname.split('/').pop() || 'Overview'}
-                            </h2>
-                        </div>
+        <div className="drawer lg:drawer-open min-h-screen bg-base-200">
+            <input
+                id="sidebar-drawer"
+                type="checkbox"
+                className="drawer-toggle"
+                checked={isMobileOpen}
+                onChange={() => setIsMobileOpen(!isMobileOpen)}
+                aria-label="Toggle mobile sidebar"
+            />
 
-                        <div className="flex items-center gap-3 lg:gap-6">
-                            {/* Search Bar */}
-                            <div className="relative hidden md:block group">
-                                <input 
-                                    type="text" 
-                                    placeholder="Search modules..." 
-                                    aria-label="Search"
-                                    className="input input-sm bg-base-200 rounded-xl pl-10 w-48 lg:w-64 focus:ring-2 focus:ring-primary/20 border-none transition-all placeholder:text-[10px] placeholder:font-black placeholder:uppercase placeholder:opacity-30" 
-                                />
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity">
-                                    <Icons.Search />
-                                </span>
-                            </div>
+            {/* --- MAIN INTERFACE --- */}
+            <div className="drawer-content flex flex-col min-w-0 overflow-hidden">
+                {/* Top Utility Bar */}
+                <header className="h-20 bg-base-100/50 backdrop-blur-xl border-b border-base-content/5 flex items-center justify-between px-4 lg:px-8 z-20 shrink-0">
+                    <div className="flex items-center gap-4">
+                        <label htmlFor="sidebar-drawer" className="btn btn-ghost btn-circle lg:hidden" aria-label="Open menu">
+                            <Icons.Menu />
+                        </label>
 
-                            {/* Notifications */}
-                            <Link to="/dashboard/notification" aria-label="View notifications">
-                                <button className="btn btn-ghost btn-circle btn-sm relative hover:bg-primary/10 hover:text-primary transition-colors">
-                                    <Icons.Bell />
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full ring-2 ring-base-100" />
-                                </button>
-                            </Link> 
-                            
-                            {/* User Profile Dropdown */}
-                            <div className="dropdown dropdown-end">
-                                <label tabIndex={0} className="btn btn-ghost btn-circle avatar hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer">
-                                    <div className="w-9 lg:w-10 rounded-xl ring-2 ring-primary/20 ring-offset-base-100 ring-offset-2">
-                                        <img src="https://i.pravatar.cc/150?u=user" alt={user?.first_name || "User profile"} />
-                                    </div>
-                                </label>
-                                <ul tabIndex={0} className="mt-4 z-50 p-3 shadow-2xl menu menu-sm dropdown-content bg-base-100 rounded-3xl w-60 border border-base-content/5 space-y-1">
-                                    <li className="menu-title text-[10px] font-black uppercase opacity-30 px-4 py-2">
-                                        Account Node
-                                    </li>
-                                    <li>
-                                        <Link className="rounded-xl py-2.5 font-bold" to="/dashboard/profile">Profile</Link>
-                                    </li>
-                                    <li>
-                                        <Link className="rounded-xl py-2.5 font-bold" to="/dashboard/settings">Account Settings</Link>
-                                    </li>
-                                    {/* Corrected valid HTML for divider inside a list */}
-                                    <li role="separator">
-                                        <div className="divider opacity-5 my-0 py-1" />
-                                    </li>
-                                    <li>
-                                        <button onClick={() => logout()} className="text-error font-black rounded-xl py-2.5 text-left w-full">Log Out</button>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* Content Area */}
-                    <main className="flex-1 overflow-y-auto p-4 lg:p-8 scroll-smooth bg-base-200/50">
-                        <div className="max-w-7xl mx-auto">
-                            <Outlet />
-                        </div>
-                    </main>
-                </div>
-
-                {/* --- SIDEBAR DRAWER SIDE --- */}
-                <div className="drawer-side z-40">
-                    <label htmlFor="sidebar-drawer" className="drawer-overlay" aria-label="Close mobile sidebar"></label>
-                    <div 
-                        className={`h-full border-r border-base-content/5 transition-all duration-300
-                        ${isSidebarOpen ? "w-64" : "w-20"} lg:block`}
-                    >
-                        <SidebarContent />
+                        <h2 className="font-black text-[10px] opacity-30 uppercase tracking-[0.2em] hidden sm:block">
+                            System / {location.pathname.split('/').pop() || 'Overview'}
+                        </h2>
                     </div>
+
+                    <div className="flex items-center gap-3 lg:gap-6">
+                        {/* Search Bar */}
+                        <div className="relative hidden md:block group">
+                            <input
+                                type="text"
+                                placeholder="Search modules..."
+                                aria-label="Search"
+                                className="input input-sm bg-base-200 rounded-xl pl-10 w-48 lg:w-64 focus:ring-2 focus:ring-primary/20 border-none transition-all placeholder:text-[10px] placeholder:font-black placeholder:uppercase placeholder:opacity-30"
+                            />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity">
+                                <Icons.Search />
+                            </span>
+                        </div>
+
+                        {/* Notifications */}
+                        <Link to="/dashboard/notification" aria-label="View notifications">
+                            <button className="btn btn-ghost btn-circle btn-sm relative hover:bg-primary/10 hover:text-primary transition-colors">
+                                <Icons.Bell />
+                                <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full ring-2 ring-base-100" />
+                            </button>
+                        </Link>
+
+                        {/* User Profile Dropdown */}
+                        <div className="dropdown dropdown-end">
+                            <label tabIndex={0} className="btn btn-ghost btn-circle avatar hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer">
+                                <div className="w-9 lg:w-10 rounded-xl ring-2 ring-primary/20 ring-offset-base-100 ring-offset-2">
+                                    <img src="https://i.pravatar.cc/150?u=user" alt={user?.first_name || "User profile"} />
+                                </div>
+                            </label>
+                            <ul tabIndex={0} className="mt-4 z-50 p-3 shadow-2xl menu menu-sm dropdown-content bg-base-100 rounded-3xl w-60 border border-base-content/5 space-y-1">
+                                <li className="menu-title text-[10px] font-black uppercase opacity-30 px-4 py-2">
+                                    Account Node
+                                </li>
+                                <li>
+                                    <Link className="rounded-xl py-2.5 font-bold" to="/dashboard/profile">Profile</Link>
+                                </li>
+                                <li>
+                                    <Link className="rounded-xl py-2.5 font-bold" to="/dashboard/settings">Account Settings</Link>
+                                </li>
+                                {/* Corrected valid HTML for divider inside a list */}
+                                <li role="separator">
+                                    <div className="divider opacity-5 my-0 py-1" />
+                                </li>
+                                <li>
+                                    <button onClick={() => logout()} className="text-error font-black rounded-xl py-2.5 text-left w-full">Log Out</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </header>
+
+                {/* Content Area */}
+                <main className="flex-1 overflow-y-auto p-4 lg:p-8 scroll-smooth bg-base-200/50">
+                    <div className="max-w-7xl mx-auto">
+                        <Outlet />
+                    </div>
+                </main>
+            </div>
+
+            {/* --- SIDEBAR DRAWER SIDE --- */}
+            <div className="drawer-side z-40">
+                <label htmlFor="sidebar-drawer" className="drawer-overlay" aria-label="Close mobile sidebar"></label>
+                <div
+                    className={`h-full border-r border-base-content/5 transition-all duration-300
+                        ${isSidebarOpen ? "w-64" : "w-20"} lg:block`}
+                >
+                    <SidebarContent />
                 </div>
             </div>
+        </div>
         </ProtectedRoute>
     );
 }

@@ -1,10 +1,53 @@
 from rest_framework import serializers
-from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption
+from django.db.models import Avg
+from authentication.serializers import UserSerializer
+from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'slug']
+
+class ReviewSerializer(serializers.ModelSerializer):
+        user = serializers.CharField(source='user.fullname', read_only=True)  # Assuming you have a fullname property on your User model
+
+        class Meta:
+            model = Review
+            fields = ['id', 'user', 'course', 'rating', 'comment', 'created_at']
+            read_only_fields = ['id', 'user', 'course', 'created_at']
+
+class WishlistSerializer(serializers.ModelSerializer):
+    course_details = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Wishlist
+        fields = ['id', 'student', 'course', 'added_at', 'course_details']
+        read_only_fields = ['id', 'student', 'added_at']
+
+    def get_course_details(self, obj):
+        # Return lightweight course info for the wishlist page
+        request = self.context.get('request')
+        serializer = CourseSerializer(obj.course, context={'request': request})
+        return serializer.data
+
+class InstructorSerializer(UserSerializer):
+    instructor_rating = serializers.SerializerMethodField()
+    student_count = serializers.IntegerField(source='courses__enrollments__count', read_only=True)  # Assuming you have enrollments related name
+    premium_courses_count = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ['fullname', 'profile_picture']
+
+    def get_instructor_rating(self, obj):
+        # Calculate the average rating across all courses taught by this instructor
+        courses = obj.courses.all()  # Assuming 'courses' is the related name for Course's instructor FK
+        if courses.exists():
+            return round(courses.aggregate(Avg('reviews__rating'))['reviews__rating__avg'], 2)
+        return None
+    
+    def get_premium_courses_count(self, obj):
+        # Count how many courses taught by this instructor are premium (price > 0)
+        return obj.courses.filter(price__gt=0).count()
 
 class ResourceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,14 +122,32 @@ class CourseSerializer(serializers.ModelSerializer):
     
     # Optional: If you want to return the full category object instead of just the ID
     # category = CategorySerializer(read_only=True) 
+    students = serializers.IntegerField(source='enrollments.count', read_only=True)  # Assuming you have an enrollments related name
+    isEnrolled = serializers.SerializerMethodField()
+    reviews = ReviewSerializer(many=True, read_only=True)  # Assuming a related name of 'review' for course reviews
+    rating = serializers.SerializerMethodField()
+    instructor = serializers.UserSerializer(read_only=True)  # Assuming you have an instructor field that is a ForeignKey to User
 
     class Meta:
         model = Course
         fields = [
             'id', 'title',  'slug', 'description', 
             'thumbnail', 'price', 'duration', 'category', 'language', 
-            'difficulty', 'status', 'lastUpdated', 'created_at', 'modules'
+            'difficulty', 'status', 'lastUpdated', 'created_at', 'modules',
+            "students", "isEnrolled", "reviews"
         ]
+
+    def get_isEnrolled(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.enrollments.filter(user=request.user).exists()
+        return False
+    
+    def get_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            return round(reviews.aggregate(Avg('rating'))['rating__avg'], 2)
+        return None
 
 class ReOrderRequestSerializer(serializers.Serializer):
     # This matches your TS: lessonIds: string[]
@@ -104,3 +165,4 @@ class ReOrderRequestSerializer(serializers.Serializer):
         if len(value) != len(set(value)):
             raise serializers.ValidationError("Duplicate lesson IDs are not allowed.")
         return value
+    

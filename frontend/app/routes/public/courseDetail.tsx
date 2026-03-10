@@ -1,6 +1,6 @@
-import { useLoaderData, Link  } from "react-router"; // Add this import at the top
+import { useLoaderData, Link } from "react-router"; // Add this import at the top
 import { PlayCircle, Lock } from "lucide-react"; // Let's use icons to clarify access
-import { api } from "~/utils/api.client";
+import api from "~/utils/api.client";
 import { Syllabus } from "~/components/course/Syllabus";
 import { InstructorBio } from "~/components/course/InstructorBio";
 import { ReviewSection } from "~/components/course/ReviewSection";
@@ -30,24 +30,25 @@ export async function loader({ params }: { params: { id: string } }) {
                 avatar: "https://i.pravatar.cc/150?u=aris",
             },
             syllabus: [
-                { 
-                    title: "Foundation & Architecture", 
+                {
+                    title: "Foundation & Architecture",
                     lessons: [
                         { id: "les_1", title: "Monolith vs Microservices", isPreview: true },
                         { id: "les_2", title: "Database Schema Design", isPreview: true }
-                    ] 
+                    ]
                 },
-                { 
-                    title: "Advanced Backend with Django", 
+                {
+                    title: "Advanced Backend with Django",
                     lessons: [
                         { id: "les_3", title: "Custom Middleware", isPreview: false },
                         { id: "les_4", title: "Query Optimization", isPreview: false }
-                    ] 
+                    ]
                 },
             ],
             reviews: [
-                { id: 1, user: "Sarah L.", rating: 5, comment: "The best architectural breakdown I've ever seen." },
-            ]
+                { id: 1, user: "Sarah L.", rating: 5, comment: "The best architectural breakdown I've ever seen.", created_at: "2026-02-15T12:00:00Z" },
+            ],
+            isEnrolled: true, // Default to false for public view
         };
     } catch (error) {
         throw new Response("Not Found", { status: 404 });
@@ -98,16 +99,32 @@ export default function CourseLandingPage() {
                         </section>
 
                         <Syllabus modules={course.syllabus} courseId={course.id} />
-                        
+
                         <InstructorBio instructor={course.instructor} />
 
-                        <ReviewSection reviews={course.reviews} />
+                        <ReviewSection reviews={course.reviews} courseId={course.id} isEnrolled={course.isEnrolled} />
                     </div>
 
                     {/* Right Column: Sticky Enrollment Card */}
-                    <aside className="w-full lg:w-100">
-                        <EnrollmentCard price={course.price} />
-                    </aside>
+                    {/* Only show enrollment card if NOT enrolled */}
+                    {!course.isEnrolled && (
+                        <aside className="w-full lg:w-[400px]">
+                            <EnrollmentCard price={course.price} courseId={course.id} />
+                        </aside>
+                    )}
+
+                    {/* If enrolled, show a progress or "Resume" sidebar */}
+                    {course.isEnrolled && (
+                        <aside className="w-full lg:w-[400px]">
+                            <div className="sticky top-28 card bg-primary text-primary-content shadow-2xl p-8 rounded-3xl">
+                                <h3 className="text-2xl font-black mb-4">Welcome Back!</h3>
+                                <p className="opacity-80 mb-6 font-medium">You are currently enrolled in this course. Continue where you left off.</p>
+                                <Link to={`/courses/${course.id}/learn`} className="btn btn-secondary btn-block shadow-lg">
+                                    Resume Learning
+                                </Link>
+                            </div>
+                        </aside>
+                    )}
                 </div>
             </div>
         </div>

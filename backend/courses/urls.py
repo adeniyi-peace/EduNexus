@@ -1,19 +1,21 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
-from .views import CourseViewSet, ModuleViewSet,LessonViewSet, ResourceViewSet, ReOrderView
+from .views import CourseViewSet, ModuleViewSet,LessonViewSet, ResourceViewSet, ReOrderView, WishlistViewSet, ReviewViewSet
 
 # Create a router and register our viewset with it.
 router = routers.DefaultRouter()
 lesson_router = routers.DefaultRouter()
 # 1. Register both as top-level resources
 router.register(r'courses', CourseViewSet, basename='course')
+router.register(r'wishlists', WishlistViewSet, basename='wishlist')
 lesson_router.register(r'modules', ModuleViewSet, basename='module')
 
 # 2. Nested Router: /courses/{course_pk}/modules/
 # lookup='course' tells the router to pass 'course_pk' to the ModuleViewSet
 courses_router = routers.NestedSimpleRouter(router, r'courses', lookup='course')
 courses_router.register(r'modules', ModuleViewSet, basename='course-modules')
+courses_router.register(r'reviews', ReviewViewSet, basename='course-reviews')
 
 # 3. NEW Nested Router: /modules/{module_pk}/lessons/
 modules_router = routers.NestedSimpleRouter(lesson_router, r'modules', lookup='module')

@@ -118,3 +118,42 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.student.email} - {self.course.title}"
+    
+class Progress(models.Model):
+    enrollment = models.OneToOneField(Enrollment, related_name='progress', on_delete=models.CASCADE)
+    completed_lessons = models.ManyToManyField(Lesson, blank=True)
+    last_accessed = models.DateTimeField(auto_now=True)
+
+    @property
+    def percentage_complete(self):
+        total_lessons = self.enrollment.course.lessons.count()
+        if total_lessons == 0:
+            return 0
+        done_count = self.completed_lessons.count()
+        return (done_count / total_lessons) * 100
+
+class Review(models.Model):
+    student = models.ForeignKey(User, related_name='reviews', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name='reviews', on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField()
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'course')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.student.email} - {self.course.title} ({self.rating} stars)"
+
+class Wishlist(models.Model):
+    student = models.ForeignKey(User, related_name='wishlists', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name='wishlisted_by', on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'course')
+        ordering = ['-added_at']
+
+    def __str__(self):
+        return f"{self.student.email} - {self.course.title}"

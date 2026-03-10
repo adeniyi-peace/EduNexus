@@ -8,11 +8,11 @@ export default [
         route("/courses", "routes/public/courses.tsx"),
         // Fixed: Added colon for dynamic parameter
         route("/courses/:id", "routes/public/courseDetail.tsx"),
-        
+
         route("cart", "routes/public/CartPage.tsx"),
         route("checkout", "routes/public/CheckoutPage.tsx"),
         route("/checkout/success", "routes/public/CheckoutSuccess.tsx"),
-        
+
         // Mentorship & Community
         route("mentors", "routes/public/mentors.tsx"),
 
@@ -26,7 +26,7 @@ export default [
         route("privacy", "routes/public/privacy.tsx"),
         route("terms", "routes/public/terms.tsx")
     ]),
-  
+
     // --- AUTHENTICATION ---
     layout("routes/_auth.tsx", [
         route("register", "routes/auth/register.tsx"),
@@ -39,10 +39,11 @@ export default [
     layout("routes/_dashboard.tsx", [
         route("dashboard", "routes/dashboard/index.tsx"),
         route("dashboard/courses", "routes/dashboard/courses.tsx"),
-        // route("dashboard/courses/:id", "routes/public/courseDetail.tsx", {id: "registered-course"}),
+        route("dashboard/wishlist", "routes/dashboard/wishlist.tsx"),
+        route("dashboard/courses/:id", "routes/public/courseDetail.tsx", { id: "registered-course" }),
         route("dashboard/community", "routes/dashboard/CommunityHub.tsx"),
         route("/dashboard/achievements", "routes/dashboard/AchievementsPage.tsx"),
-        
+
         // Shared components with Unique IDs
         route("dashboard/profile", "routes/user/ProfilePage.tsx", { id: "student-profile" }),
         route("dashboard/settings", "routes/user/SettingsPage.tsx", { id: "student-settings" }),
@@ -57,7 +58,7 @@ export default [
         route("/cms/students", "routes/cms/GlobalStudentDirectory.tsx"),
         route("/cms/course/students", "routes/cms/CourseStudentManager.tsx"),
         route("/cms/analytics", "routes/cms/InstructorAnalyticsPage.tsx"),
-        
+
         // Shared components with Unique IDs
         route("cms/profile", "routes/user/ProfilePage.tsx", { id: "cms-profile" }),
         route("/cms/settings", "routes/user/SettingsPage.tsx", { id: "cms-settings" }),
@@ -74,14 +75,14 @@ export default [
         route("/admin/courses-approval", "routes/admin/CourseApprovalPage.tsx"),
         route("/admin/courses", "routes/admin/AdminCoursesPage.tsx"),
         route("/admin/system-settings", "routes/admin/AdminSettingsPage.tsx"),
-        
+
         // Shared components with Unique IDs
         route("admin/profile", "routes/user/ProfilePage.tsx", { id: "admin-profile" }),
         route("/admin/settings", "routes/user/SettingsPage.tsx", { id: "admin-settings" }),
         route("/admin/notification", "routes/user/NotificationsPage.tsx", { id: "admin-notifications" }),
     ]),
 
-    
+
     route("courses/:id/learn", "routes/courses.$courseId.learn.tsx"),
     route("/resources/theme", "routes/resources.theme.ts"),
 

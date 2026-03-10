@@ -4,8 +4,8 @@ from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
-from .serializers import CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, ReOrderRequestSerializer
-from . models import Course, Module, Lesson, Resource
+from .serializers import CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer
+from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment
 
 @extend_schema_view(
     list=extend_schema(summary="Get all courses", tags=['Courses']),
@@ -162,3 +162,49 @@ class ResourceViewSet(viewsets.ModelViewSet):
         it is automatically linked to the correct module.
         """
         serializer.save(module_id=self.kwargs['module_pk'])
+
+@extend_schema_view(
+    list=extend_schema(summary="List user wishlist", tags=['Students']),
+    retrieve=extend_schema(summary="Get wishlist item", tags=['Students']),
+    create=extend_schema(summary="Add course to wishlist", tags=['Students']),
+    destroy=extend_schema(summary="Remove course from wishlist", tags=['Students']),
+)
+class WishlistViewSet(viewsets.ModelViewSet):
+    serializer_class = WishlistSerializer
+    http_method_names = ['get', 'post', 'delete']
+
+    def get_queryset(self):
+        # Users can only see their own wishlist
+        if self.request.user.is_authenticated:
+            return Wishlist.objects.filter(student=self.request.user)
+        return Wishlist.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(student=self.request.user)
+
+@extend_schema_view(
+    list=extend_schema(summary="List reviews for a course", tags=['Courses']),
+    create=extend_schema(summary="Add a review for a course", tags=['Students']),
+)
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    http_method_names = ['get', 'post']
+
+    def get_queryset(self):
+        return Review.objects.filter(course_id=self.kwargs['course_pk'])
+
+    def perform_create(self, serializer):
+        course_id = self.kwargs['course_pk']
+        course = get_object_or_404(Course, pk=course_id)
+        
+        # Optionally, check if the student is actually enrolled
+        if not Enrollment.objects.filter(student=self.request.user, course=course).exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("You must be enrolled in this course to leave a review.")
+            
+        # Check if review already exists
+        if Review.objects.filter(student=self.request.user, course=course).exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("You have already reviewed this course.")
+
+        serializer.save(student=self.request.user, course=course)

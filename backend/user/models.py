@@ -42,6 +42,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateField(default=timezone.now)
+    bio = models.TextField(blank=True, null=True)
+    profile_picture = models.ImageField(upload_to=f"profile pictures", height_field=None, width_field=None, max_length=None, blank=True, null=True)
 
     # Role Selection
     role = models.CharField(
