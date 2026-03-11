@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.db.models import Avg
 from authentication.serializers import UserSerializer
-from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist
+from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist, Note
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -36,7 +36,7 @@ class InstructorSerializer(UserSerializer):
     premium_courses_count = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + ['fullname', 'profile_picture']
+        fields = UserSerializer.Meta.fields + ['fullname', 'profile_picture', "student_count", "instructor_rating", "premium_courses_count"]
 
     def get_instructor_rating(self, obj):
         # Calculate the average rating across all courses taught by this instructor
@@ -53,6 +53,12 @@ class ResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resource
         fields = ['id', 'title', 'url', 'size']
+
+class NoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Note
+        fields = ['id', 'student', 'lesson', 'content', 'created_at']
+        read_only_fields = ['id', 'student', 'created_at']
 
 class QuizOptionSerializer(serializers.ModelSerializer):
     # Mapping snake_case from Django to camelCase for TypeScript
@@ -71,13 +77,15 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
 
 class LessonSerializer(serializers.ModelSerializer):
     resources = ResourceSerializer(many=True, read_only=True)
+    notes = NoteSerializer(many=True, read_only=True)  # Assuming a related name of 'notes' on Lesson model
     
     class Meta:
         model = Lesson
         fields = [
             'id', 'title', 'type', 'description', 'isPublished', 
             'isPreview', 'isHidden', 'allow_download', 'order',
-            'video_url', 'duration', 'content', 'quiz_time_limit',"resources"
+            'video_url', 'duration', 'content', 'quiz_time_limit',"resources",
+            "notes"
         ]
 
     def to_representation(self, instance):
@@ -126,7 +134,7 @@ class CourseSerializer(serializers.ModelSerializer):
     isEnrolled = serializers.SerializerMethodField()
     reviews = ReviewSerializer(many=True, read_only=True)  # Assuming a related name of 'review' for course reviews
     rating = serializers.SerializerMethodField()
-    instructor = serializers.UserSerializer(read_only=True)  # Assuming you have an instructor field that is a ForeignKey to User
+    instructor = InstructorSerializer()  # Assuming you have an instructor field that is a ForeignKey to User
 
     class Meta:
         model = Course
@@ -134,7 +142,7 @@ class CourseSerializer(serializers.ModelSerializer):
             'id', 'title',  'slug', 'description', 
             'thumbnail', 'price', 'duration', 'category', 'language', 
             'difficulty', 'status', 'lastUpdated', 'created_at', 'modules',
-            "students", "isEnrolled", "reviews"
+            "students", "isEnrolled", "reviews", "rating", "instructor"
         ]
 
     def get_isEnrolled(self, obj):

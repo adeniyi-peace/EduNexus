@@ -157,3 +157,18 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return f"{self.student.email} - {self.course.title}"
+
+
+class Note(models.Model):
+    student = models.ForeignKey(User, related_name='notes', on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson, related_name='notes', on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.PositiveIntegerField(help_text="Time in seconds where the note was taken", blank=True, null=True)
+    is_code = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Note by {self.student.email} on {self.lesson.title}"

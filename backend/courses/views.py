@@ -4,8 +4,8 @@ from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
-from .serializers import CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer
-from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment
+from .serializers import CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer
+from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note
 
 @extend_schema_view(
     list=extend_schema(summary="Get all courses", tags=['Courses']),
@@ -73,6 +73,7 @@ class LessonViewSet(viewsets.ModelViewSet):
         it is automatically linked to the correct module.
         """
         serializer.save(module_id=self.kwargs['module_pk'])
+
 
 class ReOrderView(GenericAPIView):
     serializer_class= LessonSerializer
@@ -163,6 +164,7 @@ class ResourceViewSet(viewsets.ModelViewSet):
         """
         serializer.save(module_id=self.kwargs['module_pk'])
 
+
 @extend_schema_view(
     list=extend_schema(summary="List user wishlist", tags=['Students']),
     retrieve=extend_schema(summary="Get wishlist item", tags=['Students']),
@@ -182,7 +184,9 @@ class WishlistViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(student=self.request.user)
 
+
 @extend_schema_view(
+    retrieve = extend_schema(summary="Get review details", tags=['Courses']),
     list=extend_schema(summary="List reviews for a course", tags=['Courses']),
     create=extend_schema(summary="Add a review for a course", tags=['Students']),
 )
@@ -208,3 +212,25 @@ class ReviewViewSet(viewsets.ModelViewSet):
             raise ValidationError("You have already reviewed this course.")
 
         serializer.save(student=self.request.user, course=course)
+
+
+@extend_schema_view(
+    list=extend_schema(summary="List notes for the authenticated user", tags=['Students']),
+    create=extend_schema(summary="Add a note for a lesson", tags=['Students']),
+    retrieve=extend_schema(summary="Get note details", tags=['Students']),
+    update=extend_schema(summary="Update a note", tags=['Students']),
+    partial_update=extend_schema(summary="Partial update a note", tags=['Students']),
+    destroy=extend_schema(summary="Delete a note", tags=['Students']),
+)
+class NoteViewSet(viewsets.ModelViewSet):
+    serializer_class = NoteSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+    def get_queryset(self):
+        # Users can only see their own notes
+        if self.request.user.is_authenticated:
+            return Note.objects.filter(student=self.request.user)
+        return Note.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(student=self.request.user)
