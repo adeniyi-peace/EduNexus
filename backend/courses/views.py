@@ -4,7 +4,10 @@ from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
-from .serializers import CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer
+from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
+                          ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
+                          LessonCompletionSerializer
+                        )
 from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note
 
 @extend_schema_view(
@@ -234,3 +237,34 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(student=self.request.user)
+
+class LessonCompletionView(GenericAPIView):
+    serializer_class = LessonCompletionSerializer
+
+    @extend_schema(
+        summary="Mark a lesson as completed",
+        description="Adds the specified lesson to the student's list of completed lessons for the course.",
+        tags=['Students'],
+        parameters=[
+            OpenApiParameter(
+                name='lesson_id', 
+                type=OpenApiTypes.UUID, 
+                location=OpenApiParameter.PATH,
+                description='UUID of the lesson to mark as completed'
+            ),
+        ],
+        request=LessonCompletionSerializer,
+        responses={200: {"detail": "Lesson marked as completed."}}
+    )
+    def post(self, request, *args, **kwargs):
+        course_id = self.kwargs['course_pk']
+        lesson_id = request.data.get('lesson_id')
+        module_id = request.data.get('module_id')  # Optional, if you want to validate the lesson belongs to a specific module
+
+        context = self.get_serializer_context()
+        context['course_id'] = course_id
+        context["module_id"] = module_id
+        serializer = self.get_serializer(data={'lesson_id': lesson_id}, context=context)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Lesson marked as completed."}, status=status.HTTP_200_OK)

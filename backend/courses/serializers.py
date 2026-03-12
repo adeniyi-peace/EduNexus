@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.db.models import Avg
 from authentication.serializers import UserSerializer
-from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist, Note
+from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist, Note, Progress
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -173,4 +173,35 @@ class ReOrderRequestSerializer(serializers.Serializer):
         if len(value) != len(set(value)):
             raise serializers.ValidationError("Duplicate lesson IDs are not allowed.")
         return value
+
+class LessonCompletionSerializer(serializers.Serializer):
+    lesson_id = serializers.UUIDField()
+
+    def save(self, **kwargs):
+        # Implementation for marking a lesson as completed would go here
+        # You would typically access the current user and course from the context
+        user = self.context['request'].user
+        course_id = self.context['course_id']
+        module_id = self.context.get('module_id')  # Optional, if you want to validate the lesson belongs to a specific module
+        lesson_id = self.validated_data['lesson_id']
+
+        # Here you would add logic to mark the lesson as completed for the user
+        # This might involve creating/updating a Progress model instance, etc.
+        try:
+            progress = Progress.objects.get(enrollment__user=user, enrollment__course_id=course_id)
+            lesson = Lesson.objects.get(id=lesson_id, module=module_id, module__course_id=course_id)  # Validate lesson belongs to the course (and optionally module)
+            progress.completed_lessons.add(lesson)
+        except Progress.DoesNotExist:
+            raise serializers.ValidationError("Progress record not found for this user and course.")
+        except Lesson.DoesNotExist:
+            raise serializers.ValidationError("Lesson not found in this course.")
+        except Exception as e:
+            raise serializers.ValidationError(str(e))
+
+        
+        return {
+            "message": f"Lesson {lesson_id} marked as completed for user {user.username} in course {course_id}."
+        }
+
+
     

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
-from .views import CourseViewSet, ModuleViewSet,LessonViewSet, ResourceViewSet, ReOrderView, WishlistViewSet, ReviewViewSet, NoteViewSet
+from .views import CourseViewSet, ModuleViewSet,LessonViewSet, ResourceViewSet, ReOrderView, WishlistViewSet, ReviewViewSet, NoteViewSet, LessonCompletionView
 
 # Create a router and register our viewset with it.
 router = routers.DefaultRouter()
@@ -37,4 +37,5 @@ urlpatterns = [
     path("", include(resource_router.urls)),
     path("", include(notes_router.urls)),
     path('modules/<uuid:module_pk>/reorder', ReOrderView.as_view(), name='lesson-reorder'),
+    path("courses/<uuid:course_pk>/modules/<uuid:module_pk>/complete-lesson", LessonCompletionView.as_view(), name="complete-lesson"),
 ]
