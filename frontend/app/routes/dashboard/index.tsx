@@ -1,4 +1,6 @@
 import { Link, useLoaderData } from "react-router";
+import { useEffect, useState } from "react";
+import api from "~/utils/api.client";
 
 // --- SVG COMPONENTS ---
 const DashboardIcons = {
@@ -50,8 +52,43 @@ export async function loader() {
 }
 
 export default function StudentDashboard() {
-    const { enrolledCourses, notifications, deadlines, achievements } = useLoaderData<typeof loader>();
-    const continueLearning = enrolledCourses[0];
+    const { notifications, deadlines, achievements } = useLoaderData<typeof loader>();
+    const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchEnrollments = async () => {
+            try {
+                const res = await api.get("/enrollments/");
+                const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
+                const transformed = data.map((e: any, index: number) => ({
+                    id: e.course.id,
+                    title: e.course.title,
+                    progress: e.progress?.percentage_complete || 0,
+                    lastAccessed: e.progress?.last_accessed 
+                        ? new Date(e.progress.last_accessed).toLocaleDateString() 
+                        : "Never accessed",
+                    color: index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-secondary" : "bg-accent"
+                }));
+                setEnrolledCourses(transformed);
+            } catch (err) {
+                console.error("Failed to fetch enrollments", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchEnrollments();
+    }, []);
+
+    const continueLearning = enrolledCourses.length > 0 ? enrolledCourses[0] : null;
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <span className="loading loading-dots loading-lg text-primary"></span>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
@@ -65,19 +102,35 @@ export default function StudentDashboard() {
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="text-center md:text-left">
                             <h1 className="text-4xl font-black mb-4 tracking-tight">Hello, <span className="text-primary italic">Developer</span>.</h1>
-                            <p className="opacity-60 max-w-sm mb-6 font-medium leading-relaxed">
-                                You have 3 active training paths. Your current streak is 5 days.
-                            </p>
-                            <Link to={`/dashboard/courses/${continueLearning.id}`} className="btn btn-primary rounded-2xl px-8 h-14 font-black text-lg group shadow-lg shadow-primary/20">
-                                Continue Learning
-                                <span className="group-hover:translate-x-1 transition-transform ml-2">→</span>
-                            </Link>
+                            {enrolledCourses.length > 0 ? (
+                                <>
+                                    <p className="opacity-60 max-w-sm mb-6 font-medium leading-relaxed">
+                                        You have {enrolledCourses.length} active training paths. Keep up the momentum!
+                                    </p>
+                                    <Link to={`/dashboard/courses/${continueLearning.id}`} className="btn btn-primary rounded-2xl px-8 h-14 font-black text-lg group shadow-lg shadow-primary/20">
+                                        Continue Learning
+                                        <span className="group-hover:translate-x-1 transition-transform ml-2">→</span>
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="opacity-60 max-w-sm mb-6 font-medium leading-relaxed">
+                                        Welcome to the Nexus. You haven't enrolled in any courses yet.
+                                    </p>
+                                    <Link to="/dashboard/courses" className="btn btn-primary rounded-2xl px-8 h-14 font-black text-lg group shadow-lg shadow-primary/20">
+                                        Explore Catalog
+                                        <span className="group-hover:translate-x-1 transition-transform ml-2">→</span>
+                                    </Link>
+                                </>
+                            )}
                         </div>
-                        <div className="hidden md:block bg-base-100/10 backdrop-blur-md p-6 rounded-3xl border border-white/10 w-64">
-                            <p className="text-[10px] font-black uppercase opacity-50 tracking-widest mb-2 text-primary">Current Module</p>
-                            <p className="font-bold text-sm mb-4 truncate">{continueLearning.title}</p>
-                            <progress className="progress progress-primary w-full h-2" value={continueLearning.progress} max="100" />
-                        </div>
+                        {continueLearning && (
+                            <div className="hidden md:block bg-base-100/10 backdrop-blur-md p-6 rounded-3xl border border-white/10 w-64">
+                                <p className="text-[10px] font-black uppercase opacity-50 tracking-widest mb-2 text-primary">Current Module</p>
+                                <p className="font-bold text-sm mb-4 truncate">{continueLearning.title}</p>
+                                <progress className="progress progress-primary w-full h-2" value={continueLearning.progress} max="100" />
+                            </div>
+                        )}
                     </div>
                 </div>
 

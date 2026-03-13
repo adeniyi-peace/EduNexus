@@ -6,7 +6,7 @@ from drf_spectacular.types import OpenApiTypes
 
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
-                          LessonCompletionSerializer
+                          LessonCompletionSerializer, EnrollmentSerializer
                         )
 from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note
 
@@ -268,3 +268,16 @@ class LessonCompletionView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Lesson marked as completed."}, status=status.HTTP_200_OK)
+
+@extend_schema_view(
+    list=extend_schema(summary="List user enrollments", tags=['Students']),
+    retrieve=extend_schema(summary="Get enrollment details", tags=['Students']),
+)
+class EnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = EnrollmentSerializer
+
+    def get_queryset(self):
+        # Users can only see their own enrollments
+        if self.request.user.is_authenticated:
+            return Enrollment.objects.filter(student=self.request.user)
+        return Enrollment.objects.none()

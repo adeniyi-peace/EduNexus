@@ -1,7 +1,15 @@
 from rest_framework import serializers
 from django.db.models import Avg
 from authentication.serializers import UserSerializer
-from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist, Note, Progress
+from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist, Note, Progress, Enrollment
+
+class ProgressSerializer(serializers.ModelSerializer):
+    percentage_complete = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Progress
+        fields = ['percentage_complete', 'last_accessed']
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -203,5 +211,11 @@ class LessonCompletionSerializer(serializers.Serializer):
             "message": f"Lesson {lesson_id} marked as completed for user {user.username} in course {course_id}."
         }
 
-
+class EnrollmentSerializer(serializers.ModelSerializer):
+    course = CourseSerializer(read_only=True)
+    progress = ProgressSerializer(read_only=True)
+    
+    class Meta:
+        model = Enrollment
+        fields = ['id', 'course', 'progress', 'enrolled_at']
     
