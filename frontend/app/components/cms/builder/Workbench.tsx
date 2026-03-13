@@ -9,6 +9,7 @@ interface WorkbenchProps {
     onUploadVideo: (modId: string, lesId: string, file: File) => void;
     onAddResource: (modId: string, lesId: string, file: File) => void;
     onDeleteResource: (modId: string, lesId: string, resourceId: string) => void;
+    uploadProgress?: number;
 }
 
 export function Workbench({ 
@@ -18,7 +19,8 @@ export function Workbench({
     onAddResource, 
     onUpdateLesson, 
     onAddQuizQuestion, 
-    onDeleteResource 
+    onDeleteResource,
+    uploadProgress = 0
 }: WorkbenchProps) {
 
     // Empty State
@@ -83,6 +85,16 @@ export function Workbench({
                             <div className="aspect-video bg-black rounded-4xl border border-base-content/10 relative overflow-hidden group shadow-2xl">
                                 {lesson.videoUrl ? (
                                     <video src={lesson.videoUrl} controls className="w-full h-full object-cover" />
+                                ) : uploadProgress > 0 ? (
+                                    <div className="absolute inset-0 bg-base-300 flex flex-col items-center justify-center gap-4">
+                                        <div className="radial-progress text-primary transition-all duration-300" style={{ "--value": uploadProgress, "--size": "4rem" } as any} role="progressbar">
+                                            <span className="text-[10px] font-black">{uploadProgress}%</span>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Deploying_Asset...</p>
+                                            <p className="text-[8px] opacity-30 mt-1 uppercase font-mono">Syncing_With_Cloud_Nodes</p>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-all group">
                                         <div className="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -101,8 +113,8 @@ export function Workbench({
                                 </div>
                                 <div className="p-4 bg-base-200/50 rounded-2xl border border-base-content/5">
                                     <h4 className="text-[9px] font-black opacity-30 uppercase mb-1">Deployment_Status</h4>
-                                    <p className={`font-mono text-sm ${lesson.videoUrl ? 'text-success' : 'text-warning'}`}>
-                                        {lesson.videoUrl ? 'READY' : 'PENDING_UPLOAD'}
+                                    <p className={`font-mono text-sm ${lesson.videoUrl ? 'text-success' : uploadProgress > 0 ? 'text-primary' : 'text-warning'}`}>
+                                        {lesson.videoUrl ? 'READY' : uploadProgress > 0 ? `DEPLOYING_${uploadProgress}%` : 'PENDING_UPLOAD'}
                                     </p>
                                 </div>
                             </div>

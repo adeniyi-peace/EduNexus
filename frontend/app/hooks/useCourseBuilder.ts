@@ -8,45 +8,68 @@ export type SyncStatus = "idle" | "saving" | "error" | "initializing";
 export function useCourseBuilder(initialData: CourseData) {
     const [course, setCourse] = useState<CourseData>(initialData);
     const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
-    const [isReady, setIsReady] = useState(initialData.modules.length > 0); // Controls UI editability
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+    const [isReady, setIsReady] = useState(initialData.modules.length > 0 || initialData.id !== "new-course");
 
-    // Use a ref to ensure this only runs once per mount
-    const hasCheckedExistence = useRef(false);
+    // Browser Warning for Unsaved Changes
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (syncStatus === "saving" || syncStatus === "initializing") {
+                e.preventDefault();
+                e.returnValue = "";
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [syncStatus]);
 
     // Generic wrapper to handle status changes and API calls
-    const syncToBackend = async (operation: () => Promise<any>) => {
+    const syncToBackend = async (operation: () => Promise<any>, rollback?: () => void) => {
         setSyncStatus("saving");
+        setErrorMessage(null);
         try {
-            await operation();
-            // Optional: slight delay so the user actually sees the "saved" state
-            setTimeout(() => setSyncStatus("idle"), 800);
-        } catch (error) {
+            const response = await operation();
+            setSyncStatus("idle");
+            return response;
+        } catch (error: any) {
             console.error("Builder Sync Error:", error);
             setSyncStatus("error");
+            setErrorMessage(error?.response?.data?.message || "Internal System Error: Core Sync Failed");
+            if (rollback) rollback();
+            throw error;
         }
     };
 
     // --- COURSE ACTIONS ---  COURSE UPDATES (Title, Price, etc.)
     const updateCourse = async (fields: Partial<CourseData>) => {
+        const previousCourse = { ...course };
         setCourse(prev => ({ ...prev, ...fields }));
-        // 1. Update local state immediately
-        const updatedCourse = { ...course, ...fields };
-        setCourse(updatedCourse);
+        setErrorMessage(null);
 
         try {
             if (!isReady) {
                 setSyncStatus("initializing");
-                // FIRST TIME: Create the course (POST)
-                await syncToBackend(() => apiClient.post(`/courses`, updatedCourse));
-                setIsReady(true); // Unlock the rest of the UI
+                // Remove temp ID before sending to backend
+                const { id, ...payload } = { ...course, ...fields };
+                const response = await apiClient.post(`/courses/`, payload);
+                const serverData = response.data;
+                
+                // CRITICAL: Replace temporary ID with server ID
+                setCourse(prev => ({ ...prev, ...serverData }));
+                setIsReady(true);
+                setSyncStatus("idle");
             } else {
-                // SUBSEQUENT TIMES: Update the course (PATCH)
-                await syncToBackend(() => apiClient.patch(`/courses/${course.id}`, fields));
+                await syncToBackend(
+                    () => apiClient.patch(`/courses/${course.id}/`, fields),
+                    () => setCourse(previousCourse)
+                );
             }
-            setSyncStatus("idle");
-        } catch (err) {
-            console.error("Failed to create initial course shell", err);
+        } catch (err: any) {
+            console.error("Failed to sync course content", err);
             setSyncStatus("error");
+            setErrorMessage(err?.response?.data?.title?.[0] || err?.response?.data?.message || "Failed to initialize course core records.");
+            setCourse(previousCourse);
         } 
     };
 
@@ -59,6 +82,34 @@ export function useCourseBuilder(initialData: CourseData) {
         } catch (error) {
             console.error("Failed to delete course", error);
             setSyncStatus("error");
+        }
+    };
+
+    const uploadCourseThumbnail = async (file: File) => {
+        setSyncStatus("saving");
+        setUploadProgress(10); // Start progress
+
+        try {
+            const formData = new FormData();
+            formData.append("thumbnail", file);
+            
+            const { data } = await apiClient.patch(`/courses/${course.id}/`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                onUploadProgress: (progressEvent) => {
+                    const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
+                    setUploadProgress(percent);
+                }
+            });
+            
+            setCourse(prev => ({ ...prev, thumbnail: data.thumbnail }));
+            setSyncStatus("idle");
+            setUploadProgress(0);
+            return data.thumbnail;
+        } catch (error) {
+            console.error("Thumbnail upload failed", error);
+            setSyncStatus("error");
+            setUploadProgress(0);
+            throw error;
         }
     };
 
@@ -205,6 +256,7 @@ export function useCourseBuilder(initialData: CourseData) {
     // --- VIDEO & METADATA LOGIC ---
     const uploadVideo = async (moduleId: string, lessonId: string, file: File) => {
         setSyncStatus("saving");
+        setUploadProgress(10);
         
         try {
             // 1. Get Duration Client-Side for instant metadata
@@ -212,12 +264,16 @@ export function useCourseBuilder(initialData: CourseData) {
 
             // 2. Prepare Form Data
             const formData = new FormData();
-            formData.append("video", file);
+            formData.append("video_url", file); // Backend expects video_url for lesson
             formData.append("duration", duration.toString());
 
-            // 3. Upload
+            // 3. Upload with progress
             const { data } = await apiClient.post(`/lessons/${lessonId}/upload`, formData, {
-                headers: { "Content-Type": "multipart/form-data" }
+                headers: { "Content-Type": "multipart/form-data" },
+                onUploadProgress: (progressEvent) => {
+                    const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
+                    setUploadProgress(percent);
+                }
             });
 
             // 4. Update State
@@ -228,16 +284,18 @@ export function useCourseBuilder(initialData: CourseData) {
                         ...m,
                         lessons: m.lessons.map(l => 
                             l.id === lessonId 
-                                ? { ...l, videoUrl: data.url, duration: duration } 
+                                ? { ...l, videoUrl: data.video_url, duration: duration } 
                                 : l
                         )
                     } : m
                 )
             }));
             setSyncStatus("idle");
+            setUploadProgress(0);
         } catch (error) {
             console.error("Upload failed", error);
             setSyncStatus("error");
+            setUploadProgress(0);
         }
     };
 
@@ -293,23 +351,27 @@ export function useCourseBuilder(initialData: CourseData) {
     };
 
     return { 
-        course, 
-        syncStatus,
-        isReady, // New Flag
-        updateCourse,
-        deleteCourse,  // New Function
-        updateModule,
-        updateLesson,
-        reorderLessons,
-        addQuizQuestion, 
-        addModule, 
-        deleteModule, 
-        addLesson, 
-        deleteLesson,
-        uploadVideo,
-        addResource,
-        deleteResource
-    };
+    course, 
+    syncStatus,
+    errorMessage,
+    uploadProgress,
+    isReady, 
+    setErrorMessage, // Allow manual clearing if needed
+    updateCourse,
+    deleteCourse,  
+    uploadCourseThumbnail,
+    updateModule,
+    updateLesson,
+    reorderLessons,
+    addQuizQuestion, 
+    addModule, 
+    deleteModule, 
+    addLesson, 
+    deleteLesson,
+    uploadVideo,
+    addResource,
+    deleteResource
+};
 }
 
 // Utility to get video duration
