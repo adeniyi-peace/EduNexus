@@ -4,30 +4,44 @@ import { BellOff } from "lucide-react";
 import type { NotificationItem, NotificationType } from "~/types/notification";
 import { NotificationHeader } from "~/components/user/notification/NotificationHeader";
 import { NotificationCard } from "~/components/user/notification/NotificationCard";
+import { useEffect } from "react";
+import api from "~/utils/api.client";
 
-// Mock Data Generator
-const MOCK_DATA: NotificationItem[] = [
-    {
-        id: "1", type: "mention", title: "New Reply", message: "Hey! I think you missed the dependency array in that useEffect hook example.",
-        timestamp: new Date(Date.now() - 1000 * 60 * 5), isRead: false, link: "/discussion/123",
-        actor: { id: "u1", name: "Sarah Dev", role: "student", avatar: "https://i.pravatar.cc/150?u=sarah" }
-    },
-    {
-        id: "2", type: "grade", title: "Assignment Graded", message: "Great job on the API integration task!",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), isRead: false, link: "/assignments/456",
-        meta: { grade: 92, courseName: "Advanced Node.js" },
-        actor: { id: "sys", name: "AutoGrader", role: "system" }
-    },
-    {
-        id: "3", type: "course_update", title: "New Module Released", message: "Module 4: Server Components is now live.",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), isRead: true, link: "/course/nextjs-mastery",
-        actor: { id: "i1", name: "Instructor Alex", role: "instructor", avatar: "https://i.pravatar.cc/150?u=alex" }
+// Data transformer to match NotificationItem interface
+const transformNotification = (data: any): NotificationItem => ({
+    id: String(data.id),
+    type: data.type as NotificationType,
+    title: data.title || "Notification",
+    message: data.text || data.message,
+    timestamp: new Date(data.time || data.created_at),
+    isRead: data.is_read,
+    link: data.link || "#",
+    actor: {
+        id: "sys",
+        name: "EduNexus",
+        role: "system"
     }
-];
+});
 
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_DATA);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [filter, setFilter] = useState<NotificationType | 'all'>('all');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const res = await api.get("/users/notifications/");
+                const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
+                setNotifications(data.map(transformNotification));
+            } catch (err) {
+                console.error("Failed to fetch notifications", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchNotifications();
+    }, []);
 
     // Filter Logic
     const filteredNotifications = notifications.filter(n => 
@@ -48,6 +62,14 @@ export default function NotificationsPage() {
     };
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <span className="loading loading-dots loading-lg text-primary"></span>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen">

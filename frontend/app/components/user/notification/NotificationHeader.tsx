@@ -11,9 +11,10 @@ interface HeaderProps {
 export const NotificationHeader = ({ activeFilter, setFilter, onMarkAllRead, unreadCount }: HeaderProps) => {
     const filters = [
         { id: 'all', label: 'All' },
-        { id: 'mention', label: 'Mentions' },
-        { id: 'course_update', label: 'Course Updates' },
-        { id: 'grade', label: 'Grades' },
+        { id: 'mentor_reply', label: 'Mentor Replies' },
+        { id: 'course_update', label: 'Updates' },
+        { id: 'achievement', label: 'Milestones' },
+        { id: 'deadline', label: 'Deadlines' },
     ];
 
     return (

@@ -3,6 +3,12 @@ from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, BaseU
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
@@ -103,3 +109,39 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     
 
+class Notification(models.Model):
+    class NotificationType(models.TextChoices):
+        SYSTEM = "system", _("System")
+        ENROLLMENT = "enrollment", _("Enrollment")
+        COURSE_UPDATE = "course_update", _("Course Update")
+        ACHIEVEMENT = "achievement", _("Achievement")
+        MENTOR_REPLY = "mentor_reply", _("Mentor Reply")
+        DEADLINE = "deadline", _("Deadline")
+
+    # The user who triggered the notification (optional, e.g., an instructor)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_notifications", null=True, blank=True)
+    # The user receiving the notification
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    
+    # Generic relation to link to any model (Course, Lesson, Review, etc.)
+    content_ct = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    content_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey("content_ct", "content_id")
+
+    notification_type = models.CharField(max_length=20, choices=NotificationType.choices)
+    title = models.CharField(max_length=255, blank=True)
+    message = models.TextField()
+    link = models.CharField(max_length=255, blank=True, null=True) # Optional direct link
+    
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes =[
+            models.Index(fields=["-created_at"] ),
+            models.Index(fields=["content_ct", "content_id"] )
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.notification_type} for {self.receiver.email}"

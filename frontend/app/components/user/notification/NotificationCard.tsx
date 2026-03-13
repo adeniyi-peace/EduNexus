@@ -11,10 +11,11 @@ interface NotificationCardProps {
 }
 
 const IconMap = {
-    mention: { icon: MessageCircle, color: "text-blue-500", bg: "bg-blue-500/10" },
+    mentor_reply: { icon: MessageCircle, color: "text-blue-500", bg: "bg-blue-500/10" },
     course_update: { icon: BookOpen, color: "text-purple-500", bg: "bg-purple-500/10" },
-    grade: { icon: GraduationCap, color: "text-green-500", bg: "bg-green-500/10" },
+    achievement: { icon: GraduationCap, color: "text-yellow-500", bg: "bg-yellow-500/10" },
     enrollment: { icon: Bell, color: "text-orange-500", bg: "bg-orange-500/10" },
+    deadline: { icon: ShieldAlert, color: "text-red-500", bg: "bg-red-500/10" },
     system: { icon: ShieldAlert, color: "text-base-content", bg: "bg-base-300" },
 };
 
@@ -93,9 +94,14 @@ export const NotificationCard = ({ notification, onMarkRead, onDelete }: Notific
                             <span className="font-bold text-base-content">{notification.actor.name}: </span>
                             {notification.message}
                         </p>
-                        {notification.type === 'grade' && notification.meta?.grade && (
-                            <div className="mt-2 badge badge-success badge-outline font-bold gap-1">
-                                Score: {notification.meta.grade}%
+                        {notification.type === 'achievement' && (
+                            <div className="mt-2 text-[10px] font-black uppercase tracking-widest text-yellow-500 flex items-center gap-1">
+                                Claim Reward →
+                            </div>
+                        )}
+                        {notification.type === 'mentor_reply' && (
+                            <div className="mt-2 text-xs font-bold text-primary flex items-center gap-1">
+                                Read Reply →
                             </div>
                         )}
                         {notification.type === 'course_update' && (
