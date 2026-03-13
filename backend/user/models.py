@@ -57,6 +57,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         choices=Roles.choices, 
         default=Roles.STUDENT
     )
+
+    @property
+    def xp(self):
+        """Calculates total XP as the sum of points from all earned achievements."""
+        return self.achievements_earned.aggregate(models.Sum('achievement__points'))['achievement__points__sum'] or 0
+
+    @property
+    def fullname(self):
+        return f"{self.first_name} {self.last_name}"
     
     # Add related_name to avoid clashes
     groups = models.ManyToManyField(
@@ -117,6 +126,7 @@ class Notification(models.Model):
         ACHIEVEMENT = "achievement", _("Achievement")
         MENTOR_REPLY = "mentor_reply", _("Mentor Reply")
         DEADLINE = "deadline", _("Deadline")
+        CERTIFICATE = "certificate", _("Certificate")
 
     # The user who triggered the notification (optional, e.g., an instructor)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_notifications", null=True, blank=True)
@@ -145,3 +155,25 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.notification_type} for {self.receiver.email}"
+
+class Achievement(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    icon_name = models.CharField(max_length=50, help_text="Lucide or custom icon name (e.g., 'ShieldCheck')")
+    points = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class UserAchievement(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="achievements_earned")
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name="users_earned")
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'achievement')
+        ordering = ['-earned_at']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.achievement.name}"

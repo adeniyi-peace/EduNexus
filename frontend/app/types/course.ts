@@ -33,7 +33,7 @@ export interface QuizQuestion {
 export interface Resource {
     id: string;
     title: string;
-    url: string; 
+    url: string;
     size: string;
 }
 
@@ -56,12 +56,22 @@ export interface Lesson {
         timeLimit: number; // in minutes
         questions: QuizQuestion[];
     }
-    
+
 }
 
 export interface Module {
     id: string;
     title: string;
     lessons: Lesson[];
-    isOpen: boolean; 
+    isOpen: boolean;
+}
+
+export interface Certificate {
+    id: string;
+    certificate_id: string;
+    course: number;
+    course_name: string;
+    instructor_name: string;
+    student_name: string;
+    issued_at: string;
 }

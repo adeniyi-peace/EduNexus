@@ -15,6 +15,7 @@ export const NotificationHeader = ({ activeFilter, setFilter, onMarkAllRead, unr
         { id: 'course_update', label: 'Updates' },
         { id: 'achievement', label: 'Milestones' },
         { id: 'deadline', label: 'Deadlines' },
+        { id: 'certificate', label: 'Certificates' },
     ];
 
     return (

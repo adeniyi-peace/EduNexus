@@ -43,6 +43,8 @@ export default [
         route("dashboard/courses/:id", "routes/public/courseDetail.tsx", { id: "registered-course" }),
         route("dashboard/community", "routes/dashboard/CommunityHub.tsx"),
         route("/dashboard/achievements", "routes/dashboard/AchievementsPage.tsx"),
+        route("dashboard/certificates", "routes/dashboard/certificates.tsx"),
+
 
         // Shared components with Unique IDs
         route("dashboard/profile", "routes/user/ProfilePage.tsx", { id: "student-profile" }),

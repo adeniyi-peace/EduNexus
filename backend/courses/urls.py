@@ -1,7 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
-from .views import CourseViewSet, ModuleViewSet,LessonViewSet, ResourceViewSet, ReOrderView, WishlistViewSet, ReviewViewSet, NoteViewSet, LessonCompletionView, EnrollmentViewSet
+from .views import (
+    CourseViewSet, ModuleViewSet, LessonViewSet, ResourceViewSet, 
+    ReOrderView, WishlistViewSet, ReviewViewSet, NoteViewSet, 
+    LessonCompletionView, EnrollmentViewSet, CertificateViewSet
+)
 
 # Create a router and register our viewset with it.
 router = routers.DefaultRouter()
@@ -11,6 +15,7 @@ lesson_sub_router = routers.DefaultRouter()
 router.register(r'courses', CourseViewSet, basename='course')
 router.register(r'wishlists', WishlistViewSet, basename='wishlist')
 router.register(r'enrollments', EnrollmentViewSet, basename='enrollment')
+router.register(r'certificates', CertificateViewSet, basename='certificate')
 lesson_router.register(r'modules', ModuleViewSet, basename='module')
 lesson_sub_router.register(r'lessons', LessonViewSet, basename='lesson')
 

@@ -172,3 +172,35 @@ class Note(models.Model):
 
     def __str__(self):
         return f"Note by {self.student.email} on {self.lesson.title}"
+
+
+class CertificateConfig(models.Model):
+    course = models.OneToOneField(Course, related_name='certificate_config', on_delete=models.CASCADE)
+    signatory_name = models.CharField(max_length=255, help_text="Name of the person signing the certificate")
+    signatory_title = models.CharField(max_length=255, help_text="Title of the signatory (e.g., 'Lead Instructor')")
+    signatory_signature = models.ImageField(upload_to='signatures/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Config for {self.course.title}"
+
+class Certificate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    student = models.ForeignKey(User, related_name='certificates', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name='certificates', on_delete=models.CASCADE)
+    certificate_id = models.CharField(max_length=100, unique=True, blank=True)
+    issued_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'course')
+        ordering = ['-issued_at']
+
+    def save(self, *args, **kwargs):
+        if not self.certificate_id:
+            import uuid
+            self.certificate_id = f"CERT-{uuid.uuid4().hex[:12].upper()}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Certificate - {self.student.fullname} - {self.course.title}"
+

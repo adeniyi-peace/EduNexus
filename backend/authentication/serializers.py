@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'email', 'first_name', 'last_name', 
-            'fullname', 'role', 'phone', 'date_joined'
+            'fullname', 'role', 'phone', 'date_joined', 'xp'
         ]
         # Role and Email should generally not be editable via a standard profile update
         read_only_fields = ['role', 'email', 'date_joined']

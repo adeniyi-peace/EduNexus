@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.db.models import Avg
 from authentication.serializers import UserSerializer
-from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist, Note, Progress, Enrollment
+from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist, Note, Progress, Enrollment, Certificate
 
 class ProgressSerializer(serializers.ModelSerializer):
     percentage_complete = serializers.IntegerField(read_only=True)
@@ -218,4 +218,13 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enrollment
         fields = ['id', 'course', 'progress', 'enrolled_at']
+
+class CertificateSerializer(serializers.ModelSerializer):
+    course_name = serializers.CharField(source='course.title', read_only=True)
+    instructor_name = serializers.CharField(source='course.instructor.fullname', read_only=True)
+    student_name = serializers.CharField(source='student.fullname', read_only=True)
+    
+    class Meta:
+        model = Certificate
+        fields = ['id', 'certificate_id', 'course', 'course_name', 'instructor_name', 'student_name', 'issued_at']
     

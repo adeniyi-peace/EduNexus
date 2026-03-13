@@ -1,4 +1,4 @@
-export type NotificationType = 'system' | 'enrollment' | 'course_update' | 'achievement' | 'mentor_reply' | 'deadline';
+export type NotificationType = 'system' | 'enrollment' | 'course_update' | 'achievement' | 'mentor_reply' | 'deadline' | 'certificate';
 
 export interface NotificationActor {
     id: string;

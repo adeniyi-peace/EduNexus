@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
-import { MessageCircle, BookOpen, GraduationCap, Bell, Check, Trash2, ShieldAlert } from "lucide-react";
+import { MessageCircle, BookOpen, GraduationCap, Bell, Check, Trash2, ShieldAlert, FileBadge } from "lucide-react";
 import { Link } from "react-router"; // Use React Router v7 Link
-import type { NotificationItem } from "~/types/notification";
+import type { NotificationItem, NotificationType } from "~/types/notification";
 
 interface NotificationCardProps {
     notification: NotificationItem;
@@ -10,12 +10,13 @@ interface NotificationCardProps {
     onDelete: (id: string) => void;
 }
 
-const IconMap = {
+const IconMap: Record<string, { icon: any, color: string, bg: string }> = {
     mentor_reply: { icon: MessageCircle, color: "text-blue-500", bg: "bg-blue-500/10" },
     course_update: { icon: BookOpen, color: "text-purple-500", bg: "bg-purple-500/10" },
     achievement: { icon: GraduationCap, color: "text-yellow-500", bg: "bg-yellow-500/10" },
     enrollment: { icon: Bell, color: "text-orange-500", bg: "bg-orange-500/10" },
     deadline: { icon: ShieldAlert, color: "text-red-500", bg: "bg-red-500/10" },
+    certificate: { icon: FileBadge, color: "text-green-500", bg: "bg-green-500/10" },
     system: { icon: ShieldAlert, color: "text-base-content", bg: "bg-base-300" },
 };
 
@@ -107,6 +108,11 @@ export const NotificationCard = ({ notification, onMarkRead, onDelete }: Notific
                         {notification.type === 'course_update' && (
                             <div className="mt-2 text-xs font-bold text-primary flex items-center gap-1">
                                 View Content →
+                            </div>
+                        )}
+                        {notification.type === 'certificate' && (
+                            <div className="mt-2 text-xs font-bold text-green-500 flex items-center gap-1">
+                                Download Certificate →
                             </div>
                         )}
                     </Link>

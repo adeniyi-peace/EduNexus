@@ -1,14 +1,16 @@
 from django.shortcuts import render,get_object_or_404
 from rest_framework.generics import GenericAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
+from django.http import FileResponse
 
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
-                          LessonCompletionSerializer, EnrollmentSerializer
+                          LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer
                         )
-from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note
+from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate
 
 @extend_schema_view(
     list=extend_schema(summary="Get all courses", tags=['Courses']),
@@ -281,3 +283,30 @@ class EnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
         if self.request.user.is_authenticated:
             return Enrollment.objects.filter(student=self.request.user)
         return Enrollment.objects.none()
+
+@extend_schema_view(
+    list=extend_schema(summary="List user certificates", tags=['Students']),
+    retrieve=extend_schema(summary="Get certificate details", tags=['Students']),
+    download=extend_schema(summary="Download certificate", tags=['Students']),
+)
+class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = CertificateSerializer
+
+    def get_queryset(self):
+        # Users can only see their own certificates
+        if self.request.user.is_authenticated:
+            return Certificate.objects.filter(student=self.request.user)
+        return Certificate.objects.none()
+
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        certificate = self.get_object()
+        from .utils import generate_certificate_pdf
+        
+        buffer = generate_certificate_pdf(certificate)
+        
+        return FileResponse(
+            buffer, 
+            as_attachment=True, 
+            filename=f"Certificate_{certificate.certificate_id}.pdf"
+        )
