@@ -1,162 +1,227 @@
 import { 
-    TrendingUp, 
-    Users, 
-    Star, 
-    DollarSign, 
-    ArrowUpRight, 
-    ArrowDownRight,
-    Activity,
-    BookOpen
+    Plus, 
+    MessageSquare, 
+    BookOpen, 
+    Award, 
+    Clock, 
+    ChevronRight, 
+    MoreVertical,
+    Zap,
+    Users,
+    DollarSign
 } from "lucide-react";
+import { useLoaderData, type ClientLoaderFunctionArgs } from "react-router";
+import api from "~/utils/api.client";
+
+interface DashboardData {
+    quickStats: {
+        label: string;
+        value: string;
+        icon: string;
+        color: string;
+    }[];
+    myCourses: {
+        id: string;
+        title: string;
+        status: string;
+        progress: number;
+        students: number;
+        revenue: string;
+    }[];
+    activityFeed: {
+        id: string;
+        user: string;
+        action: string;
+        target: string;
+        time: string;
+    }[];
+    instructorName: string;
+}
+
+export async function clientLoader({ }: ClientLoaderFunctionArgs) {
+    try {
+        // Updated URL to move to 'user' app context
+        const response = await api.get("/user/instructor/dashboard/");
+        return response.data as DashboardData;
+    } catch (error) {
+        console.error("Dashboard loader error:", error);
+        // Return a shape that won't crash the UI even on failure
+        return {
+            quickStats: [],
+            myCourses: [],
+            activityFeed: [],
+            instructorName: "Instructor"
+        } as DashboardData;
+    }
+}
+
+const IconMap: Record<string, React.ReactNode> = {
+    DollarSign: <DollarSign size={18} />,
+    Users: <Users size={18} />,
+    Zap: <Zap size={18} />,
+};
 
 export default function CMSDashboard() {
-    // Mock data for the high-level metrics
-    const stats = [
-        { 
-            label: "Total Revenue", 
-            value: "$42,850.12", 
-            trend: "+12.5%", 
-            isPositive: true, 
-            icon: <DollarSign size={24} />,
-            color: "text-success" // Using semantic status color
-        },
-        { 
-            label: "Active Students", 
-            value: "1,248", 
-            trend: "+8.2%", 
-            isPositive: true, 
-            icon: <Users size={24} />,
-            color: "text-primary"
-        },
-        { 
-            label: "Avg. Course Rating", 
-            value: "4.85", 
-            trend: "-0.2%", 
-            isPositive: false, 
-            icon: <Star size={24} />,
-            color: "text-warning"
-        }
-    ];
-
-    const topCourses = [
-        { id: "NX-01", title: "Advanced Distributed Systems", students: 450, revenue: "$12,400", rating: 4.9 },
-        { id: "NX-02", title: "Cloud Architecture Masterclass", students: 380, revenue: "$9,500", rating: 4.8 },
-        { id: "NX-03", title: "Next.js 15: Deep Dive", students: 210, revenue: "$5,200", rating: 4.7 },
-    ];
+    const data = useLoaderData<DashboardData>();
+    
+    // Safeguard against missing data
+    const quickStats = data?.quickStats || [];
+    const myCourses = data?.myCourses || [];
+    const activityFeed = data?.activityFeed || [];
+    const instructorName = data?.instructorName || "Instructor";
 
     return (
-        <div className="space-y-8 p-4 lg:p-8 animate-in fade-in duration-700">
-            {/* --- HEADER --- */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-10 p-4 lg:p-8 animate-in fade-in slide-in-from-top-4 duration-700">
+            
+            {/* --- HERO SECTION --- */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tighter italic uppercase text-base-content">
-                        Control_<span className="text-primary">Center</span>
+                    <h1 className="text-4xl font-black tracking-tight text-base-content">
+                        Instructor_<span className="text-primary">Workspace</span>
                     </h1>
-                    <p className="text-base-content/40 font-mono text-xs mt-1 uppercase tracking-widest">
-                        System Status: <span className="text-success">Optimal</span> // Data Sync: Realtime
+                    <p className="text-sm opacity-50 mt-1 font-medium italic">
+                        Good morning, {instructorName}. Your courses are performing <span className="text-success font-bold">above average</span> this week.
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <select className="select select-sm bg-base-200 border-base-content/10 rounded-xl text-[10px] font-black uppercase focus:outline-none focus:border-primary">
-                        <option>Last 30 Days</option>
-                        <option>Last 90 Days</option>
-                        <option>All Time</option>
-                    </select>
-                    <button className="btn btn-sm btn-primary rounded-xl text-[10px] font-black uppercase px-4 shadow-lg shadow-primary/20">
-                        Export Report
+                <div className="flex items-center gap-3">
+                    <button className="btn btn-primary rounded-2xl shadow-xl shadow-primary/20 px-6 gap-2">
+                        <Plus size={18} />
+                        <span>Create New Course</span>
                     </button>
                 </div>
             </div>
 
-            {/* --- TOP LEVEL METRICS --- */}
+            {/* --- QUICK KPI GRID --- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {stats.map((stat, i) => (
-                    <div 
-                        key={i} 
-                        className="bg-base-200 border border-base-content/5 rounded-4xl p-8 relative overflow-hidden group hover:border-primary/30 transition-all duration-300"
-                    >
-                        <div className={`absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity ${stat.color}`}>
-                            {stat.icon}
+                {quickStats.map((stat, i) => (
+                    <div key={i} className="bg-base-200 border border-base-content/5 rounded-3xl p-6 flex items-center gap-5 hover:border-primary/20 transition-all cursor-default group">
+                        <div className={`p-4 rounded-2xl ${stat.color} group-hover:scale-110 transition-transform`}>
+                            {IconMap[stat.icon] || <Zap size={18} />}
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-base-content/40 mb-2">
-                            {stat.label}
-                        </p>
-                        <div className="flex items-end gap-3">
-                            <h2 className="text-3xl font-bold tracking-tight text-base-content">
-                                {stat.value}
-                            </h2>
-                            <div className={`flex items-center text-[10px] font-black px-2 py-1 rounded-lg mb-1 ${
-                                stat.isPositive ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-                            }`}>
-                                {stat.isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                                {stat.trend}
-                            </div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-0.5">{stat.label}</p>
+                            <h2 className="text-2xl font-bold">{stat.value}</h2>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* --- MAIN ANALYTICS GRID --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* --- MAIN WORKSPACE GRID --- */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 
-                {/* Performance Chart Placeholder */}
-                <div className="lg:col-span-2 bg-base-200 border border-base-content/5 rounded-[2.5rem] p-8 min-h-100 flex flex-col">
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-3">
-                            <Activity className="text-primary" size={20} />
-                            <h3 className="font-black text-sm uppercase tracking-widest italic text-base-content">Revenue_Flow</h3>
-                        </div>
-                        <div className="flex gap-4 text-[10px] font-black uppercase opacity-40">
-                            <span className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--p),0.5)]"/> Current
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-base-content/20"/> Previous
-                            </span>
-                        </div>
+                {/* COURSE MANAGEMENT (Active Work) */}
+                <div className="xl:col-span-2 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
+                            <BookOpen size={20} className="text-primary" />
+                            My_Deployments
+                        </h3>
+                        <button className="btn btn-link btn-xs no-underline font-bold opacity-40 hover:opacity-100">See All Courses</button>
                     </div>
-                    {/* Placeholder content adapting to theme text color */}
-                    <div className="flex-1 border-t border-dashed border-base-content/10 flex items-center justify-center text-base-content/20 italic text-sm font-mono uppercase tracking-tighter">
-                        [ Graph Visualization Node: Active ]
-                    </div>
-                </div>
 
-                {/* Course Leaderboard */}
-                <div className="bg-base-200 border border-base-content/5 rounded-[2.5rem] p-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <BookOpen className="text-primary" size={20} />
-                        <h3 className="font-black text-sm uppercase tracking-widest italic text-base-content">Top_Deployments</h3>
-                    </div>
-                    <div className="space-y-6">
-                        {topCourses.map((course) => (
-                            <div key={course.id} className="flex flex-col gap-2 group">
-                                <div className="flex justify-between items-start">
-                                    <h4 className="text-xs font-bold truncate pr-4 text-base-content group-hover:text-primary transition-colors cursor-pointer uppercase tracking-tight">
-                                        {course.title}
-                                    </h4>
-                                    <span className="text-[10px] font-mono text-base-content/30">{course.id}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {myCourses.map((course) => (
+                            <div key={course.id} className="bg-base-200 border border-base-content/5 rounded-[2rem] p-6 hover:shadow-2xl hover:shadow-primary/5 transition-all group">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${
+                                        course.status === 'Published' || course.status === 'Active' ? 'bg-success/10 text-success' : 'bg-base-300 text-base-content/50'
+                                    }`}>
+                                        {course.status}
+                                    </div>
+                                    <button className="text-base-content/20 hover:text-primary transition-colors">
+                                        <MoreVertical size={16} />
+                                    </button>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {/* Sub-cards using base-300 for depth */}
-                                    <div className="bg-base-300/50 p-2 rounded-xl text-center border border-base-content/5">
-                                        <p className="text-[7px] uppercase font-black opacity-30 text-base-content">Sales</p>
-                                        <p className="text-[10px] font-bold text-base-content">{course.revenue}</p>
+                                <h4 className="font-bold text-base mb-1 group-hover:text-primary transition-colors cursor-pointer">{course.title}</h4>
+                                <p className="text-[10px] font-mono opacity-30 mb-6 uppercase tracking-wider">{course.id}</p>
+                                
+                                <div className="flex items-center justify-between text-[11px] font-black opacity-60 uppercase mb-2">
+                                    <span>Completion Rate</span>
+                                    <span>{course.progress}%</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-base-300 rounded-full overflow-hidden mb-6">
+                                    <div 
+                                        className="h-full bg-primary transition-all duration-1000" 
+                                        style={{ width: `${course.progress}%` }} 
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-base-content/5">
+                                    <div className="text-center">
+                                        <p className="text-[9px] font-bold opacity-30 uppercase">Students</p>
+                                        <p className="font-bold">{course.students.toLocaleString()}</p>
                                     </div>
-                                    <div className="bg-base-300/50 p-2 rounded-xl text-center border border-base-content/5">
-                                        <p className="text-[7px] uppercase font-black opacity-30 text-base-content">Users</p>
-                                        <p className="text-[10px] font-bold text-base-content">{course.students}</p>
-                                    </div>
-                                    <div className="bg-base-300/50 p-2 rounded-xl text-center border border-base-content/5">
-                                        <p className="text-[7px] uppercase font-black opacity-30 text-base-content">Rate</p>
-                                        <p className="text-[10px] font-bold text-warning">{course.rating}</p>
+                                    <div className="text-center">
+                                        <p className="text-[9px] font-bold opacity-30 uppercase">Revenue</p>
+                                        <p className="font-bold">{course.revenue}</p>
                                     </div>
                                 </div>
                             </div>
                         ))}
+                        {myCourses.length === 0 && (
+                            <div className="col-span-full py-12 text-center opacity-30 border-2 border-dashed border-base-content/10 rounded-3xl">
+                                <p className="text-sm font-bold uppercase tracking-widest">No courses found</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* ACTIVITY & TOOLS (The Pulse) */}
+                <div className="space-y-8">
+                    {/* Live Feed */}
+                    <div className="bg-base-200 border border-base-content/5 rounded-[2.5rem] p-8 flex flex-col h-75 lg:h-125">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="font-black text-sm uppercase tracking-widest italic flex items-center gap-2">
+                                <Zap size={16} className="text-warning animate-pulse" />
+                                Student_Pulse
+                            </h3>
+                            <div className="w-2 h-2 rounded-full bg-success animate-ping" />
+                        </div>
+
+                        <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                            {activityFeed.map((item) => (
+                                <div key={item.id} className="flex gap-4 group">
+                                    <div className="w-8 h-8 rounded-xl bg-base-300 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                                        <Clock size={14} className="opacity-40" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs leading-relaxed">
+                                            <span className="font-black text-base-content">{item.user}</span>
+                                            <span className="opacity-50"> {item.action} </span>
+                                            <span className="font-bold text-primary">{item.target}</span>
+                                        </p>
+                                        <p className="text-[10px] font-mono opacity-30 mt-1 uppercase">{item.time}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {activityFeed.length === 0 && (
+                                <p className="text-[10px] text-center opacity-20 uppercase font-black py-10">No recent activity</p>
+                            )}
+                        </div>
+
+                        <button className="mt-8 w-full btn btn-sm btn-ghost rounded-xl text-[10px] font-black uppercase opacity-40 hover:opacity-100">
+                            View All Activity
+                            <ChevronRight size={12} />
+                        </button>
+                    </div>
+
+                    {/* Instructor Toolkit */}
+                    <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8">
+                        <h3 className="font-black text-sm uppercase tracking-widest italic mb-6">Toolkit</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button className="flex flex-col items-center justify-center p-4 rounded-3xl bg-base-100 border border-base-content/5 hover:border-primary/30 transition-all gap-2 group">
+                                <Award className="text-primary group-hover:scale-110 transition-transform" size={20} />
+                                <span className="text-[9px] font-black uppercase opacity-60">Certs</span>
+                            </button>
+                            <button className="flex flex-col items-center justify-center p-4 rounded-3xl bg-base-100 border border-base-content/5 hover:border-primary/30 transition-all gap-2 group">
+                                <Clock className="text-secondary group-hover:scale-110 transition-transform" size={20} />
+                                <span className="text-[9px] font-black uppercase opacity-60">Schedule</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
             </div>
         </div>
     );
-}
+}

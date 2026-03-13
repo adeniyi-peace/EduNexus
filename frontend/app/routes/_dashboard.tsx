@@ -125,7 +125,7 @@ export default function DashboardLayout() {
     );
 
     return (
-        // <ProtectedRoute allowedRoles={["student"]}>
+        <ProtectedRoute allowedRoles={["student"]}>
         <div className="drawer lg:drawer-open min-h-screen bg-base-200">
             <input
                 id="sidebar-drawer"
@@ -220,6 +220,6 @@ export default function DashboardLayout() {
                 </div>
             </div>
         </div>
-        // </ProtectedRoute>
+        </ProtectedRoute>
     );
 }

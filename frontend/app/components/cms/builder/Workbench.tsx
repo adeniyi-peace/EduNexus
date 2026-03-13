@@ -24,7 +24,7 @@ export function Workbench({
     // Empty State
     if (!lesson) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-base-100 relative overflow-hidden">
+            <div className="flex-1 flex flex-col items-center justify-center bg-base-100 relative overflow-hidden h-full">
                 <div className="absolute inset-0 opacity-[0.02] pointer-events-none" 
                      style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
                 <div className="relative text-center space-y-4">

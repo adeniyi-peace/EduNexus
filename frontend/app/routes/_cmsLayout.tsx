@@ -110,7 +110,7 @@ export default function CMSLayout() {
     );
 
     return (
-        <ProtectedRoute allowedRoles={["instructor"]}>
+        // <ProtectedRoute allowedRoles={["instructor"]}>
             <div className="drawer lg:drawer-open min-h-screen bg-base-100 text-base-content selection:bg-primary/30">
             <input id="cms-drawer" type="checkbox" className="drawer-toggle" checked={isMobileOpen} onChange={() => setIsMobileOpen(!isMobileOpen)} />
             
@@ -171,6 +171,6 @@ export default function CMSLayout() {
                 </div>
             </div>
             </div>
-        </ProtectedRoute>
+        // </Protected  Route>
     );
 }
