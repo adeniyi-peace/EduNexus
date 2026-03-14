@@ -59,17 +59,20 @@ export function useCourseBuilder(initialData: CourseData) {
                 setCourse(prev => ({ ...prev, ...serverData }));
                 setIsReady(true);
                 setSyncStatus("idle");
+                return serverData;
             } else {
-                await syncToBackend(
+                const response = await syncToBackend(
                     () => apiClient.patch(`/courses/${course.id}/`, fields),
                     () => setCourse(previousCourse)
                 );
+                return response.data;
             }
         } catch (err: any) {
             console.error("Failed to sync course content", err);
             setSyncStatus("error");
             setErrorMessage(err?.response?.data?.title?.[0] || err?.response?.data?.message || "Failed to initialize course core records.");
             setCourse(previousCourse);
+            throw err;
         } 
     };
 
@@ -85,7 +88,12 @@ export function useCourseBuilder(initialData: CourseData) {
         }
     };
 
-    const uploadCourseThumbnail = async (file: File) => {
+    const uploadCourseThumbnail = async (file: File, courseId?: string) => {
+        const targetId = courseId || course.id;
+        if (targetId === "new-course") {
+            throw new Error("Cannot upload thumbnail: Course not initialized");
+        }
+
         setSyncStatus("saving");
         setUploadProgress(10); // Start progress
 
@@ -93,7 +101,7 @@ export function useCourseBuilder(initialData: CourseData) {
             const formData = new FormData();
             formData.append("thumbnail", file);
             
-            const { data } = await apiClient.patch(`/courses/${course.id}/`, formData, {
+            const { data } = await apiClient.patch(`/courses/${targetId}/`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 onUploadProgress: (progressEvent) => {
                     const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
@@ -116,18 +124,21 @@ export function useCourseBuilder(initialData: CourseData) {
 
     // --- MODULE ACTIONS ---
     const addModule = async () => {
-        const newModule: Module = {
-            id: `mod-${uuidv4()}`,
-            title: "New Section",
-            lessons: [],
-            isOpen: true
-        };
+        setErrorMessage(null);
+        try {
+            // 1. Create on backend first (or let backend handle creation)
+            const response = await syncToBackend(() => 
+                apiClient.post(`/courses/${course.id}/modules`, { title: "New Section" })
+            );
+            const newModule = response.data;
 
-        setCourse(prev => ({ ...prev, modules: [...prev.modules, newModule] }));
-        
-        await syncToBackend(() => 
-            apiClient.post(`/courses/${course.id}/modules`, newModule)
-        );
+            // 2. Update state with server ID
+            setCourse(prev => ({ ...prev, modules: [...prev.modules, newModule] }));
+            return newModule;
+        } catch (err: any) {
+            setErrorMessage("Failed to create new module.");
+            throw err;
+        }
     };
 
     const deleteModule = async (moduleId: string) => {
@@ -155,32 +166,34 @@ export function useCourseBuilder(initialData: CourseData) {
     // --- 3. LESSON UPDATES (Renaming, Content, Quiz Data) ---
     // --- LESSON ACTIONS ---
     const addLesson = async (moduleId: string, type: "video" | "article" | "quiz") => {
-        
+        setErrorMessage(null);
         // dynamic title based on type
         let defaultTitle = "Untitled Content";
         if (type === "video") defaultTitle = "Untitled Video";
         if (type === "article") defaultTitle = "Untitled Article";
         if (type === "quiz") defaultTitle = "Untitled Quiz";
 
-        const newLesson: Lesson = {
-            id: `les-${uuidv4()}`,
-            title: defaultTitle,
-            type, // 'video' | 'article' | 'quiz'
-            duration: 0,
-            resources: [],
-            isPublished: false
-        };
+        try {
+            const response = await syncToBackend(() => 
+                apiClient.post(`/modules/${moduleId}/lessons`, { 
+                    title: defaultTitle, 
+                    type,
+                    isPublished: false
+                })
+            );
+            const newLesson = response.data;
 
-        setCourse(prev => ({
-            ...prev,
-            modules: prev.modules.map(m => 
-                m.id === moduleId ? { ...m, lessons: [...m.lessons, newLesson] } : m
-            )
-        }));
-
-        await syncToBackend(() => 
-            apiClient.post(`/modules/${moduleId}/lessons`, newLesson)
-        );
+            setCourse(prev => ({
+                ...prev,
+                modules: prev.modules.map(m => 
+                    m.id === moduleId ? { ...m, lessons: [...m.lessons, newLesson] } : m
+                )
+            }));
+            return newLesson;
+        } catch (err: any) {
+            setErrorMessage("Failed to create new lesson.");
+            throw err;
+        }
     };
 
     const deleteLesson = async (moduleId: string, lessonId: string) => {
@@ -199,6 +212,7 @@ export function useCourseBuilder(initialData: CourseData) {
     };
 
     const updateLesson = async (moduleId: string, lessonId: string, fields: Partial<Lesson>) => {
+        const previousCourse = { ...course };
         setCourse(prev => ({
             ...prev,
             modules: prev.modules.map(m => 
@@ -208,7 +222,11 @@ export function useCourseBuilder(initialData: CourseData) {
                 } : m
             )
         }));
-        await syncToBackend(() => apiClient.patch(`/lessons/${lessonId}`, fields));
+        const response = await syncToBackend(
+            () => apiClient.patch(`/lessons/${lessonId}`, fields),
+            () => setCourse(previousCourse)
+        );
+        return response.data;
     };
 
     // --- 4. REORDERING ---
@@ -229,27 +247,44 @@ export function useCourseBuilder(initialData: CourseData) {
     };
 
     // --- QUIZ SPECIFIC HELPERS ---
-    const addQuizQuestion = (moduleId: string, lessonId: string) => {
-        const newQuestion: QuizQuestion = {
-            id: uuidv4(),
-            text: "New Question",
-            options: [
-                { text: "Option A", isCorrect: true },
-                { text: "Option B", isCorrect: false }
-            ]
-        };
-
-        // Find current lesson to get existing questions
+    const addQuizQuestion = async (moduleId: string, lessonId: string) => {
         const module = course.modules.find(m => m.id === moduleId);
         const lesson = module?.lessons.find(l => l.id === lessonId);
         const currentQuestions = lesson?.quizConfig?.questions || [];
 
-        updateLesson(moduleId, lessonId, {
-            quizConfig: {
-                timeLimit: lesson?.quizConfig?.timeLimit || 10,
-                questions: [...currentQuestions, newQuestion]
-            }
-        });
+        const newQuestionPayload = {
+            text: "New Question",
+            options: [
+                { text: "Option A", isCorrect: true },
+                { text: "Option B", isCorrect: false },
+                { text: "Option C", isCorrect: false },
+                { text: "Option D", isCorrect: false }
+            ]
+        };
+
+        try {
+            // We send the update to the lesson, and the backend should return the new lesson with the added question (and its ID)
+            const updatedLesson = await updateLesson(moduleId, lessonId, {
+                quizConfig: {
+                    timeLimit: lesson?.quizConfig?.timeLimit || 10,
+                    questions: [...currentQuestions, newQuestionPayload as any]
+                }
+            });
+
+            // The updateLesson already sets the course state, but we might want to ensure 
+            // the returned lesson from server (with IDs) is what we have in state.
+            setCourse(prev => ({
+                ...prev,
+                modules: prev.modules.map(m => 
+                    m.id === moduleId ? {
+                        ...m,
+                        lessons: m.lessons.map(l => l.id === lessonId ? updatedLesson : l)
+                    } : m
+                )
+            }));
+        } catch (err) {
+            console.error("Failed to add quiz question", err);
+        }
     };
 
 
@@ -301,33 +336,33 @@ export function useCourseBuilder(initialData: CourseData) {
 
     // --- RESOURCE (DOCUMENT) ACTIONS ---
     const addResource = async (moduleId: string, lessonId: string, file: File) => {
-        const tempId = uuidv4();
-        const newResource: Resource = {
-            id: `res-${tempId}`,
-            title: file.name,
-            url: URL.createObjectURL(file), 
-            size: (file.size / 1024 / 1024).toFixed(2) + " MB"
-        };
-
-        // Optimistic UI update
-        setCourse(prev => ({
-            ...prev,
-            modules: prev.modules.map(m => 
-                m.id === moduleId ? {
-                    ...m,
-                    lessons: m.lessons.map(l => 
-                        l.id === lessonId ? { ...l, resources: [...l.resources, newResource] } : l
-                    )
-                } : m
-            )
-        }));
-
+        setErrorMessage(null);
+        setSyncStatus("saving");
         const formData = new FormData();
         formData.append("file", file);
 
-        await syncToBackend(() => 
-            apiClient.post(`/lessons/${lessonId}/resources`, formData)
-        );
+        try {
+            const response = await apiClient.post(`/lessons/${lessonId}/resources`, formData);
+            const newResource = response.data;
+
+            setCourse(prev => ({
+                ...prev,
+                modules: prev.modules.map(m => 
+                    m.id === moduleId ? {
+                        ...m,
+                        lessons: m.lessons.map(l => 
+                            l.id === lessonId ? { ...l, resources: [...l.resources, newResource] } : l
+                        )
+                    } : m
+                )
+            }));
+            setSyncStatus("idle");
+            return newResource;
+        } catch (err: any) {
+            setSyncStatus("error");
+            setErrorMessage("Resource upload failed.");
+            throw err;
+        }
     };
 
     const deleteResource = async (moduleId: string, lessonId: string, resourceId: string) => {

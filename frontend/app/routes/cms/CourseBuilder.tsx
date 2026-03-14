@@ -91,31 +91,45 @@ export default function CourseBuilderLayout() {
     };
 
     const handleSaveSettings = async () => {
-        let finalThumbnail = draftSettings.thumbnail;
+        try {
+            // 1. Initialize course or update core fields first. 
+            // We need the server-assigned ID for thumbnail upload if it's new.
+            const updatedCourse = await updateCourse({
+                title: draftSettings.title,
+                price: draftSettings.price,
+                difficulty: draftSettings.difficulty,
+                description: draftSettings.description,
+                category: draftSettings.category,
+                language: draftSettings.language,
+                status: draftSettings.status,
+            });
 
-        // Upload thumbnail if a new file was selected
-        if (draftSettings.thumbnailFile) {
-            try {
-                finalThumbnail = await uploadCourseThumbnail(draftSettings.thumbnailFile);
-            } catch (err) {
-                console.error("Failed to upload thumbnail", err);
-                // We'll continue with the rest of the update even if upload fails
+            const courseId = updatedCourse.id;
+            let finalThumbnail = draftSettings.thumbnail;
+
+            // 2. Now upload the thumbnail if a file is selected, using the guaranteed ID
+            if (draftSettings.thumbnailFile) {
+                finalThumbnail = await uploadCourseThumbnail(draftSettings.thumbnailFile, courseId);
             }
-        }
 
-        updateCourse({
-            title: draftSettings.title,
-            price: draftSettings.price,
-            difficulty: draftSettings.difficulty,
-            description: draftSettings.description,
-            category: draftSettings.category,
-            language: draftSettings.language,
-            status: draftSettings.status,
-            thumbnail: finalThumbnail
-        });
-        
-        setDraftSettings(prev => ({ ...prev, thumbnailFile: null }));
-        (document.getElementById('course_settings_modal') as HTMLDialogElement)?.close();
+            // 3. Final sync for the thumbnail URL if it was uploaded
+            if (draftSettings.thumbnailFile) {
+                await updateCourse({ thumbnail: finalThumbnail });
+            }
+
+            setDraftSettings(prev => ({ ...prev, thumbnailFile: null }));
+            
+            // Only close if everything succeeded
+            (document.getElementById('course_settings_modal') as HTMLDialogElement)?.close();
+        } catch (err) {
+            console.error("Critical Save Failure:", err);
+            (document.getElementById('course_settings_modal') as HTMLDialogElement).scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            })
+            // Error is already handled/set in useCourseBuilder, 
+            // the modal will stay open so the user can see the errorMessage prop.
+        }
     };
 
     const handleCancelSettings = () => {
@@ -291,4 +305,4 @@ export default function CourseBuilderLayout() {
             )}
         </div>
     );
-}
+}

@@ -1,5 +1,7 @@
-import { Upload, X, Plus, Trash2, CheckCircle, Clock, FileText, AlignLeft, Play } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Upload, X, Plus, Trash2, Clock, FileText, AlignLeft, Play } from "lucide-react";
 import type { Lesson, Resource, QuizQuestion } from "~/types/course";
+import { QuizQuestionItem } from "./QuizQuestionItem";
 
 interface WorkbenchProps {
     lesson: Lesson | undefined;
@@ -22,6 +24,46 @@ export function Workbench({
     onDeleteResource,
     uploadProgress = 0
 }: WorkbenchProps) {
+    // --- LOCAL DRAFT STATE (For Debouncing) ---
+    const [localTitle, setLocalTitle] = useState(lesson?.title || "");
+    const [localDesc, setLocalDesc] = useState(lesson?.description || "");
+    const [localContent, setLocalContent] = useState(lesson?.content || "");
+
+    // Sync local state when lesson changes (e.g. user selects another lesson)
+    useEffect(() => {
+        if (lesson) {
+            setLocalTitle(lesson.title);
+            setLocalDesc(lesson.description || "");
+            setLocalContent(lesson.content || "");
+        }
+    }, [lesson?.id]);
+
+    // Debounced sync for Title
+    useEffect(() => {
+        if (!lesson || localTitle === lesson.title) return;
+        const timer = setTimeout(() => {
+            onUpdateLesson(moduleId, lesson.id, { title: localTitle });
+        }, 800);
+        return () => clearTimeout(timer);
+    }, [localTitle, moduleId, lesson?.id]);
+
+    // Debounced sync for Description
+    useEffect(() => {
+        if (!lesson || localDesc === (lesson.description || "")) return;
+        const timer = setTimeout(() => {
+            onUpdateLesson(moduleId, lesson.id, { description: localDesc });
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [localDesc, moduleId, lesson?.id]);
+
+    // Debounced sync for Article Content
+    useEffect(() => {
+        if (!lesson || localContent === (lesson.content || "")) return;
+        const timer = setTimeout(() => {
+            onUpdateLesson(moduleId, lesson.id, { content: localContent });
+        }, 1200); 
+        return () => clearTimeout(timer);
+    }, [localContent, moduleId, lesson?.id]);
 
     // Empty State
     if (!lesson) {
@@ -62,8 +104,8 @@ export function Workbench({
                 <div className="flex items-center gap-4 flex-1">
                     <input 
                         className="text-sm font-black bg-transparent border-none focus:outline-none w-full placeholder:opacity-10  "
-                        value={lesson.title}
-                        onChange={(e) => onUpdateLesson(moduleId, lesson.id, { title: e.target.value })}
+                        value={localTitle}
+                        onChange={(e) => setLocalTitle(e.target.value)}
                         placeholder="UNTITLED_LESSON_NODE..."
                     />
                     <div className="badge badge-outline border-primary/20 text-primary text-[9px] font-mono h-5 px-2 uppercase">
@@ -126,8 +168,8 @@ export function Workbench({
                                 <textarea 
                                     className="textarea w-full h-32 bg-transparent border-none focus:ring-0 p-0 text-sm leading-relaxed resize-none placeholder:opacity-20" 
                                     placeholder="Enter descriptive overview for this lesson..."
-                                    value={lesson.description || ""}
-                                    onChange={(e) => onUpdateLesson(moduleId, lesson.id, { description: e.target.value })}
+                                    value={localDesc}
+                                    onChange={(e) => setLocalDesc(e.target.value)}
                                 />
                             </div>
                         </section>
@@ -145,8 +187,8 @@ export function Workbench({
                             <textarea 
                                 className="w-full h-96 bg-base-200/50 border border-base-content/5 rounded-4xl p-6 focus:outline-none focus:border-primary/30 transition-colors font-mono text-sm leading-relaxed"
                                 placeholder="# Write your article content here (Markdown/HTML)..."
-                                value={lesson.content || ""}
-                                onChange={(e) => onUpdateLesson(moduleId, lesson.id, { content: e.target.value })}
+                                value={localContent}
+                                onChange={(e) => setLocalContent(e.target.value)}
                             />
                         </section>
                     )}
@@ -174,50 +216,16 @@ export function Workbench({
 
                             <div className="space-y-4">
                                 {lesson.quizConfig?.questions?.map((q, qIdx) => (
-                                    <div key={q.id} className="bg-base-200/40 p-8 rounded-4xl border border-base-content/5 space-y-6 relative group transition-all hover:border-base-content/10">
-                                        <div className="flex gap-4">
-                                            <span className="font-mono text-xs opacity-20 mt-1">{String(qIdx + 1).padStart(2, '0')}</span>
-                                            <input 
-                                                className="flex-1 bg-transparent font-black text-sm focus:outline-none border-b border-transparent focus:border-primary/20 pb-2 uppercase tracking-tight"
-                                                value={q.text}
-                                                placeholder="ENTER_QUESTION_PROMPT..."
-                                                onChange={(e) => {
-                                                    const newQuestions = [...(lesson.quizConfig?.questions || [])];
-                                                    newQuestions[qIdx].text = e.target.value;
-                                                    onUpdateLesson(moduleId, lesson.id, { quizConfig: { ...lesson.quizConfig!, questions: newQuestions }});
-                                                }}
-                                            />
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-8">
-                                            {q.options.map((opt, oIdx) => (
-                                                <div key={oIdx} className={`
-                                                    flex items-center gap-3 p-3 rounded-xl border transition-all
-                                                    ${opt.isCorrect ? 'bg-success/5 border-success/20' : 'bg-base-300/50 border-transparent hover:border-base-content/10'}
-                                                `}>
-                                                    <button 
-                                                        onClick={() => {
-                                                            const newQuestions = [...(lesson.quizConfig?.questions || [])];
-                                                            newQuestions[qIdx].options.forEach((o, i) => o.isCorrect = i === oIdx);
-                                                            onUpdateLesson(moduleId, lesson.id, { quizConfig: { ...lesson.quizConfig!, questions: newQuestions }});
-                                                        }}
-                                                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${opt.isCorrect ? 'border-success bg-success' : 'border-base-content/20'}`}
-                                                    >
-                                                        {opt.isCorrect && <CheckCircle size={12} className="text-white" />}
-                                                    </button>
-                                                    <input 
-                                                        className="flex-1 bg-transparent text-xs focus:outline-none font-medium"
-                                                        value={opt.text}
-                                                        onChange={(e) => {
-                                                            const newQuestions = [...(lesson.quizConfig?.questions || [])];
-                                                            newQuestions[qIdx].options[oIdx].text = e.target.value;
-                                                            onUpdateLesson(moduleId, lesson.id, { quizConfig: { ...lesson.quizConfig!, questions: newQuestions }});
-                                                        }}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    <QuizQuestionItem 
+                                        key={q.id}
+                                        question={q}
+                                        index={qIdx}
+                                        onUpdate={(updatedQuestion) => {
+                                            const newQuestions = [...(lesson.quizConfig?.questions || [])];
+                                            newQuestions[qIdx] = updatedQuestion;
+                                            onUpdateLesson(moduleId, lesson.id, { quizConfig: { ...lesson.quizConfig!, questions: newQuestions }});
+                                        }}
+                                    />
                                 ))}
                             </div>
 
