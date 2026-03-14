@@ -60,7 +60,7 @@ export default function WishlistPage() {
                             className="relative group animate-in zoom-in-95 duration-500 fill-mode-both"
                             style={{ animationDelay: `${idx * 50}ms` }}
                         >
-                            <CourseCard {...item.course_details} />
+                            <CourseCard course={item.course_details} />
                             <button
                                 onClick={() => removeFromWishlist(item.id)}
                                 className="absolute top-4 right-4 z-10 btn btn-circle btn-sm bg-base-100/80 backdrop-blur-md border-none shadow-lg text-error hover:bg-error hover:text-white transition-all transform group-hover:scale-110"

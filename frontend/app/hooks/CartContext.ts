@@ -40,7 +40,12 @@ export const useCart = create<CartState>()(
 
             getTotalPrice: () => {
                 const { cart } = get();
-                return cart.reduce((sum, item) => sum + item.price, 0);
+                return cart.reduce((sum, item) => {
+                    const price = typeof (item.price as any) === "string" 
+                        ? parseFloat((item.price as any).replace(/[^\d.]/g, "")) 
+                        : (item.price || 0);
+                    return sum + (isNaN(price) ? 0 : price);
+                }, 0);
             },
         }),
         {

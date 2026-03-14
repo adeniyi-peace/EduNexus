@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect, useRef } from "react";
 import { Trash2, ImagePlus } from "lucide-react";
 import type { CourseData } from "~/types/course";
 
@@ -40,9 +40,17 @@ export function SettingsModal({
     onDeleteConfirmTextChange,
     error
 }: SettingsModalProps) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (error && scrollRef.current) {
+            scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [error]);
+
     return (
         <dialog id="course_settings_modal" className="modal modal-bottom sm:modal-middle backdrop-blur-sm">
-            <div className="modal-box bg-base-100 border border-base-content/10 max-w-2xl p-8 rounded-4xl">
+            <div ref={scrollRef} className="modal-box bg-base-100 border border-base-content/10 max-w-2xl p-8 rounded-4xl custom-scrollbar">
                 <h3 className="font-black text-xl mb-6 italic uppercase tracking-tighter">Course_Settings</h3>
                 
                 {error && (
@@ -120,7 +128,7 @@ export function SettingsModal({
                                 onChange={(e) => onDraftChange({ category: e.target.value })} 
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             <div className="form-control">
                                 <label className="label py-1">
                                     <span className="label-text text-[10px] opacity-40 uppercase font-black tracking-widest">Difficulty</span>
@@ -133,20 +141,6 @@ export function SettingsModal({
                                     <option value="Beginner">Beginner</option>
                                     <option value="Intermediate">Intermediate</option>
                                     <option value="Advanced">Advanced</option>
-                                </select>
-                            </div>
-                            <div className="form-control">
-                                <label className="label py-1">
-                                    <span className="label-text text-[10px] opacity-40 uppercase font-black tracking-widest">Status</span>
-                                </label>
-                                <select 
-                                    className="select select-bordered w-full bg-base-200 border-none font-bold"
-                                    value={draftSettings.status}
-                                    onChange={(e) => onDraftChange({ status: e.target.value as any })}
-                                >
-                                    <option value="Draft">Draft</option>
-                                    <option value="Published">Published</option>
-                                    <option value="Archived">Archived</option>
                                 </select>
                             </div>
                         </div>

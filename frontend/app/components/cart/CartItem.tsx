@@ -24,7 +24,9 @@ export const CartItem = ({ course }: { course: CourseData }) => {
 
             {/* Price & Action */}
             <div className="flex sm:flex-col justify-between items-end gap-2">
-                <p className="text-xl font-black text-secondary">${course.price}</p>
+                <p className="text-xl font-black text-secondary">
+                    {(course.price as any)?.toString().startsWith('$') ? course.price : `$${course.price}`}
+                </p>
                 <button 
                     onClick={() => removeFromCart(course.id)}
                     className="btn btn-ghost btn-circle btn-sm text-error hover:bg-error/10"

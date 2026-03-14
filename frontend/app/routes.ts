@@ -55,10 +55,11 @@ export default [
     // --- CMS (INSTRUCTOR) DASHBOARD ---
     layout("routes/_cmsLayout.tsx", [
         route("/cms", "routes/cms/CMSDashboard.tsx"),
-        route("/cms/builder", "routes/cms/CourseBuilder.tsx"),
+        route("/cms/builder/:id?", "routes/cms/CourseBuilder.tsx"),
         route("/cms/library", "routes/cms/AssetLibrary.tsx"),
         route("/cms/students", "routes/cms/GlobalStudentDirectory.tsx"),
-        route("/cms/course/students", "routes/cms/CourseStudentManager.tsx"),
+        route("/cms/course/:id/students", "routes/cms/CourseStudentManager.tsx"),
+        route("/cms/course/:id/analytics", "routes/cms/CourseAnalyticsPage.tsx"),
         route("/cms/analytics", "routes/cms/InstructorAnalyticsPage.tsx"),
 
         // Shared components with Unique IDs

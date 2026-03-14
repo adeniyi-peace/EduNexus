@@ -81,7 +81,7 @@ export default function CoursesPage() {
                                 className="animate-in zoom-in-95 duration-500 fill-mode-both"
                                 style={{ animationDelay: `${idx * 50}ms` }}
                             >
-                                <CourseCard {...course} />
+                                <CourseCard course={course as any} />
                             </div>
                         ))}
                     </div>

@@ -40,7 +40,7 @@ class Course(models.Model):
     category = models.ForeignKey(Category, related_name="courses", on_delete=models.CASCADE)
     language = models.CharField(max_length=50, default='English')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICE, default=DIFFICULTY_CHOICE[0][0])
-    status = models.CharField( max_length=50, choices=STATUS)
+    status = models.CharField( max_length=50, choices=STATUS, default=STATUS[1][0])
     lastUpdated = models.DateTimeField(auto_now=True, auto_now_add=False)
     created_at = models.DateTimeField( auto_now=False, auto_now_add=True)
 

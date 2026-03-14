@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import apiClient from "~/utils/api.client";
 import type { CourseData, Module, Lesson, Resource, QuizQuestion } from "~/types/course";
 import { v4 as uuidv4 } from "uuid";
@@ -40,6 +40,21 @@ export function useCourseBuilder(initialData: CourseData) {
             throw error;
         }
     };
+
+    const loadCourse = useCallback(async (courseId: string) => {
+        if (!courseId) return;
+        setSyncStatus("initializing");
+        try {
+            const response = await apiClient.get(`/courses/${courseId}/`);
+            setCourse(response.data);
+            setIsReady(true);
+            setSyncStatus("idle");
+        } catch (error) {
+            console.error("Failed to load course", error);
+            setSyncStatus("error");
+            setErrorMessage("Failed to load course data.");
+        }
+    }, []);
 
     // --- COURSE ACTIONS ---  COURSE UPDATES (Title, Price, etc.)
     const updateCourse = async (fields: Partial<CourseData>) => {
@@ -392,6 +407,7 @@ export function useCourseBuilder(initialData: CourseData) {
     uploadProgress,
     isReady, 
     setErrorMessage, // Allow manual clearing if needed
+    loadCourse,
     updateCourse,
     deleteCourse,  
     uploadCourseThumbnail,

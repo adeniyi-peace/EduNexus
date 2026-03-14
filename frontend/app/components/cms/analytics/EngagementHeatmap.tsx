@@ -1,10 +1,10 @@
 import { Tooltip, ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis } from 'recharts';
 
 const data = [
-  { hour: 'Morning', day: 'Mon', value: 10 }, { hour: 'Afternoon', day: 'Mon', value: 60 }, { hour: 'Evening', day: 'Mon', value: 30 },
-  { hour: 'Morning', day: 'Tue', value: 20 }, { hour: 'Afternoon', day: 'Tue', value: 50 }, { hour: 'Evening', day: 'Tue', value: 80 },
-  { hour: 'Morning', day: 'Wed', value: 15 }, { hour: 'Afternoon', day: 'Wed', value: 70 }, { hour: 'Evening', day: 'Wed', value: 40 },
-  // ... more mock data would actally go here
+    { hour: 'Morning', day: 'Mon', value: 10 }, { hour: 'Afternoon', day: 'Mon', value: 60 }, { hour: 'Evening', day: 'Mon', value: 30 },
+    { hour: 'Morning', day: 'Tue', value: 20 }, { hour: 'Afternoon', day: 'Tue', value: 50 }, { hour: 'Evening', day: 'Tue', value: 80 },
+    { hour: 'Morning', day: 'Wed', value: 15 }, { hour: 'Afternoon', day: 'Wed', value: 70 }, { hour: 'Evening', day: 'Wed', value: 40 },
+    // ... more mock data would actally go here
 ];
 
 export const EngagementHeatmap = () => {

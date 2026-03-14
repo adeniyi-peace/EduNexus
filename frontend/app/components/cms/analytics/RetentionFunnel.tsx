@@ -25,16 +25,16 @@ export const RetentionFunnel = () => {
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={funnelData} layout="vertical" margin={{ left: 20 }}>
                         <XAxis type="number" hide />
-                        <YAxis 
-                            dataKey="stage" 
-                            type="category" 
-                            width={80} 
-                            tick={{ fontSize: 11, fontWeight: 'bold' }} 
+                        <YAxis
+                            dataKey="stage"
+                            type="category"
+                            width={80}
+                            tick={{ fontSize: 11, fontWeight: 'bold' }}
                             axisLine={false}
                             tickLine={false}
                         />
-                        <Tooltip 
-                            cursor={{fill: 'transparent'}}
+                        <Tooltip
+                            cursor={{ fill: 'transparent' }}
                             content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                     return (

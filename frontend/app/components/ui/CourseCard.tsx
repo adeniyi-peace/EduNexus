@@ -1,39 +1,45 @@
 import { Link } from "react-router";
 import { Edit3, Trash2, MoreVertical, ShoppingCart, Check } from "lucide-react";
-import type { Course as MockCourse } from "~/utils/mockData";
-import type { Dispatch, SetStateAction } from "react";
 import type { CourseData } from "~/types/course";
-import { useCart } from "~/hooks/CartContext"; // Import your new Zustand store
+import { useCart } from "~/hooks/CartContext";
 
-interface CourseCardProps extends MockCourse {
+interface CourseCardProps {
+    course: CourseData;
     isInstructorView?: boolean;
     onEdit?: (id: string) => void;
-    onDelete?: (id: string) => void;
-    status?: 'Published' | 'Draft' | 'Archived';
+    onDelete?: (course: CourseData) => void;
 }
 
 export function CourseCard({ 
-    id, title, instructor, thumbnail, category, price, rating, duration, level, isEnrolled,
-    isInstructorView = false, onEdit, onDelete, status = 'Published'
+    course,
+    isInstructorView = false, onEdit, onDelete
 }: CourseCardProps) {
+    const { 
+        id, 
+        title, 
+        instructor, 
+        thumbnail = "https://placehold.co/600x400/2a323c/a6adbb?text=Course", 
+        category = "General", 
+        price = 0, 
+        rating = 0, 
+        duration = "0h", 
+        difficulty = "Beginner", 
+        isEnrolled,
+        status = "Published"
+    } = course;
+
     // 1. Hook into the Zustand store
     const { cart, addToCart } = useCart();
     
     // 2. Check if this specific course is already in the cart
-    const isInCart = cart.some((item) => item.id === id);
+    const isInCart = cart.some((item: CourseData) => item.id === id);
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         
-        // Match the data structure expected by your Store
-        addToCart({
-            id,
-            title,
-            instructor,
-            price: typeof price === 'string' ? parseFloat(price.replace('$', '')) : price,
-            image: thumbnail
-        });
+        // Pass the full course object as expected by the store
+        addToCart(course);
     };
 
     return (
@@ -85,10 +91,10 @@ export function CourseCard({
                 
                 <div className="flex items-center gap-2 mt-2">
                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border 
-                        ${level === 'Beginner' ? 'border-success text-success' : 
-                          level === 'Intermediate' ? 'border-warning text-warning' : 
+                        ${difficulty === 'Beginner' ? 'border-success text-success' : 
+                          difficulty === 'Intermediate' ? 'border-warning text-warning' : 
                           'border-error text-error'}`}>
-                        {level}
+                        {difficulty}
                     </span>
                     <span className="text-xs text-base-content/40 font-bold italic">
                         By {instructor}
@@ -110,13 +116,21 @@ export function CourseCard({
                                 <button tabIndex={0} className="btn btn-ghost btn-sm btn-square rounded-xl border border-base-content/10">
                                     <MoreVertical size={16} />
                                 </button>
-                                <ul tabIndex={0} className="dropdown-content z-50 menu p-2 shadow-2xl bg-base-100 rounded-box w-40 border border-base-content/5">
-                                    <li><a className="text-xs font-bold">View Analytics</a></li>
-                                    <li><a className="text-xs font-bold">Manage Students</a></li>
+                                <ul tabIndex={0} className="dropdown-content z-50 menu p-2 shadow-2xl bg-base-100 rounded-box w-48 border border-base-content/5">
+                                    <li>
+                                        <Link to={`/cms/course/${id}/analytics`} className="text-xs font-bold">
+                                            View Analytics
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link to={`/cms/course/${id}/students`} className="text-xs font-bold">
+                                            Manage Students
+                                        </Link>
+                                    </li>
                                     <li><div className="divider my-0 opacity-10"></div></li>
                                     <li>
                                         <button 
-                                            onClick={() => onDelete?.(id.toString())}
+                                            onClick={() => onDelete?.(course)}
                                             className="text-xs font-bold text-error hover:bg-error/10"
                                         >
                                             <Trash2 size={14} /> Delete Course
@@ -140,7 +154,9 @@ export function CourseCard({
                         <div className="flex items-center justify-between w-full">
                             <div className="flex flex-col">
                                 <span className="text-[10px] uppercase opacity-40 font-black tracking-widest">Price</span>
-                                <span className="text-2xl font-black text-base-content">{price}</span>
+                                <span className="text-2xl font-black text-base-content">
+                                    {(price as any)?.toString().startsWith('$') ? price : `$${price}`}
+                                </span>
                             </div>
                             
                             <div className="flex gap-2">

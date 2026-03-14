@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Plus, AlertTriangle, Search } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import type { CourseData } from "~/types/course";
@@ -8,12 +9,13 @@ import { CourseRow } from "~/components/cms/library/CourseRow";
 
 // Mock Data Source
 const MOCK_DATA: CourseData[] = [
-    { id: "1", title: "Complete Python Bootcamp 2026", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=Python", category: "Development", students: 1250, rating: 4.8, status: "Published", lastUpdated: "2d ago", price: 49.99 },
-    { id: "2", title: "Advanced React Patterns", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=React", category: "Frontend", students: 850, rating: 4.9, status: "Draft", lastUpdated: "1w ago", price: 59.99 },
-    { id: "3", title: "UI/UX Design Masterclass", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=UI/UX", category: "Design", students: 0, rating: 0, status: "Archived", lastUpdated: "3mo ago", price: 29.99 },
+    { id: "1", title: "Complete Python Bootcamp 2026", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=Python", category: "Development", students: 1250, rating: 4.8, status: "Published", lastUpdated: "2d ago", price: 49.99, instructor: "Dr. Angela", duration: "25h", modules: [], difficulty: "Beginner" },
+    { id: "2", title: "Advanced React Patterns", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=React", category: "Frontend", students: 850, rating: 4.9, status: "Draft", lastUpdated: "1w ago", price: 59.99, instructor: "Kent C.", duration: "12h", modules: [], difficulty: "Advanced" },
+    { id: "3", title: "UI/UX Design Masterclass", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=UI/UX", category: "Design", students: 0, rating: 0, status: "Archived", lastUpdated: "3mo ago", price: 29.99, instructor: "Gary Simon", duration: "10h", modules: [], difficulty: "Intermediate" },
 ];
 
 export default function InstructorLibrary() {
+    const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [searchQuery, setSearchQuery] = useState("");
     const [courses, setCourses] = useState(MOCK_DATA);
@@ -30,7 +32,7 @@ export default function InstructorLibrary() {
     };
 
     const handleEdit = (id: string) => {
-        console.log(`Maps to /instructor/course/${id}/edit`);
+        navigate(`/cms/builder/${id}`);
     };
 
     // Filter Logic
@@ -47,7 +49,10 @@ export default function InstructorLibrary() {
                     <h1 className="text-3xl font-black tracking-tight text-base-content">Course Library</h1>
                     <p className="text-sm opacity-60 mt-1">Manage your curriculum content and assets.</p>
                 </div>
-                <button className="btn btn-primary gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+                <button 
+                    onClick={() => navigate("/cms/builder")}
+                    className="btn btn-primary gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+                >
                     <Plus size={18} />
                     <span>Create New Course</span>
                 </button>
@@ -78,10 +83,10 @@ export default function InstructorLibrary() {
                         {filteredCourses.map((course) => (
                             <CourseCard 
                                 key={course.id} 
-                                {...course} 
+                                course={course}
                                 onEdit={handleEdit} 
                                 isInstructorView={true}
-                                onDelete={setCourseToDelete} 
+                                onDelete={(course) => setCourseToDelete(course)} 
                             />
                         ))}
                     </div>
@@ -103,7 +108,7 @@ export default function InstructorLibrary() {
                                         key={course.id} 
                                         course={course} 
                                         onEdit={handleEdit} 
-                                        onDelete={setCourseToDelete} 
+                                        onDelete={() => setCourseToDelete(course)} 
                                     />
                                 ))}
                             </tbody>

@@ -22,7 +22,7 @@ export const RevenueChart = () => {
                         <p className="text-xs opacity-50">Income performance over time.</p>
                     </div>
                     <div className="flex items-center gap-2">
-                         <select className="select select-sm select-bordered font-bold text-xs uppercase focus:outline-hidden">
+                        <select className="select select-sm select-bordered font-bold text-xs uppercase focus:outline-hidden">
                             <option>Last 7 Days</option>
                             <option>Last 30 Days</option>
                             <option>This Year</option>
@@ -39,40 +39,40 @@ export const RevenueChart = () => {
                         <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="var(--p)" stopOpacity={0.2}/>
-                                    <stop offset="95%" stopColor="var(--p)" stopOpacity={0}/>
+                                    <stop offset="5%" stopColor="var(--p)" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="var(--p)" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
-                            <XAxis 
-                                dataKey="name" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{fontSize: 12, fill: 'currentColor', opacity: 0.4}} 
+                            <XAxis
+                                dataKey="name"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 12, fill: 'currentColor', opacity: 0.4 }}
                                 dy={10}
                             />
-                            <YAxis 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{fontSize: 12, fill: 'currentColor', opacity: 0.4}} 
+                            <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 12, fill: 'currentColor', opacity: 0.4 }}
                                 tickFormatter={(value) => `$${value}`}
                             />
-                            <Tooltip 
-                                contentStyle={{ 
-                                    backgroundColor: 'var(--b1)', 
-                                    borderRadius: '12px', 
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: 'var(--b1)',
+                                    borderRadius: '12px',
                                     border: '1px solid rgba(0,0,0,0.05)',
-                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' 
+                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                                 }}
                                 cursor={{ stroke: 'var(--p)', strokeWidth: 2, opacity: 0.5 }}
                             />
-                            <Area 
-                                type="monotone" 
-                                dataKey="revenue" 
-                                stroke="var(--p)" 
+                            <Area
+                                type="monotone"
+                                dataKey="revenue"
+                                stroke="var(--p)"
                                 strokeWidth={3}
-                                fillOpacity={1} 
-                                fill="url(#colorRevenue)" 
+                                fillOpacity={1}
+                                fill="url(#colorRevenue)"
                             />
                         </AreaChart>
                     </ResponsiveContainer>

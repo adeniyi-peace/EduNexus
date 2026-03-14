@@ -2,9 +2,9 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 import { Smartphone, Monitor, Tablet } from "lucide-react";
 
 const deviceData = [
-    { name: 'Desktop', value: 65, color: 'var(--p)' },
-    { name: 'Mobile', value: 25, color: 'var(--s)' },
-    { name: 'Tablet', value: 10, color: 'var(--a)' },
+    { name: 'Desktop', value: 65, color: '#3b82f6' }, // Blue
+    { name: 'Mobile', value: 25, color: '#ec4899' },  // Pink
+    { name: 'Tablet', value: 10, color: '#8b5cf6' },  // Purple
 ];
 
 export const DeviceStats = () => {
