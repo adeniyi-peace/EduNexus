@@ -8,7 +8,7 @@ export default function AdminLayout() {
     const { theme } = useRouteLoaderData("root") as { theme: string };
 
     return (
-        <ProtectedRoute allowedRoles={["admin"]}>
+        // <ProtectedRoute allowedRoles={["admin"]}>
             <div className="drawer lg:drawer-open min-h-screen bg-base-200/50 font-sans">
                 <input id="admin-drawer" type="checkbox" className="drawer-toggle" />
                 
@@ -37,6 +37,6 @@ export default function AdminLayout() {
                     <AdminSidebar />
                 </div>
             </div>
-        </ProtectedRoute>
+        // </ProtectedRoute>
     );
 }

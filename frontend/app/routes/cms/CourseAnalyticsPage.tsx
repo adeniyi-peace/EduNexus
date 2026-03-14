@@ -1,25 +1,55 @@
-import { useParams, Link } from "react-router";
+import { useParams, Link, useLoaderData, type ClientLoaderFunctionArgs } from "react-router";
+import api from "~/utils/api.client";
 import {
     DollarSign,
     Users,
     Star,
-    Clock,
     ChevronLeft,
     TrendingUp,
     Download
 } from "lucide-react";
 import { StatCard } from "~/components/cms/analytics/AnalyticsStats";
-import { DeviceStats } from "~/components/cms/analytics/DeviceStats";
-import { EngagementHeatmap } from "~/components/cms/analytics/EngagementHeatmap";
 import { RetentionFunnel } from "~/components/cms/analytics/RetentionFunnel";
 import { RevenueChart } from "~/components/cms/analytics/RevenueChart";
-import { TrafficSources } from "~/components/cms/analytics/TrafficSources";
+import { StudentDistribution } from "~/components/cms/analytics/StudentDistribution";
+import { RatingAnalysis } from "~/components/cms/analytics/RatingAnalysis";
+
+interface AnalyticsData {
+    courseTitle: string;
+    stats: {
+        revenue: string;
+        students: string;
+        rating: string;
+        completion: string;
+    };
+    revenueChart: { name: string; revenue: number }[];
+    progressDistribution: { name: string; value: number; color: string }[];
+    ratingAnalysis: { stars: number; count: number; percentage: number }[];
+    funnelData: { stage: string; students: number; percent: number }[];
+    dropoutRates: {
+        id: number;
+        name: string;
+        views: number;
+        completed: number;
+        dropout: number;
+    }[];
+}
+
+export async function clientLoader({ params }: ClientLoaderFunctionArgs) {
+    try {
+        const response = await api.get(`/user/instructor/course-analytics/${params.id}/`);
+        return response.data as AnalyticsData;
+    } catch (error) {
+        console.error("Course analytics loader error:", error);
+        throw error;
+    }
+}
 
 export default function CourseAnalyticsPage() {
     const { id } = useParams();
+    const data = useLoaderData<AnalyticsData>();
 
-    // In a real app, you'd fetch course details here based on 'id'
-    const courseTitle = "Advanced React Patterns"; // Mock title
+    const courseTitle = data?.courseTitle || "Course Analytics";
 
     return (
         <div className="min-h-screen space-y-6 p-4 lg:p-8">
@@ -52,11 +82,11 @@ export default function CourseAnalyticsPage() {
                 </div>
             </div>
 
-            {/* KPI Grid - Reusing global components */}
+            {/* KPI Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     title="Course Revenue"
-                    value="$8,240"
+                    value={data?.stats?.revenue || "$0"}
                     trend="+15.2%"
                     trendDirection="up"
                     icon={DollarSign}
@@ -64,7 +94,7 @@ export default function CourseAnalyticsPage() {
                 />
                 <StatCard
                     title="Active Students"
-                    value="420"
+                    value={data?.stats?.students || "0"}
                     trend="+5.4%"
                     trendDirection="up"
                     icon={Users}
@@ -72,7 +102,7 @@ export default function CourseAnalyticsPage() {
                 />
                 <StatCard
                     title="Course Rating"
-                    value="4.9"
+                    value={data?.stats?.rating || "0.0"}
                     trend="+0.1"
                     trendDirection="up"
                     icon={Star}
@@ -80,7 +110,7 @@ export default function CourseAnalyticsPage() {
                 />
                 <StatCard
                     title="Completion Rate"
-                    value="68%"
+                    value={data?.stats?.completion || "0%"}
                     trend="-2%"
                     trendDirection="down"
                     icon={TrendingUp}
@@ -90,40 +120,42 @@ export default function CourseAnalyticsPage() {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2">
-                    <RevenueChart />
+                    <RevenueChart data={data?.revenueChart} />
                 </div>
                 <div className="h-full">
-                    <TrafficSources />
+                    <StudentDistribution data={data?.progressDistribution} />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <RetentionFunnel />
-                <EngagementHeatmap />
-                <DeviceStats />
-            </div>
-
-            {/* Video Engagement / Section Specific metrics could go here */}
-            <div className="card bg-base-100 border border-base-content/5 shadow-sm p-6">
-                <h3 className="text-xl font-black mb-6">Lesson Dropout Rates</h3>
-                <div className="space-y-4">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-base-200 rounded-xl flex items-center justify-center font-black">
-                                {i}
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-sm font-bold">Module {i}: Core Concepts</span>
-                                    <span className="text-xs font-mono opacity-40">240 views</span>
+                <RetentionFunnel data={data?.funnelData} />
+                <RatingAnalysis ratings={data?.ratingAnalysis} averageRating={data?.stats?.rating} courseId={id} />
+                
+                {/* Lesson Dropout Rates */}
+                <div className="card bg-base-100 border border-base-content/5 shadow-sm p-6">
+                    <h3 className="text-xl font-black mb-6">Module Retention</h3>
+                    <div className="space-y-4">
+                        {(data?.dropoutRates || []).map((module) => (
+                            <div key={module.id} className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-base-200 rounded-xl flex items-center justify-center font-black text-sm">
+                                    {module.id}
                                 </div>
-                                <div className="w-full h-2 bg-base-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-primary" style={{ width: `${100 - (i * 10)}%` }}></div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-sm font-bold truncate">{module.name}</span>
+                                        <span className="text-[10px] font-mono opacity-40 whitespace-nowrap ml-2">{module.completed} completed</span>
+                                    </div>
+                                    <div className="w-full h-1.5 bg-base-200 rounded-full overflow-hidden">
+                                        <div className="h-full bg-primary" style={{ width: `${100 - module.dropout}%` }}></div>
+                                    </div>
                                 </div>
+                                <div className="text-xs font-black text-error">-{module.dropout}%</div>
                             </div>
-                            <div className="text-xs font-black text-error">-{i * 10}%</div>
-                        </div>
-                    ))}
+                        ))}
+                        {(!data?.dropoutRates || data.dropoutRates.length === 0) && (
+                            <p className="text-xs opacity-50 italic">No module data available yet.</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

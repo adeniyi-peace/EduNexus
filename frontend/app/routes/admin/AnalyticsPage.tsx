@@ -1,9 +1,11 @@
 import { AnalyticsChart } from "~/components/admin/analytics/AnalyticsChart";
 import { AnalyticsHeader } from "~/components/admin/analytics/AnalyticsHeader";
 import { DeviceDonutChart } from "~/components/admin/analytics/DeviceDonutChart";
+import { DeviceStats } from "~/components/cms/analytics/DeviceStats";
 import { EngagementCards } from "~/components/admin/analytics/EngagementCards";
 import { EngagementLineChart } from "~/components/admin/analytics/EngagementLineChart";
 import { TopCourses } from "~/components/admin/analytics/TopCourses";
+import { TrafficSources } from "~/components/cms/analytics/TrafficSources";
 
 
 export default function AnalyticsPage() {
@@ -84,8 +86,14 @@ export default function AnalyticsPage() {
                         <h3 className="text-lg font-black tracking-tight">Device Distribution</h3>
                         <p className="text-xs opacity-50 font-bold uppercase">Traffic by platform</p>
                     </div>
-                    <DeviceDonutChart />
+                    <DeviceStats />
                 </div>
+            </div>
+
+            <div>
+                <AnalyticsChart title="Traffic Sources" subtitle="Where are your users coming from?">
+                    <TrafficSources />
+                </AnalyticsChart>   
             </div>
         </div>
     );

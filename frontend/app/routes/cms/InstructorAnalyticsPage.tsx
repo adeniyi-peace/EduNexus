@@ -6,6 +6,7 @@ import { RetentionFunnel } from "~/components/cms/analytics/RetentionFunnel";
 import { RevenueChart } from "~/components/cms/analytics/RevenueChart";
 import { TopPerformingCourses } from "~/components/cms/analytics/TopPerformingCourses";
 import { TrafficSources } from "~/components/cms/analytics/TrafficSources";
+
 export default function InstructorAnalyticsPage() {
     return (
         <div className=" min-h-screen space-y-6 p-4 lg:p-8">

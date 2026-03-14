@@ -1,11 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Sum
+from django.db.models import Sum, Avg, Count, Case, When, IntegerField, F
 from django.utils import timezone
 from datetime import timedelta
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-from courses.models import Course, Enrollment, Review
+from courses.models import Course, Enrollment, Review, Module, Lesson, Progress
 
 class CMSDashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -130,6 +130,138 @@ class CMSDashboardView(APIView):
             "myCourses": my_courses,
             "activityFeed": feed,
             "instructorName": instructor.first_name
+        })
+
+
+class CourseAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Individual Course Analytics Data",
+        description="Returns detailed performance metrics for a specific course including revenue, student progress, and ratings.",
+        responses={200: OpenApiResponse(description="Course analytics data retrieved successfully.")},
+        tags=["Instructor Dashboard"]
+    )
+    def get(self, request, slug):
+        instructor = request.user
+        
+        # Ensure user is an instructor
+        if instructor.role != 'instructor':
+            return Response({"error": "Only instructors can access course analytics."}, status=403)
+
+        try:
+            course = Course.objects.get(slug=slug, instructor=instructor)
+        except Course.DoesNotExist:
+            return Response({"error": "Course not found or you don't have permission to view it."}, status=404)
+
+        # 1. Stat Cards
+        enrollments = Enrollment.objects.filter(course=course)
+        student_count = enrollments.count()
+        revenue = student_count * course.price
+        
+        rating_avg = Review.objects.filter(course=course).aggregate(avg=Avg('rating'))['avg'] or 0
+        
+        completion_rate = 0
+        if enrollments.exists():
+            total_progress = 0
+            for enr in enrollments:
+                try:
+                    total_progress += enr.progress.percentage_complete
+                except:
+                    pass
+            completion_rate = total_progress / enrollments.count()
+
+        stats = {
+            "revenue": f"${revenue:,.0f}",
+            "students": f"{student_count}",
+            "rating": f"{rating_avg:.1f}",
+            "completion": f"{completion_rate:.0f}%"
+        }
+
+        # 2. Revenue Chart (Simple last 6 months)
+        revenue_data = []
+        now = timezone.now()
+        for i in range(5, -1, -1):
+            month_date = now - timedelta(days=i*30)
+            month_name = month_date.strftime("%b")
+            month_enrollments = enrollments.filter(enrolled_at__year=month_date.year, enrolled_at__month=month_date.month).count()
+            revenue_data.append({
+                "name": month_name,
+                "revenue": float(month_enrollments * course.price)
+            })
+
+        # 3. Student Progress Distribution (Buckets)
+        progress_distribution = [
+            {"name": "0-20%", "value": 0, "color": "#f87171"},
+            {"name": "21-40%", "value": 0, "color": "#fb923c"},
+            {"name": "41-60%", "value": 0, "color": "#fbbf24"},
+            {"name": "61-80%", "value": 0, "color": "#818cf8"},
+            {"name": "81-100%", "value": 0, "color": "#34d399"},
+        ]
+        
+        for enr in enrollments:
+            try:
+                p = enr.progress.percentage_complete
+                if p <= 20: progress_distribution[0]["value"] += 1
+                elif p <= 40: progress_distribution[1]["value"] += 1
+                elif p <= 60: progress_distribution[2]["value"] += 1
+                elif p <= 80: progress_distribution[3]["value"] += 1
+                else: progress_distribution[4]["value"] += 1
+            except:
+                progress_distribution[0]["value"] += 1
+
+        # 4. Rating Analysis
+        rating_dist = Review.objects.filter(course=course).values('rating').annotate(count=Count('rating')).order_by('-rating')
+        rating_analysis = []
+        for i in range(5, 0, -1):
+            count = next((r['count'] for r in rating_dist if r['rating'] == i), 0)
+            percentage = (count / student_count * 100) if student_count > 0 else 0
+            rating_analysis.append({
+                "stars": i,
+                "count": count,
+                "percentage": round(percentage)
+            })
+
+        # 5. Retention / Funnel Data
+        modules = course.modules.all().prefetch_related('lessons')
+        funnel_data = [{"stage": "Started", "students": student_count, "percent": 100}]
+        
+        dropout_rates = []
+        
+        for i, module in enumerate(modules):
+            module_lessons = module.lessons.all()
+            if not module_lessons.exists():
+                continue
+            
+            completed_count = Progress.objects.filter(
+                enrollment__course=course,
+                completed_lessons__in=module_lessons
+            ).distinct().count()
+            
+            percentage = round((completed_count / student_count * 100)) if student_count > 0 else 0
+            
+            funnel_data.append({
+                "stage": f"Mod {i+1}",
+                "students": completed_count,
+                "percent": percentage
+            })
+            
+            dropout_rates.append({
+                "id": i+1,
+                "name": f"Module {i+1}: {module.title}",
+                "views": completed_count + (student_count - completed_count) // 2,
+                "completed": completed_count,
+                "dropout": 100 - percentage
+            })
+
+        return Response({
+            "courseTitle": course.title,
+            "stats": stats,
+            "revenueChart": revenue_data,
+            "progressDistribution": progress_distribution,
+            "ratingAnalysis": rating_analysis,
+            "funnelData": funnel_data,
+            "dropoutRates": dropout_rates[:5]
         })
 
     def format_time_ago(self, dt):

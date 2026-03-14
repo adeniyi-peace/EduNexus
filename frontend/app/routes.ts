@@ -60,6 +60,7 @@ export default [
         route("/cms/students", "routes/cms/GlobalStudentDirectory.tsx"),
         route("/cms/course/:id/students", "routes/cms/CourseStudentManager.tsx"),
         route("/cms/course/:id/analytics", "routes/cms/CourseAnalyticsPage.tsx"),
+        route("/cms/course/:id/reviews", "routes/cms/CourseReviewsPage.tsx"),
         route("/cms/analytics", "routes/cms/InstructorAnalyticsPage.tsx"),
 
         // Shared components with Unique IDs
