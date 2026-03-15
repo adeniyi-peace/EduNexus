@@ -255,6 +255,8 @@ class CourseAnalyticsView(APIView):
             })
 
         return Response({
+            "id": course.id,
+            "slug": course.slug,
             "courseTitle": course.title,
             "stats": stats,
             "revenueChart": revenue_data,

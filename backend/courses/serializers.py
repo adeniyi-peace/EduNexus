@@ -17,12 +17,15 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'slug']
 
 class ReviewSerializer(serializers.ModelSerializer):
-        user = serializers.CharField(source='user.fullname', read_only=True)  # Assuming you have a fullname property on your User model
+    student = UserSerializer(read_only=True)
 
-        class Meta:
-            model = Review
-            fields = ['id', 'user', 'course', 'rating', 'comment', 'created_at']
-            read_only_fields = ['id', 'user', 'course', 'created_at']
+    class Meta:
+        model = Review
+        fields = [
+            'id', 'student', 'course', 'rating', 'comment', 
+            'instructor_reply', 'replied_at', 'created_at'
+        ]
+        read_only_fields = ['id', 'student', 'course', 'replied_at', 'created_at']
 
 class WishlistSerializer(serializers.ModelSerializer):
     course_details = serializers.SerializerMethodField(read_only=True)

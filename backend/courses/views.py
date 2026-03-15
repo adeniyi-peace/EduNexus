@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 from django.http import FileResponse
+from django.utils import timezone
 
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
@@ -197,7 +198,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
 )
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    http_method_names = ['get', 'post']
+    http_method_names = ['get', 'post', 'patch']
 
     def get_queryset(self):
         return Review.objects.filter(course_id=self.kwargs['course_pk'])
@@ -217,6 +218,30 @@ class ReviewViewSet(viewsets.ModelViewSet):
             raise ValidationError("You have already reviewed this course.")
 
         serializer.save(student=self.request.user, course=course)
+
+    @action(detail=True, methods=['patch'], url_path='instructor-reply')
+    def reply(self, request, course_pk=None, pk=None):
+        review = self.get_object()
+        
+        # Ensure the user is the instructor of the course
+        if review.course.instructor != request.user:
+            return Response(
+                {"error": "You can only reply to reviews of your own courses."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        instructor_reply = request.data.get('instructor_reply')
+        if not instructor_reply:
+            return Response(
+                {"error": "instructor_reply is required."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        review.instructor_reply = instructor_reply
+        review.replied_at = timezone.now()
+        review.save()
+        
+        return Response(self.get_serializer(review).data)
 
 
 @extend_schema_view(

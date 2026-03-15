@@ -142,6 +142,8 @@ class Review(models.Model):
     course = models.ForeignKey(Course, related_name='reviews', on_delete=models.CASCADE)
     rating = models.PositiveIntegerField()
     comment = models.TextField(blank=True, null=True)
+    instructor_reply = models.TextField(blank=True, null=True)
+    replied_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

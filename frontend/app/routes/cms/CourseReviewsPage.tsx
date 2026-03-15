@@ -20,14 +20,26 @@ interface PageData {
 
 export async function clientLoader({ params }: ClientLoaderFunctionArgs) {
     try {
-        const [courseRes, reviewsRes] = await Promise.all([
-            api.get(`/user/instructor/course-analytics/${params.id}/`), // Reusing this for course title
-            api.get(`/courses/${params.id}/reviews/`)
-        ]);
+        // Step 1: Get Course Analytics (this supports SLUG) to get the real course ID
+        const courseRes = await api.get(`/user/instructor/course-analytics/${params.id}/`);
+        const courseData = courseRes.data;
+        const realCourseId = courseData.id || params.id;
+
+        // Step 2: Get Reviews using the realCourseId
+        let reviewsData = [];
+        try {
+            const reviewsRes = await api.get(`/courses/${realCourseId}/reviews/`);
+            // Handle both Array and DRF Paginated Response ({ results: [] })
+            reviewsData = Array.isArray(reviewsRes.data) 
+                ? reviewsRes.data 
+                : (reviewsRes.data?.results || []);
+        } catch (revErr) {
+            console.error("Secondary reviews fetch error:", revErr);
+        }
         
         return {
-            courseTitle: courseRes.data.courseTitle,
-            reviews: reviewsRes.data
+            courseTitle: courseData.courseTitle || "Course",
+            reviews: reviewsData
         } as PageData;
     } catch (error) {
         console.error("Course reviews loader error:", error);
