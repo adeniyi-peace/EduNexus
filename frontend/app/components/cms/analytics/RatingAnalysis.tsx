@@ -55,10 +55,10 @@ export const RatingAnalysis = ({ ratings = [], averageRating = "0.0", courseId }
 
                 <div className="mt-6 pt-6 border-t border-base-content/5">
                     <Link 
-                        to={`/cms/course/${courseId}/reviews`}
+                        to={courseId ? `/cms/course/${courseId}/reviews` : "/cms/reviews"}
                         className="btn btn-ghost btn-xs w-full font-black opacity-50 hover:opacity-100 flex items-center justify-center no-underline"
                     >
-                        View All Reviews
+                        {courseId ? "View Course Reviews" : "View All Reviews"}
                     </Link>
                 </div>
             </div>

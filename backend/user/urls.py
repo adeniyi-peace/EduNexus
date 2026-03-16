@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import NotificationViewSet, AchievementViewSet, UserAchievementViewSet
-from .views_cms import CMSDashboardView, CourseAnalyticsView, CourseStudentsView, MessageAllStudentsView, MessageStudentView, GlobalStudentsView
+from .views_cms import CMSDashboardView, CourseAnalyticsView, CourseStudentsView, MessageAllStudentsView, MessageStudentView, GlobalStudentsView, InstructorAnalyticsView
 
 router = DefaultRouter()
 router.register(r'notifications', NotificationViewSet, basename='notification')
@@ -11,6 +11,7 @@ router.register(r'user-achievements', UserAchievementViewSet, basename='user-ach
 urlpatterns = [
     path('', include(router.urls)),
     path("instructor/dashboard/", CMSDashboardView.as_view(), name="instructor-dashboard"),
+    path("instructor/analytics/", InstructorAnalyticsView.as_view(), name="instructor-analytics"),
     path("instructor/course-analytics/<slug:slug>/", CourseAnalyticsView.as_view(), name="course-analytics"),
     path("instructor/courses/<uuid:course_id>/students/", CourseStudentsView.as_view(), name="course-students"),
     path("instructor/courses/<uuid:course_id>/message-all/", MessageAllStudentsView.as_view(), name="message-all-students"),

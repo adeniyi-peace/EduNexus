@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Avg, Count, Case, When, IntegerField, F
 from django.utils import timezone
 from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from courses.models import Course, Enrollment, Review, Module, Lesson, Progress
 from .serializers import MessageAllSerializer, MessageStudentSerializer
@@ -538,3 +539,303 @@ class GlobalStudentsView(APIView):
         students_list = list(students_data.values())
         
         return Response({"students": students_list})
+
+
+class InstructorAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Instructor Overall Analytics",
+        description="Returns aggregated analytics data for the instructor dashboard including KPIs, revenue charts, student distribution, rating analysis, and top performing courses.",
+        responses={
+            200: OpenApiResponse(
+                description="Analytics data retrieved successfully.",
+                examples=[{
+                    "stats": {
+                        "totalRevenue": "$24,500",
+                        "activeStudents": "1,240",
+                        "avgRating": "4.8",
+                        "hoursWatched": "854h"
+                    },
+                    "revenueChart": [{"name": "Jan", "revenue": 4000}],
+                    "studentDistribution": [{"name": "0-20%", "value": 10, "color": "#f87171"}],
+                    "ratingAnalysis": [{"stars": 5, "count": 120, "percentage": 60}],
+                    "quickStats": {
+                        "newEnrollments": 48,
+                        "certificates": 156,
+                        "refundRate": 2.4,
+                        "completionRate": 68
+                    },
+                    "topCourses": [
+                        {"id": "course-1", "title": "Course Title", "students": 450, "revenue": "$9,000", "rating": 4.9}
+                    ]
+                }]
+            ),
+            403: OpenApiResponse(description="Only instructors can access this endpoint.")
+        },
+        tags=["Instructor Dashboard"]
+    )
+    def get(self, request):
+        instructor = request.user
+
+        # Ensure user is an instructor
+        if instructor.role != 'instructor':
+            return Response({"error": "Only instructors can access this endpoint."}, status=403)
+
+        # Get all instructor courses with enrollment counts (fixes N+1)
+        courses = Course.objects.filter(instructor=instructor).annotate(
+            enrollment_count=Count('enrollments')
+        )
+        all_enrollments = Enrollment.objects.filter(course__in=courses).select_related('progress')
+        
+        # Calculate total revenue (using annotated count - fixes N+1)
+        total_revenue = sum(course.price * course.enrollment_count for course in courses)
+        
+        # Active students (unique)
+        active_students = all_enrollments.values('student').distinct().count()
+        
+        # Calculate hours watched
+        total_hours = 0
+        for enrollment in all_enrollments:
+            try:
+                if hasattr(enrollment, 'progress') and enrollment.progress:
+                    completed_count = enrollment.progress.completed_lessons.count()
+                    total_hours += completed_count * 0.5
+            except:
+                pass
+        
+        # Average rating across all courses
+        reviews = Review.objects.filter(course__in=courses)
+        avg_rating = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+        
+        # Calculate Trends (compare current month vs previous month)
+        now = timezone.now()
+        current_month = now.month
+        current_year = now.year
+        
+        # Previous month calculation
+        if current_month == 1:
+            prev_month = 12
+            prev_year = current_year - 1
+        else:
+            prev_month = current_month - 1
+            prev_year = current_year
+        
+        # Revenue trend
+        current_month_revenue = sum(
+            enrollment.course.price for enrollment in all_enrollments.filter(
+                enrolled_at__year=current_year, enrolled_at__month=current_month
+            )
+        )
+        prev_month_revenue = sum(
+            enrollment.course.price for enrollment in all_enrollments.filter(
+                enrolled_at__year=prev_year, enrolled_at__month=prev_month
+            )
+        )
+        
+        if prev_month_revenue > 0:
+            revenue_trend_pct = ((current_month_revenue - prev_month_revenue) / prev_month_revenue) * 100
+        else:
+            revenue_trend_pct = 100 if current_month_revenue > 0 else 0
+        
+        # Students trend (new enrollments)
+        current_month_students = all_enrollments.filter(
+            enrolled_at__year=current_year, enrolled_at__month=current_month
+        ).count()
+        prev_month_students = all_enrollments.filter(
+            enrolled_at__year=prev_year, enrolled_at__month=prev_month
+        ).count()
+        
+        if prev_month_students > 0:
+            students_trend_pct = ((current_month_students - prev_month_students) / prev_month_students) * 100
+        else:
+            students_trend_pct = 100 if current_month_students > 0 else 0
+        
+        # Rating trend (compare reviews from current vs previous month)
+        current_month_reviews = reviews.filter(
+            created_at__year=current_year, created_at__month=current_month
+        ).aggregate(avg=Avg('rating'))['avg'] or 0
+        prev_month_reviews = reviews.filter(
+            created_at__year=prev_year, created_at__month=prev_month
+        ).aggregate(avg=Avg('rating'))['avg'] or 0
+        
+        if prev_month_reviews > 0:
+            rating_trend_pct = ((current_month_reviews - prev_month_reviews) / prev_month_reviews) * 100
+        else:
+            rating_trend_pct = 0
+        
+        # Hours trend (approximate via completed lessons this month vs last)
+        # Use enrollment last_accessed as proxy for activity
+        current_month_activity = all_enrollments.filter(
+            progress__last_accessed__year=current_year,
+            progress__last_accessed__month=current_month
+        ).count()
+        prev_month_activity = all_enrollments.filter(
+            progress__last_accessed__year=prev_year,
+            progress__last_accessed__month=prev_month
+        ).count()
+        
+        if prev_month_activity > 0:
+            hours_trend_pct = ((current_month_activity - prev_month_activity) / prev_month_activity) * 100
+        else:
+            hours_trend_pct = 0 if current_month_activity == 0 else 100
+        
+        # Stats object with trends
+        def get_trend_direction(value):
+            if value > 0.5:
+                return "up"
+            elif value < -0.5:
+                return "down"
+            return "neutral"
+        
+        stats = {
+            "totalRevenue": f"${total_revenue:,.0f}",
+            "activeStudents": f"{active_students:,}",
+            "avgRating": f"{avg_rating:.1f}",
+            "hoursWatched": f"{int(total_hours)}h",
+            "revenueTrend": f"{revenue_trend_pct:+.1f}%",
+            "revenueTrendDirection": get_trend_direction(revenue_trend_pct),
+            "studentsTrend": f"{students_trend_pct:+.1f}%",
+            "studentsTrendDirection": get_trend_direction(students_trend_pct),
+            "ratingTrend": f"{rating_trend_pct:+.1f}%",
+            "ratingTrendDirection": get_trend_direction(rating_trend_pct),
+            "hoursTrend": f"{hours_trend_pct:+.1f}%",
+            "hoursTrendDirection": get_trend_direction(hours_trend_pct),
+        }
+        
+        # Revenue Chart (last 6 months aggregated)
+        revenue_chart = []
+        now = timezone.now()
+        for i in range(5, -1, -1):
+            month_date = now - relativedelta(months=i)
+            month_name = month_date.strftime("%b")
+            month_enrollments = all_enrollments.filter(
+                enrolled_at__year=month_date.year,
+                enrolled_at__month=month_date.month
+            )
+            month_revenue = sum(
+                enrollment.course.price for enrollment in month_enrollments
+            )
+            revenue_chart.append({
+                "name": month_name,
+                "revenue": float(month_revenue)
+            })
+        
+        # Student Progress Distribution
+        progress_distribution = [
+            {"name": "0-20%", "value": 0, "color": "#f87171"},
+            {"name": "21-40%", "value": 0, "color": "#fb923c"},
+            {"name": "41-60%", "value": 0, "color": "#fbbf24"},
+            {"name": "61-80%", "value": 0, "color": "#818cf8"},
+            {"name": "81-100%", "value": 0, "color": "#34d399"},
+        ]
+        
+        for enrollment in all_enrollments:
+            try:
+                if hasattr(enrollment, 'progress') and enrollment.progress:
+                    p = enrollment.progress.percentage_complete
+                else:
+                    p = 0
+            except:
+                p = 0
+                
+            if p <= 20: progress_distribution[0]["value"] += 1
+            elif p <= 40: progress_distribution[1]["value"] += 1
+            elif p <= 60: progress_distribution[2]["value"] += 1
+            elif p <= 80: progress_distribution[3]["value"] += 1
+            else: progress_distribution[4]["value"] += 1
+        
+        # Rating Analysis (aggregate across all courses)
+        rating_dist = reviews.values('rating').annotate(count=Count('rating')).order_by('-rating')
+        total_reviews = reviews.count()
+        rating_analysis = []
+        for i in range(5, 0, -1):
+            count = next((r['count'] for r in rating_dist if r['rating'] == i), 0)
+            percentage = (count / total_reviews * 100) if total_reviews > 0 else 0
+            rating_analysis.append({
+                "stars": i,
+                "count": count,
+                "percentage": round(percentage)
+            })
+        
+        # Quick Stats
+        # New enrollments this week
+        one_week_ago = timezone.now() - timedelta(days=7)
+        new_enrollments = all_enrollments.filter(enrolled_at__gte=one_week_ago).count()
+        
+        # Certificates (students at 100% completion)
+        certificates_count = 0
+        for enrollment in all_enrollments:
+            try:
+                if hasattr(enrollment, 'progress') and enrollment.progress:
+                    if enrollment.progress.percentage_complete >= 100:
+                        certificates_count += 1
+            except:
+                pass
+        
+        # Refund rate (approximate - assuming refunds tracked separately)
+        # For now, calculate based on dropouts (students with < 5% progress who haven't accessed in 30 days)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        potential_refunds = 0
+        for enrollment in all_enrollments:
+            try:
+                if hasattr(enrollment, 'progress') and enrollment.progress:
+                    low_progress = enrollment.progress.percentage_complete < 5
+                    inactive = not enrollment.progress.last_accessed or enrollment.progress.last_accessed < thirty_days_ago
+                    if low_progress and inactive:
+                        potential_refunds += 1
+            except:
+                pass
+        
+        refund_rate = (potential_refunds / all_enrollments.count() * 100) if all_enrollments.exists() else 0
+        
+        # Completion rate (students at 100%)
+        completions = 0
+        for enrollment in all_enrollments:
+            try:
+                if hasattr(enrollment, 'progress') and enrollment.progress:
+                    if enrollment.progress.percentage_complete >= 100:
+                        completions += 1
+            except:
+                pass
+        
+        completion_rate = (completions / all_enrollments.count() * 100) if all_enrollments.exists() else 0
+        
+        quick_stats = {
+            "newEnrollments": new_enrollments,
+            "certificates": certificates_count,
+            "refundRate": round(refund_rate, 1),
+            "completionRate": round(completion_rate)
+        }
+        
+        # Top Performing Courses
+        top_courses = []
+        for course in courses.order_by('-created_at')[:5]:
+            course_enrollments = Enrollment.objects.filter(course=course)
+            student_count = course_enrollments.count()
+            course_revenue = student_count * course.price
+            course_rating = Review.objects.filter(course=course).aggregate(avg=Avg('rating'))['avg'] or 0
+            
+            top_courses.append({
+                "id": course.slug or str(course.id),
+                "title": course.title,
+                "students": student_count,
+                "revenue": f"${course_revenue:,.0f}",
+                "rating": round(course_rating, 1)
+            })
+        
+        # Sort by revenue (highest first) - use float to handle decimals (fixes crash risk)
+        top_courses.sort(key=lambda x: float(x['revenue'].replace('$', '').replace(',', '')), reverse=True)
+        
+        return Response({
+            "stats": stats,
+            "revenueChart": revenue_chart,
+            "studentDistribution": progress_distribution,
+            "ratingAnalysis": rating_analysis,
+            "quickStats": quick_stats,
+            "topCourses": top_courses
+        })
+
+    # End of get method
+
+# End of InstructorAnalyticsView class

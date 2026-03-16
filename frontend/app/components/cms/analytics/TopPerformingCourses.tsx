@@ -1,14 +1,21 @@
 import { Users, Star, DollarSign, Eye } from "lucide-react";
-import type { CourseMetric } from "~/types/analytics";
 
-const COURSE_DATA = [
-    { id: "NX-01", title: "Advanced Distributed Systems", views: 12500, students: 450, revenue: 12400, rating: 4.9, conversionRate: 3.6 },
-    { id: "NX-02", title: "Cloud Architecture Masterclass", views: 8200, students: 380, revenue: 9500, rating: 4.8, conversionRate: 3.9 },
-    { id: "NX-03", title: "Next.js 15: Deep Dive", views: 5100, students: 210, revenue: 5200, rating: 4.7, conversionRate: 2.3 },
-    { id: "NX-04", title: "UI/UX Design Masterclass", views: 3200, students: 120, revenue: 4200, rating: 4.6, conversionRate: 2.6 },
-];
+interface Course {
+    id: string;
+    title: string;
+    students: number;
+    revenue: string;
+    rating: number;
+    views?: number;
+    conversionRate?: number;
+}
 
-export const TopPerformingCourses = () => {
+interface TopPerformingCoursesProps {
+    courses?: Course[];
+}
+
+export const TopPerformingCourses = ({ courses }: TopPerformingCoursesProps) => {
+    const hasCourses = courses && courses.length > 0;
     return (
         <div className="bg-base-100 border border-base-content/5 rounded-3xl overflow-hidden shadow-xl">
             <div className="p-6 border-b border-base-content/5 flex flex-row justify-between items-center bg-base-200/50">
@@ -37,47 +44,61 @@ export const TopPerformingCourses = () => {
                     
                     {/* Body */}
                     <tbody className="divide-y divide-base-content/5">
-                        {COURSE_DATA.map((course) => (
-                            <tr key={course.id} className="hover:bg-primary/5 transition-colors group">
-                                <td className="pl-8 py-5">
-                                    <div className="flex flex-col">
-                                        <div className="font-bold text-sm text-base-content group-hover:text-primary transition-colors truncate max-w-[250px]" title={course.title}>
-                                            {course.title}
+                        {hasCourses ? (
+                            courses!.map((course) => (
+                                <tr key={course.id} className="hover:bg-primary/5 transition-colors group">
+                                    <td className="pl-8 py-5">
+                                        <div className="flex flex-col">
+                                            <div className="font-bold text-sm text-base-content group-hover:text-primary transition-colors truncate max-w-[250px]" title={course.title}>
+                                                {course.title}
+                                            </div>
+                                            <span className="text-[10px] font-mono opacity-30 mt-0.5">{course.id}</span>
                                         </div>
-                                        <span className="text-[10px] font-mono opacity-30 mt-0.5">{course.id}</span>
-                                    </div>
-                                </td>
-                                <td className="text-center">
-                                    <div className="flex items-center justify-center gap-2 font-bold text-sm">
-                                        <Users size={14} className="opacity-30" />
-                                        {course.students}
-                                    </div>
-                                </td>
-                                <td className="text-center">
-                                    <div className="flex items-center justify-center gap-2 font-black text-sm text-success">
-                                        <DollarSign size={14} className="opacity-50" />
-                                        {course.revenue.toLocaleString()}
-                                    </div>
-                                </td>
-                                <td className="text-center">
-                                    <div className="flex items-center justify-center gap-2 font-bold text-sm text-warning">
-                                        <Star size={14} fill="currentColor" />
-                                        {course.rating}
-                                    </div>
-                                </td>
-                                <td className="text-center font-mono text-xs opacity-40">
-                                    {course.views.toLocaleString()}
-                                </td>
-                                <td className="pr-8 text-right">
-                                    <div className="badge badge-lg bg-base-300 border-none font-black text-[11px] group-hover:bg-primary group-hover:text-primary-content transition-colors px-3">
-                                        {course.conversionRate}%
+                                    </td>
+                                    <td className="text-center">
+                                        <div className="flex items-center justify-center gap-2 font-bold text-sm">
+                                            <Users size={14} className="opacity-30" />
+                                            {course.students}
+                                        </div>
+                                    </td>
+                                    <td className="text-center">
+                                        <div className="flex items-center justify-center gap-2 font-black text-sm text-success">
+                                            <DollarSign size={14} className="opacity-50" />
+                                            {course.revenue.replace('$', '')}
+                                        </div>
+                                    </td>
+                                    <td className="text-center">
+                                        <div className="flex items-center justify-center gap-2 font-bold text-sm text-warning">
+                                            <Star size={14} fill="currentColor" />
+                                            {course.rating}
+                                        </div>
+                                    </td>
+                                    <td className="text-center font-mono text-xs opacity-40">
+                                        {(course.views || 0).toLocaleString()}
+                                    </td>
+                                    <td className="pr-8 text-right">
+                                        <div className="badge badge-lg bg-base-300 border-none font-black text-[11px] group-hover:bg-primary group-hover:text-primary-content transition-colors px-3">
+                                            {course.conversionRate || 0}%
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={6} className="py-16 text-center">
+                                    <div className="flex flex-col items-center gap-3 opacity-30">
+                                        <div className="w-16 h-16 rounded-2xl bg-base-300 flex items-center justify-center">
+                                            <DollarSign size={32} />
+                                        </div>
+                                        <p className="font-black text-sm uppercase tracking-widest">No Courses Yet</p>
+                                        <p className="text-xs opacity-60 max-w-xs">Create your first course to see performance metrics here.</p>
                                     </div>
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </div>
         </div>
     );
-};
+};
