@@ -114,7 +114,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     @property
     def is_admin(self):
-        return self.role == self.Role.ADMIN or self.is_superuser
+        return self.role == self.Roles.ADMIN or self.is_superuser
     
     
 
@@ -177,3 +177,14 @@ class UserAchievement(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.achievement.name}"
+
+
+class AdminSetting(models.Model):
+    """Key-value store for platform-wide configuration (site name, maintenance mode, etc.)"""
+    key = models.CharField(max_length=100, unique=True)
+    value = models.TextField()
+    label = models.CharField(max_length=255, blank=True, help_text="Human-readable label for the setting")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.key} = {self.value[:50]}"

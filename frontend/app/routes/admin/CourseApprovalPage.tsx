@@ -1,67 +1,85 @@
 import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
-import type { PendingCourse } from "~/types/course";
+import { AnimatePresence, motion } from "framer-motion";
+import type { PendingCourse } from "~/types/admin";
 import { ApprovalFilters } from "~/components/admin/course_approval/ApprovalFilters";
 import { CourseReviewCard } from "~/components/admin/course_approval/CourseReviewCard";
-
-const MOCK_PENDING: PendingCourse[] = [
-    {
-        id: "c1",
-        title: "Mastering React Server Components",
-        instructor: { name: "Dr. Angela Yu", avatar: "https://i.pravatar.cc/100?u=angela", rating: 4.9 },
-        category: "Development",
-        price: 89.99,
-        submittedAt: "2 hours ago",
-        thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400",
-        description: "Deep dive into RSC and the Next.js App Router.",
-        modulesCount: 12
-    },
-    {
-        id: "c2",
-        title: "Advanced Figma for SaaS",
-        instructor: { name: "Gary Simon", avatar: "https://i.pravatar.cc/100?u=gary", rating: 4.7 },
-        category: "Design",
-        price: 49.00,
-        submittedAt: "5 hours ago",
-        thumbnail: "https://images.unsplash.com/photo-1541462608141-ad511a7ee596?w=400",
-        description: "Scale your design systems with variables and auto-layout.",
-        modulesCount: 8
-    }
-];
+import { usePendingApprovals, useApproveCourse, useRejectCourse } from "~/hooks/admin/usePendingApprovals";
+import { AdminTableSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
+import { ShieldCheck } from "lucide-react";
 
 export default function CourseApprovalPage() {
-    const [queue, setQueue] = useState<PendingCourse[]>(MOCK_PENDING);
+    const { data, isLoading, isError, refetch } = usePendingApprovals();
+    const approveMutation = useApproveCourse();
+    const rejectMutation = useRejectCourse();
 
-    const handleAction = (id: string, type: 'approve' | 'reject') => {
-        // Here you would trigger your React Router action or Fetcher
-        setQueue(prev => prev.filter(c => c.id !== id));
-        console.log(`${type}d course: ${id}`);
+    const [optimisticQueue, setOptimisticQueue] = useState<string[]>([]);
+
+    const handleApprove = async (id: string) => {
+        setOptimisticQueue(prev => [...prev, id]);
+        try {
+            await approveMutation.mutateAsync(id);
+        } catch {
+            setOptimisticQueue(prev => prev.filter(x => x !== id));
+        }
     };
+
+    const handleReject = async (id: string, reason?: string) => {
+        if (!reason) reason = "Does not meet platform standards.";
+        setOptimisticQueue(prev => [...prev, id]);
+        try {
+            await rejectMutation.mutateAsync({ courseId: id, reason });
+        } catch {
+            setOptimisticQueue(prev => prev.filter(x => x !== id));
+        }
+    };
+
+    // Filter out optimistically-removed courses for instant UI feedback
+    const queue: PendingCourse[] = (data?.results ?? []).filter(
+        c => !optimisticQueue.includes(c.id)
+    );
+
+    if (isError) {
+        return (
+            <div className="max-w-4xl mx-auto pt-8">
+                <AdminErrorState message="Could not load pending courses." onRetry={refetch} />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <ApprovalFilters count={queue.length} />
 
-            <div className="grid grid-cols-1 gap-4">
-                <AnimatePresence mode="popLayout">
-                    {queue.length > 0 ? (
-                        queue.map((course) => (
-                            <CourseReviewCard 
-                                key={course.id}
-                                course={course}
-                                onApprove={(id) => handleAction(id, 'approve')}
-                                onReject={(id) => handleAction(id, 'reject')}
-                            />
-                        ))
-                    ) : (
-                        <div className="py-20 text-center bg-base-100 rounded-3xl border-2 border-dashed border-base-content/10">
-                            <div className="text-5xl mb-4">🎉</div>
-                            <h3 className="text-xl font-black">All Caught Up!</h3>
-                            <p className="opacity-50">No new courses require review at this time.</p>
-                        </div>
-                    )}
-                </AnimatePresence>
-            </div>
+            {isLoading ? (
+                <AdminTableSkeleton rows={3} columns={4} />
+            ) : (
+                <div className="grid grid-cols-1 gap-4">
+                    <AnimatePresence mode="popLayout">
+                        {queue.length > 0 ? (
+                            queue.map((course) => (
+                                <CourseReviewCard
+                                    key={course.id}
+                                    course={course}
+                                    onApprove={(id) => handleApprove(id)}
+                                    onReject={(id) => handleReject(id)}
+                                />
+                            ))
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="py-20 text-center bg-base-100 rounded-3xl border-2 border-dashed border-base-content/10"
+                            >
+                                <div className="w-16 h-16 bg-success/10 text-success rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <ShieldCheck size={32} />
+                                </div>
+                                <h3 className="text-xl font-black">All Caught Up!</h3>
+                                <p className="opacity-50">No new courses require review at this time.</p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,24 +1,26 @@
 import { useState } from "react";
 import { AlertTriangle, Power, Save } from "lucide-react";
 
-export const MaintenanceToggle = () => {
-    // In a real app, this state comes from your DB or Config
-    const [isMaintenanceMode, setMaintenanceMode] = useState(false);
+interface Props {
+    isEnabled: boolean;
+    onToggle: (val: boolean) => void;
+}
+
+export const MaintenanceToggle = ({ isEnabled, onToggle }: Props) => {
     const [showConfirm, setShowConfirm] = useState(false);
 
     const handleToggle = () => {
-        if (!isMaintenanceMode) {
+        if (!isEnabled) {
             // Turning ON requires confirmation
             setShowConfirm(true);
         } else {
             // Turning OFF can be instant
-            setMaintenanceMode(false);
-            // TODO: Call API to update system status
+            onToggle(false);
         }
     };
 
     const confirmMaintenance = () => {
-        setMaintenanceMode(true);
+        onToggle(true);
         setShowConfirm(false);
         // TODO: Call API to update system status
     };
@@ -45,7 +47,7 @@ export const MaintenanceToggle = () => {
                     <label className="swap swap-rotate">
                         <input 
                             type="checkbox" 
-                            checked={isMaintenanceMode} 
+                            checked={isEnabled} 
                             onChange={handleToggle} 
                             className="toggle toggle-error toggle-lg" 
                         />

@@ -1,9 +1,16 @@
+import { useState } from "react";
 import { Users, GraduationCap, DollarSign, BookCheck } from "lucide-react";
 import { ActivityFeed } from "~/components/admin/dashboard/ActivityFeed";
 import { PendingApprovals } from "~/components/admin/dashboard/PendingApprovals";
 import { StatCard } from "~/components/admin/dashboard/StatCard";
+import { useAdminDashboard } from "~/hooks/admin/useAdminDashboard";
+import { AdminStatSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
+
+const STAT_ICONS = [Users, DollarSign, GraduationCap, BookCheck];
 
 export default function AdminDashboard() {
+    const { data, isLoading, isError, refetch } = useAdminDashboard();
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* 1. Header Hero */}
@@ -19,54 +26,69 @@ export default function AdminDashboard() {
             </div>
 
             {/* 2. KPI Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                <StatCard 
-                    title="Active Students" 
-                    value="12,840" 
-                    trend={+8.2} 
-                    icon={Users} 
-                    description="Since last month" 
-                />
-                <StatCard 
-                    title="Total Revenue" 
-                    value="$42,390" 
-                    trend={+14.5} 
-                    icon={DollarSign} 
-                    description="Current billing cycle" 
-                />
-                <StatCard 
-                    title="Course Completions" 
-                    value="1,204" 
-                    trend={-2.1} 
-                    icon={GraduationCap} 
-                    description="Daily average" 
-                />
-                <StatCard 
-                    title="Pending Approvals" 
-                    value="18" 
-                    trend={0} 
-                    icon={BookCheck} 
-                    description="Items in queue" 
-                />
-            </div>
+            {isLoading ? (
+                <AdminStatSkeleton count={4} />
+            ) : isError ? (
+                <AdminErrorState message="Could not load platform stats." onRetry={refetch} />
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    {data?.kpiStats.map((stat, i) => (
+                        <StatCard
+                            key={stat.title}
+                            title={stat.title}
+                            value={stat.value}
+                            trend={stat.trend}
+                            icon={STAT_ICONS[i] ?? BookCheck}
+                            description={stat.description}
+                        />
+                    ))}
+                </div>
+            )}
 
             {/* 3. Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-                {/* Left: Pending Table & Analytics Placeholder */}
+                {/* Left: Pending Table & Revenue Chart */}
                 <div className="lg:col-span-2 space-y-8">
-                    <PendingApprovals />
-                    
-                    {/* Mock Chart Area */}
-                    <div className="card bg-base-100 border border-base-content/5 shadow-sm p-6 h-80 flex flex-col justify-center items-center text-center opacity-40">
-                        <div className="w-16 h-16 rounded-full border-4 border-dashed border-primary mb-4 animate-spin-slow" />
-                        <p className="font-black text-sm uppercase tracking-widest">Revenue Analytics Chart</p>
-                        <p className="text-xs font-medium">Connect Recharts or Chart.js here</p>
+                    <PendingApprovals
+                        items={data?.pendingApprovals ?? []}
+                        isLoading={isLoading}
+                    />
+
+                    {/* Revenue Mini Chart */}
+                    <div className="card bg-base-100 border border-base-content/5 shadow-sm p-6">
+                        <h3 className="font-black text-sm uppercase tracking-widest mb-4 opacity-60">Revenue Trends (6 months)</h3>
+                        {isLoading ? (
+                            <div className="h-48 bg-base-300 rounded-xl animate-pulse" />
+                        ) : (
+                            <div className="flex items-end justify-between h-48 w-full gap-2">
+                                {data?.revenueChart.map((point) => {
+                                    const maxVal = Math.max(...(data.revenueChart.map(p => p.revenue)), 1);
+                                    const heightPct = Math.max((point.revenue / maxVal) * 100, 4);
+                                    return (
+                                        <div key={point.name} className="flex-1 flex flex-col items-center gap-1 group">
+                                            <div
+                                                className="w-full bg-primary/20 hover:bg-primary rounded-t-md transition-all relative"
+                                                style={{ height: `${heightPct}%` }}
+                                            >
+                                                <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-base-300 px-1 py-0.5 rounded whitespace-nowrap">
+                                                    ${point.revenue.toFixed(0)}
+                                                </span>
+                                            </div>
+                                            <span className="text-[10px] font-bold opacity-40">{point.name}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Right: Activity Feed */}
                 <div className="lg:col-span-1">
-                    <ActivityFeed />
+                    <ActivityFeed
+                        items={data?.activityFeed ?? []}
+                        isLoading={isLoading}
+                    />
                 </div>
             </div>
         </div>

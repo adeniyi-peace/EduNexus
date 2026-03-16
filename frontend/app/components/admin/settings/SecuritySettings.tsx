@@ -1,6 +1,11 @@
 import { ShieldCheck, UserPlus, Fingerprint } from "lucide-react";
 
-export const SecuritySettings = () => {
+interface Props {
+    settings: Record<string, string>;
+    onChange: (key: string, value: string) => void;
+}
+
+export const SecuritySettings = ({ settings, onChange }: Props) => {
     return (
         <div className="card bg-base-100 border border-base-content/5 shadow-sm">
             <div className="p-6 border-b border-base-content/5">

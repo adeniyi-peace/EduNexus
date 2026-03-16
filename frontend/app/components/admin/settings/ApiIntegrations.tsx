@@ -1,7 +1,12 @@
 import { Key, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
-export const ApiIntegrations = () => {
+interface Props {
+    settings: Record<string, string>;
+    onChange: (key: string, value: string) => void;
+}
+
+export const ApiIntegrations = ({ settings, onChange }: Props) => {
     const [showKey, setShowKey] = useState(false);
 
     return (

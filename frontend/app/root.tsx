@@ -22,6 +22,18 @@ import MaintenancePage from "./routes/MaintenancePage";
 import { getSystemStatus, getUser } from "./utils/db.server"
 import OfflinePage from "./routes/OfflinePage";
 import { useEffect, useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Global QueryClient — must be created outside component to avoid re-creation on renders
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 10_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -118,7 +130,11 @@ export default function App() {
       return <MaintenancePage />;
   }
 
-  return <Outlet />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+    </QueryClientProvider>
+  );
 }
 
 export function ErrorBoundary() {

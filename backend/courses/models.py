@@ -24,9 +24,11 @@ class Course(models.Model):
     )
 
     STATUS = (
-        ('Published','Published'),
-        ('Draft','Draft'),
-        ('Archived','Archived')
+        ('Published', 'Published'),
+        ('Draft', 'Draft'),
+        ('Archived', 'Archived'),
+        ('PendingApproval', 'Pending Approval'),
+        ('Rejected', 'Rejected'),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -40,9 +42,10 @@ class Course(models.Model):
     category = models.ForeignKey(Category, related_name="courses", on_delete=models.CASCADE)
     language = models.CharField(max_length=50, default='English')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICE, default=DIFFICULTY_CHOICE[0][0])
-    status = models.CharField( max_length=50, choices=STATUS, default=STATUS[1][0])
+    status = models.CharField(max_length=50, choices=STATUS, default=STATUS[1][0])
+    rejection_reason = models.TextField(blank=True, null=True)
     lastUpdated = models.DateTimeField(auto_now=True, auto_now_add=False)
-    created_at = models.DateTimeField( auto_now=False, auto_now_add=True)
+    created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(f"{self.title} {self.instructor.fullname}")
@@ -144,6 +147,10 @@ class Review(models.Model):
     comment = models.TextField(blank=True, null=True)
     instructor_reply = models.TextField(blank=True, null=True)
     replied_at = models.DateTimeField(blank=True, null=True)
+    is_flagged = models.BooleanField(default=False)
+    flag_reason = models.CharField(max_length=255, blank=True, null=True)
+    flagged_by = models.ForeignKey(User, related_name='flagged_reviews', on_delete=models.SET_NULL, null=True, blank=True)
+    flagged_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
