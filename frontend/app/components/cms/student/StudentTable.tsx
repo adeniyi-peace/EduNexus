@@ -6,9 +6,10 @@ interface StudentTableProps {
     students: Student[];
     mode: 'global' | 'course'; // Determines which columns to show
     onSelectStudent: (student: Student) => void;
+    onMessageStudent?: (student: Student) => void;
 }
 
-export const StudentTable = ({ students, mode, onSelectStudent }: StudentTableProps) => {
+export const StudentTable = ({ students, mode, onSelectStudent, onMessageStudent }: StudentTableProps) => {
     return (
         <div className="rounded-2xl border border-base-content/5 shadow-sm overflow-hidden">
             <table className="table w-full">
@@ -113,7 +114,13 @@ export const StudentTable = ({ students, mode, onSelectStudent }: StudentTablePr
 
                             {/* 3. Actions Column */}
                             <td className="pr-6 text-right">
-                                <button className="btn btn-ghost btn-sm btn-square opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                    className="btn btn-ghost btn-sm btn-square opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onMessageStudent?.(student);
+                                    }}
+                                >
                                     <Mail size={16} />
                                 </button>
                                 <button className="btn btn-ghost btn-sm btn-square">

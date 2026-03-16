@@ -1,8 +1,33 @@
 import { useState } from "react";
-import { Search, Download, Users } from "lucide-react";
+import { useLoaderData } from "react-router";
+import { Search, Download, Users, Loader2 } from "lucide-react";
 import type { Student } from "~/types/students";
 import { StudentTable } from "~/components/cms/student/StudentTable";
 import { StudentDrawer } from "~/components/cms/student/StudentDrawer";
+import api from "~/utils/api.client";
+import type { Route } from "./+types/GlobalStudentDirectory";
+
+// Client loader - fetches global students data
+export async function clientLoader({}: Route.ClientLoaderArgs) {
+    try {
+        const response = await api.get(`/users/instructor/students/`);
+        return { students: response.data.students as Student[] };
+    } catch (error) {
+        throw new Response("Failed to load students", { status: 500 });
+    }
+}
+
+// Loading state shown while clientLoader fetches
+export function HydrateFallback() {
+    return (
+        <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="animate-spin text-primary" size={48} />
+                <p className="text-base-content/60">Loading students...</p>
+            </div>
+        </div>
+    );
+}
 
 // Mock Data for Global View
 const GLOBAL_STUDENTS_MOCK: Student[] = [
@@ -25,13 +50,37 @@ const GLOBAL_STUDENTS_MOCK: Student[] = [
 ];
 
 export default function GlobalStudentDirectory() {
+    const { students } = useLoaderData<typeof clientLoader>();
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const filteredStudents = GLOBAL_STUDENTS_MOCK.filter(s => 
+    const filteredStudents = (students || []).filter(s => 
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
         s.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    // Export CSV functionality
+    const handleExportCSV = () => {
+        const headers = ['Name', 'Email', 'Joined Date', 'Courses Count', 'Total Spent'];
+        const csvContent = [
+            headers.join(','),
+            ...filteredStudents.map(student => [
+                `"${student.name}"`,
+                `"${student.email}"`,
+                `"${student.joinedDate}"`,
+                `${student.enrolledCoursesCount || 0}`,
+                `${student.totalSpent?.toFixed(2) || '0.00'}`
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `all-students-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div className="min-h-screen p-4 lg:p-8">
@@ -43,7 +92,10 @@ export default function GlobalStudentDirectory() {
                     </h1>
                     <p className="text-sm opacity-60">Directory of all students across all your courses.</p>
                 </div>
-                <button className="btn btn-outline btn-sm gap-2">
+                <button 
+                    className="btn btn-outline btn-sm gap-2"
+                    onClick={handleExportCSV}
+                >
                     <Download size={14} /> Export CSV
                 </button>
             </div>

@@ -6,6 +6,8 @@ from django.utils import timezone
 from datetime import timedelta
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from courses.models import Course, Enrollment, Review, Module, Lesson, Progress
+from .serializers import MessageAllSerializer, MessageStudentSerializer
+from .utils import format_time_ago
 
 class CMSDashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -111,7 +113,7 @@ class CMSDashboardView(APIView):
                 "user": enr.student.fullname,
                 "action": "enrolled in",
                 "target": enr.course.title,
-                "time": self.format_time_ago(enr.enrolled_at)
+                "time": format_time_ago(enr.enrolled_at)
             })
         
         for rev in recent_reviews:
@@ -120,7 +122,7 @@ class CMSDashboardView(APIView):
                 "user": rev.student.fullname,
                 "action": f"left a {rev.rating}-star review on",
                 "target": rev.course.title,
-                "time": self.format_time_ago(rev.created_at)
+                "time": format_time_ago(rev.created_at)
             })
         
         feed = sorted(feed, key=lambda x: x['id'], reverse=True)[:5]
@@ -266,13 +268,273 @@ class CourseAnalyticsView(APIView):
             "dropoutRates": dropout_rates[:5]
         })
 
-    def format_time_ago(self, dt):
-        now = timezone.now()
-        diff = now - dt
-        if diff.days > 0:
-            return f"{diff.days}d ago"
-        hours = diff.seconds // 3600
-        if hours > 0:
-            return f"{hours}h ago"
-        minutes = (diff.seconds % 3600) // 60
-        return f"{minutes}m ago"
+
+class CourseStudentsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="List students enrolled in a specific course",
+        description="Returns all students enrolled in the specified course with their progress data. Only accessible by the course instructor.",
+        responses={
+            200: OpenApiResponse(
+                description="Students list retrieved successfully.",
+                examples=[{
+                    "students": [
+                        {
+                            "id": "uuid",
+                            "name": "Student Name",
+                            "email": "student@example.com",
+                            "avatar": "url",
+                            "joinedDate": "Oct 24",
+                            "currentProgress": 75,
+                            "status": "Active",
+                            "lastActive": "2h ago"
+                        }
+                    ]
+                }]
+            ),
+            403: OpenApiResponse(description="Only instructors can access this endpoint."),
+            404: OpenApiResponse(description="Course not found or you don't have permission.")
+        },
+        tags=["Instructor Dashboard"]
+    )
+    def get(self, request, course_id):
+        instructor = request.user
+
+        # Ensure user is an instructor
+        if instructor.role != 'instructor':
+            return Response({"error": "Only instructors can access this endpoint."}, status=403)
+
+        try:
+            course = Course.objects.get(id=course_id, instructor=instructor)
+        except Course.DoesNotExist:
+            return Response({"error": "Course not found or you don't have permission to view it."}, status=404)
+
+        # Get all enrollments for this course with related student data
+        # Note: progress is OneToOne on Progress model pointing to Enrollment,
+        # so we can't use select_related for it - we'll query separately if needed
+        enrollments = Enrollment.objects.filter(course=course).select_related('student')
+
+        students_data = []
+        for enrollment in enrollments:
+            student = enrollment.student
+
+            # Calculate progress percentage
+            progress_percentage = 0
+            try:
+                progress_percentage = enrollment.progress.percentage_complete
+            except:
+                pass
+
+            # Determine status based on progress
+            if progress_percentage >= 100:
+                status = 'Completed'
+            elif progress_percentage < 20:
+                status = 'At Risk'
+            else:
+                status = 'Active'
+
+            # Format joined date
+            joined_date = enrollment.enrolled_at.strftime("%b %d")
+
+            # Calculate last active (from progress.last_accessed)
+            last_active = "Never"
+            try:
+                if enrollment.progress.last_accessed:
+                    last_active = format_time_ago(enrollment.progress.last_accessed)
+            except:
+                pass
+
+            students_data.append({
+                "id": str(student.id),
+                "name": student.fullname,
+                "email": student.email,
+                "avatar": student.profile_picture.url if student.profile_picture else None,
+                "joinedDate": joined_date,
+                "currentProgress": round(progress_percentage),
+                "status": status,
+                "lastActive": last_active
+            })
+
+        return Response({"students": students_data})
+
+
+class MessageAllStudentsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Send message to all students in a course",
+        description="Sends a notification/message to all enrolled students in the specified course.",
+        request=MessageAllSerializer,
+        responses={
+            200: OpenApiResponse(description="Messages sent successfully."),
+            403: OpenApiResponse(description="Only instructors can access this endpoint."),
+            404: OpenApiResponse(description="Course not found."),
+            400: OpenApiResponse(description="Invalid data."),
+        },
+        tags=["Instructor Dashboard"]
+    )
+    def post(self, request, course_id):
+        instructor = request.user
+
+        # Ensure user is an instructor
+        if instructor.role != 'instructor':
+            return Response({"error": "Only instructors can access this endpoint."}, status=403)
+
+        try:
+            course = Course.objects.get(id=course_id, instructor=instructor)
+        except Course.DoesNotExist:
+            return Response({"error": "Course not found or you don't have permission."}, status=404)
+
+        # Validate and process using serializer
+        serializer = MessageAllSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"error": serializer.errors}, status=400)
+        
+        # Create notifications via serializer
+        notifications = serializer.create_notifications(course, instructor)
+
+        return Response({
+            "success": True,
+            "message": f"Message sent to {len(notifications)} students.",
+            "recipients_count": len(notifications)
+        })
+
+
+class MessageStudentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Send message to an individual student",
+        description="Sends a direct notification/message to a specific student.",
+        request=MessageStudentSerializer,
+        responses={
+            200: OpenApiResponse(description="Message sent successfully."),
+            403: OpenApiResponse(description="Only instructors can access this endpoint."),
+            404: OpenApiResponse(description="Student not found."),
+            400: OpenApiResponse(description="Invalid data."),
+        },
+        tags=["Instructor Dashboard"]
+    )
+    def post(self, request):
+        instructor = request.user
+
+        # Ensure user is an instructor
+        if instructor.role != 'instructor':
+            return Response({"error": "Only instructors can access this endpoint."}, status=403)
+
+        # Validate and process using serializer
+        serializer = MessageStudentSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"error": serializer.errors}, status=400)
+        
+        # Create notification via serializer
+        notification = serializer.create_notification(instructor)
+        student = serializer.validated_data['student']
+
+        return Response({
+            "success": True,
+            "message": f"Message sent to {student.fullname}."
+        })
+
+
+class GlobalStudentsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="List all students across all instructor courses",
+        description="Returns all students enrolled in any of the instructor's courses with aggregated data including total spent, enrolled courses count, and course details.",
+        responses={
+            200: OpenApiResponse(
+                description="Students list retrieved successfully.",
+                examples=[{
+                    "students": [
+                        {
+                            "id": "uuid",
+                            "name": "Student Name",
+                            "email": "student@example.com",
+                            "avatar": "url",
+                            "joinedDate": "Oct 2025",
+                            "totalSpent": 179.98,
+                            "enrolledCoursesCount": 2,
+                            "enrolledCoursesList": [
+                                {
+                                    "id": "course-uuid",
+                                    "title": "Course Title",
+                                    "progress": 75,
+                                    "lastAccessed": "2h ago"
+                                }
+                            ]
+                        }
+                    ]
+                }]
+            ),
+            403: OpenApiResponse(description="Only instructors can access this endpoint.")
+        },
+        tags=["Instructor Dashboard"]
+    )
+    def get(self, request):
+        instructor = request.user
+
+        # Ensure user is an instructor
+        if instructor.role != 'instructor':
+            return Response({"error": "Only instructors can access this endpoint."}, status=403)
+
+        # Get all courses by this instructor
+        courses = Course.objects.filter(instructor=instructor)
+        
+        # Get all enrollments for these courses with related student data
+        enrollments = Enrollment.objects.filter(course__in=courses).select_related('student', 'course', 'progress')
+        
+        # Aggregate data by student
+        students_data = {}
+        
+        for enrollment in enrollments:
+            student = enrollment.student
+            student_id = str(student.id)
+            
+            if student_id not in students_data:
+                # Initialize student data
+                students_data[student_id] = {
+                    "id": student_id,
+                    "name": student.fullname,
+                    "email": student.email,
+                    "avatar": student.profile_picture.url if student.profile_picture else None,
+                    "joinedDate": enrollment.enrolled_at.strftime("%b %Y"),
+                    "totalSpent": 0,
+                    "enrolledCoursesCount": 0,
+                    "enrolledCoursesList": []
+                }
+            
+            # Add course price to total spent
+            students_data[student_id]["totalSpent"] += float(enrollment.course.price or 0)
+            students_data[student_id]["enrolledCoursesCount"] += 1
+            
+            # Get progress for this course
+            progress_percentage = 0
+            try:
+                if hasattr(enrollment, 'progress') and enrollment.progress:
+                    progress_percentage = round(enrollment.progress.percentage_complete)
+            except:
+                pass
+            
+            # Get last accessed time
+            last_accessed = "Never"
+            try:
+                if hasattr(enrollment, 'progress') and enrollment.progress and enrollment.progress.last_accessed:
+                    last_accessed = format_time_ago(enrollment.progress.last_accessed)
+            except:
+                pass
+            
+            # Add course to enrolled list
+            students_data[student_id]["enrolledCoursesList"].append({
+                "id": str(enrollment.course.id),
+                "title": enrollment.course.title,
+                "progress": progress_percentage,
+                "lastAccessed": last_accessed
+            })
+        
+        # Convert dict to list
+        students_list = list(students_data.values())
+        
+        return Response({"students": students_list})

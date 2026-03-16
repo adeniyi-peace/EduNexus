@@ -165,7 +165,7 @@ export default function CourseBuilderLayout() {
     const activeLesson = activeModule?.lessons.find(l => l.id === activeLessonId);
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden bg-base-100 text-base-content font-sans">
+        <div className="h-screen relative flex flex-col overflow-hidden bg-base-100 text-base-content font-sans">
             
             {/* --- BUILDER HEADER --- */}
             <header className="h-16 flex items-center justify-between px-4 lg:px-6 border-b border-base-content/5 bg-base-200/50 backdrop-blur-md shrink-0 ">

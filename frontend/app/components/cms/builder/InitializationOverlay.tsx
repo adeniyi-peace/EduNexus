@@ -7,7 +7,7 @@ interface InitializationOverlayProps {
 
 export function InitializationOverlay({ onOpenSettings, error }: InitializationOverlayProps) {
     return (
-        <div className="fixed inset-0 z-[100] bg-base-100 flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+        <div className="absolute inset-0 z-[100] bg-base-100 flex flex-col items-center justify-center p-6 text-center overflow-hidden">
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
                  style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
             

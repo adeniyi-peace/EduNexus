@@ -49,7 +49,7 @@ export function SettingsModal({
     }, [error]);
 
     return (
-        <dialog id="course_settings_modal" className="modal modal-bottom sm:modal-middle backdrop-blur-sm">
+        <dialog id="course_settings_modal" className="modal modal-bottom modal-middle backdrop-blur-sm">
             <div ref={scrollRef} className="modal-box bg-base-100 border border-base-content/10 max-w-2xl p-8 rounded-4xl custom-scrollbar">
                 <h3 className="font-black text-xl mb-6 italic uppercase tracking-tighter">Course_Settings</h3>
                 
