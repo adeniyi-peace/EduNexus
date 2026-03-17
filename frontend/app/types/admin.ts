@@ -105,18 +105,18 @@ export interface PendingCoursesResponse {
 }
 
 // --- Content Moderation ---
-export interface ModerationReport {
+export interface ContentReport {
     id: number;
-    type: 'review' | 'comment';
-    content: string;
+    targetType: 'review' | 'comment';
+    targetContent: string;
     rating?: number;
     reason: string;
-    reporter: string;
-    author: string;
+    reporterName: string;
+    authorName: string;
     authorId: number;
     courseTitle: string;
     courseId: string;
-    timestamp: string;
+    createdAt: string;
 }
 
 export interface ModerationStats {
@@ -128,18 +128,21 @@ export interface ModerationStats {
 export interface ModerationListResponse {
     stats: ModerationStats;
     count: number;
-    results: ModerationReport[];
+    results: ContentReport[];
 }
 
 // --- Finance ---
 export interface AdminFinanceStats {
-    totalRevenue: number;
+    totalRevenue: string | number;
     totalRevenueFormatted: string;
     thisMonth: number;
     thisMonthFormatted: string;
     revenueTrend: number;
     totalTransactions: number;
     platformFee: number;
+    netIncomeFormatted?: string;
+    pendingPayoutsFormatted?: string;
+    activeInstructors?: number;
 }
 
 export interface AdminTransaction {

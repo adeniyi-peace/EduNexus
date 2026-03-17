@@ -1,11 +1,18 @@
-import { AlertTriangle, ShieldAlert, MessageSquareX, UserMinus } from "lucide-react";
+import { AlertTriangle, ShieldAlert, MessageSquareX, UserMinus, Loader2 } from "lucide-react";
 
-export const ModerationStats = () => {
+interface Props {
+    totalFlagged: number;
+    resolvedToday: number;
+    pendingReview: number;
+    isLoading?: boolean;
+}
+
+export const ModerationStats = ({ totalFlagged, resolvedToday, pendingReview, isLoading }: Props) => {
     const STATS = [
-        { label: "High Priority", value: "14", icon: ShieldAlert, color: "text-error", bg: "bg-error/10" },
-        { label: "Reported Comments", value: "42", icon: MessageSquareX, color: "text-warning", bg: "bg-warning/10" },
-        { label: "Flagged Profiles", value: "5", icon: UserMinus, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Resolved Today", value: "128", icon: AlertTriangle, color: "text-success", bg: "bg-success/10" },
+        { label: "High Priority", value: isLoading ? "..." : pendingReview.toString(), icon: ShieldAlert, color: "text-error", bg: "bg-error/10" },
+        { label: "Reported Comments", value: isLoading ? "..." : totalFlagged.toString(), icon: MessageSquareX, color: "text-warning", bg: "bg-warning/10" },
+        { label: "Flagged Profiles", value: "0", icon: UserMinus, color: "text-primary", bg: "bg-primary/10" }, // Mocked for now
+        { label: "Resolved Today", value: isLoading ? "..." : resolvedToday.toString(), icon: AlertTriangle, color: "text-success", bg: "bg-success/10" },
     ];
 
     return (

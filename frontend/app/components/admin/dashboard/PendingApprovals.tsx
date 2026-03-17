@@ -1,9 +1,11 @@
-export const PendingApprovals = () => {
-    const PENDING = [
-        { id: 1, name: "Advanced Go Mastery", instructor: "Jared Smith", date: "Feb 14", status: "New" },
-        { id: 2, name: "UI Design for Devs", instructor: "Emily Chen", date: "Feb 13", status: "Updated" },
-    ];
+import type { AdminPendingCoursePreview } from "~/types/admin";
 
+interface Props {
+    items: AdminPendingCoursePreview[];
+    isLoading?: boolean;
+}
+
+export const PendingApprovals = ({ items, isLoading }: Props) => {
     return (
         <div className="card bg-base-100 border border-base-content/5 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-base-content/5">
@@ -20,11 +22,15 @@ export const PendingApprovals = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {PENDING.map((course) => (
+                        {items.length === 0 ? (
+                            <tr>
+                                <td colSpan={4} className="text-center py-4 opacity-50 font-bold">No pending approvals</td>
+                            </tr>
+                        ) : items.map((course) => (
                             <tr key={course.id} className="hover">
-                                <td className="font-bold text-sm">{course.name}</td>
+                                <td className="font-bold text-sm">{course.title}</td>
                                 <td className="text-sm opacity-70 font-medium">{course.instructor}</td>
-                                <td className="text-xs">{course.date}</td>
+                                <td className="text-xs">{new Date(course.submittedAt).toLocaleDateString()}</td>
                                 <td className="text-right">
                                     <button className="btn btn-xs btn-primary">Review</button>
                                 </td>

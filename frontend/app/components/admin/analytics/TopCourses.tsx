@@ -1,12 +1,11 @@
 import { Star, Trophy } from "lucide-react";
+import type { AdminTopCourse } from "~/types/admin";
 
-export const TopCourses = () => {
-    const COURSES = [
-        { name: "React 19 Deep Dive", instructor: "Sarah J.", students: 840, rating: 4.9, completion: 78 },
-        { name: "UI Design Mastery", instructor: "Gary S.", students: 620, rating: 4.8, completion: 65 },
-        { name: "Advanced Node.js", instructor: "Alex R.", students: 410, rating: 4.6, completion: 42 },
-    ];
+interface Props {
+    courses: AdminTopCourse[];
+}
 
+export const TopCourses = ({ courses }: Props) => {
     return (
         <div className="card bg-base-100 border border-base-content/5 shadow-sm overflow-hidden h-full">
             <div className="p-6 border-b border-base-content/5 flex justify-between items-center">
@@ -25,14 +24,16 @@ export const TopCourses = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {COURSES.map((c, i) => (
-                            <tr key={i} className="group hover:bg-base-200/50">
+                        {courses.length === 0 ? (
+                            <tr><td colSpan={4} className="text-center py-6 opacity-30 font-bold">No trending courses</td></tr>
+                        ) : courses.map((c, i) => (
+                            <tr key={c.id} className="group hover:bg-base-200/50">
                                 <td className="font-bold text-sm">
                                     <div className="flex items-center gap-2">
                                         <span className="font-mono opacity-30 text-xs">#{i + 1}</span>
-                                        {c.name}
+                                        {c.title}
                                     </div>
-                                    <div className="text-[10px] opacity-50 font-normal">{c.instructor}</div>
+                                    <div className="text-[10px] opacity-50 font-normal">{c.instructor} | {c.category}</div>
                                 </td>
                                 <td className="font-mono text-xs">{c.students}</td>
                                 <td>
@@ -42,8 +43,8 @@ export const TopCourses = () => {
                                 </td>
                                 <td>
                                     <div className="flex items-center gap-2">
-                                        <progress className="progress progress-primary w-16" value={c.completion} max="100"></progress>
-                                        <span className="text-[10px] font-bold opacity-60">{c.completion}%</span>
+                                        <progress className="progress progress-primary w-16" value={c.rating * 20} max="100"></progress>
+                                        <span className="text-[10px] font-bold opacity-60">{c.revenueFormatted}</span>
                                     </div>
                                 </td>
                             </tr>

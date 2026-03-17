@@ -1,13 +1,18 @@
 import { Users, Clock, BookOpen, Zap } from "lucide-react";
+import type { AdminAnalyticsKpis } from "~/types/admin";
 
-const METRICS = [
-    { label: "Daily Active Users", value: "1,240", change: "+12%", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Avg. Watch Time", value: "42m", change: "+5%", icon: Clock, color: "text-purple-500", bg: "bg-purple-500/10" },
-    { label: "Lesson Completion", value: "68%", change: "-2%", icon: BookOpen, color: "text-green-500", bg: "bg-green-500/10" },
-    { label: "Engagement Rate", value: "High", change: "Stable", icon: Zap, color: "text-orange-500", bg: "bg-orange-500/10" },
-];
+interface Props {
+    kpis?: AdminAnalyticsKpis;
+}
 
-export const EngagementCards = () => {
+export const EngagementCards = ({ kpis }: Props) => {
+    const METRICS = [
+        { label: "Total Platform Users", value: kpis?.totalUsers?.toLocaleString() ?? "...", change: "+12%", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
+        { label: "Total Enrollments", value: kpis?.totalEnrollments?.toLocaleString() ?? "...", change: "+2%", icon: Zap, color: "text-purple-500", bg: "bg-purple-500/10" },
+        { label: "Published Courses", value: kpis?.totalPublishedCourses?.toLocaleString() ?? "...", change: "Stable", icon: BookOpen, color: "text-green-500", bg: "bg-green-500/10" },
+        { label: "Platform Rating", value: kpis ? `${kpis.avgPlatformRating.toFixed(1)}/5` : "...", change: "+0.1", icon: Zap, color: "text-orange-500", bg: "bg-orange-500/10" },
+    ];
+
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {METRICS.map((m, i) => (

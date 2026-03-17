@@ -1,11 +1,17 @@
 import { BookOpen, FileEdit, EyeOff, CheckCircle } from "lucide-react";
+import type { AdminCourse } from "~/types/admin";
 
-export const CourseStats = () => {
+interface Props {
+    data: AdminCourse[];
+    isLoading?: boolean;
+}
+
+export const CourseStats = ({ data, isLoading }: Props) => {
     const STATS = [
-        { label: "Total Courses", value: "1,248", icon: BookOpen, color: "text-primary" },
-        { label: "Published", value: "1,102", icon: CheckCircle, color: "text-success" },
-        { label: "Drafts", value: "84", icon: FileEdit, color: "text-warning" },
-        { label: "Private", value: "62", icon: EyeOff, color: "text-error" },
+        { label: "Total Courses", value: isLoading ? "..." : data.length.toString(), icon: BookOpen, color: "text-primary" },
+        { label: "Published", value: isLoading ? "..." : data.filter(c => c.status === 'Published').length.toString(), icon: CheckCircle, color: "text-success" },
+        { label: "Drafts", value: isLoading ? "..." : data.filter(c => c.status === 'Draft').length.toString(), icon: FileEdit, color: "text-warning" },
+        { label: "Pending Review", value: isLoading ? "..." : data.filter(c => c.status === 'PendingApproval').length.toString(), icon: EyeOff, color: "text-info" },
     ];
 
     return (

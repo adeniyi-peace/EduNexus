@@ -1,6 +1,6 @@
 import { CheckCircle, XCircle, Eye, Clock, BookOpen, User } from "lucide-react";
 import { motion } from "framer-motion";
-import type { PendingCourse } from "~/types/course";
+import type { PendingCourse } from "~/types/admin";
 
 interface Props {
     course: PendingCourse;
@@ -18,8 +18,12 @@ export const CourseReviewCard = ({ course, onApprove, onReject }: Props) => {
             className="card card-side bg-base-100 border border-base-content/5 shadow-sm hover:shadow-md transition-all group"
         >
             {/* Thumbnail */}
-            <figure className="w-48 hidden md:block relative overflow-hidden">
-                <img src={course.thumbnail} alt={course.title} className="object-cover h-full w-full group-hover:scale-110 transition-transform duration-500" />
+            <figure className="w-48 hidden md:block relative overflow-hidden bg-base-200">
+                {course.thumbnail ? (
+                    <img src={course.thumbnail} alt={course.title} className="object-cover h-full w-full group-hover:scale-110 transition-transform duration-500" />
+                ) : (
+                    <div className="h-full w-full flex items-center justify-center text-base-content/20"><BookOpen size={48} /></div>
+                )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button className="btn btn-circle btn-primary">
                         <Eye size={20} />
@@ -45,8 +49,8 @@ export const CourseReviewCard = ({ course, onApprove, onReject }: Props) => {
                         {/* Instructor Info */}
                         <div className="flex items-center gap-2 mb-4">
                             <div className="avatar">
-                                <div className="w-6 h-6 rounded-full">
-                                    <img src={course.instructor.avatar} />
+                                <div className="w-6 h-6 rounded-full bg-base-300">
+                                    <img src={course.instructor.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(course.instructor.name)}`} alt={course.instructor.name} />
                                 </div>
                             </div>
                             <span className="text-xs font-bold opacity-70">by {course.instructor.name}</span>

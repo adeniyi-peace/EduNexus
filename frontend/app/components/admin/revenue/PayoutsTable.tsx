@@ -1,12 +1,11 @@
 import { CheckCircle2, MoreHorizontal, ExternalLink, AlertCircle } from "lucide-react";
+import type { AdminPayout } from "~/types/admin";
 
-const PAYOUTS = [
-    { id: "p1", instructor: "Sarah Jenkins", email: "sarah@edu.com", amount: 1250.00, method: "Stripe", date: "Feb 14", status: "Pending", avatar: "https://i.pravatar.cc/150?u=1" },
-    { id: "p2", instructor: "David Chen", email: "david@edu.com", amount: 890.50, method: "PayPal", date: "Feb 13", status: "Pending", avatar: "https://i.pravatar.cc/150?u=2" },
-    { id: "p3", instructor: "Elena Gomez", email: "elena@edu.com", amount: 2400.00, method: "Bank Transfer", date: "Feb 10", status: "Overdue", avatar: "https://i.pravatar.cc/150?u=3" },
-];
+interface Props {
+    payouts: AdminPayout[];
+}
 
-export const PayoutsTable = () => {
+export const PayoutsTable = ({ payouts }: Props) => {
     return (
         <div className="card bg-base-100 border border-base-content/5 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-base-content/5 flex justify-between items-center bg-base-200/30">
@@ -31,29 +30,33 @@ export const PayoutsTable = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {PAYOUTS.map((p) => (
+                        {payouts.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="text-center py-6 opacity-30 font-bold">No payouts due</td>
+                            </tr>
+                        ) : payouts.map((p) => (
                             <tr key={p.id} className="hover:bg-base-200/50 group transition-colors">
                                 <td>
                                     <div className="flex items-center gap-3">
                                         <div className="avatar">
-                                            <div className="w-10 rounded-full">
-                                                <img src={p.avatar} alt={p.instructor} />
+                                            <div className="w-10 rounded-full bg-base-300 flex items-center justify-center font-bold text-base-content/50">
+                                                {p.name.charAt(0)}
                                             </div>
                                         </div>
                                         <div>
-                                            <div className="font-bold text-sm">{p.instructor}</div>
+                                            <div className="font-bold text-sm">{p.name}</div>
                                             <div className="text-xs opacity-50">{p.email}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span className="badge badge-ghost badge-sm font-bold text-[10px] uppercase tracking-wider">{p.method}</span>
+                                    <span className="badge badge-ghost badge-sm font-bold text-[10px] uppercase tracking-wider">{p.students} Enr.</span>
                                 </td>
                                 <td className="text-sm font-medium opacity-70">
-                                    {p.status === 'Overdue' && <AlertCircle size={14} className="inline text-error mr-1" />}
-                                    {p.date}
+                                    {p.status === 'overdue' && <AlertCircle size={14} className="inline text-error mr-1" />}
+                                    Gross: ${p.grossRevenue.toFixed(0)}
                                 </td>
-                                <td className="font-black text-base">${p.amount.toFixed(2)}</td>
+                                <td className="font-black text-base">${p.payoutDue.toFixed(2)}</td>
                                 <td className="text-right">
                                     <button className="btn btn-sm btn-success btn-outline gap-2 hover:text-white!">
                                         Pay Now <CheckCircle2 size={16} />

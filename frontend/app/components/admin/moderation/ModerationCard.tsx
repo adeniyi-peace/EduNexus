@@ -1,17 +1,14 @@
 import { motion } from "framer-motion";
 import { ThumbsUp, Trash2, ShieldAlert, UserX, MessageSquare } from "lucide-react";
+import type { ContentReport } from "~/types/admin";
 
-interface ModerationItem {
-    id: string;
-    type: 'comment' | 'course' | 'review';
-    content: string;
-    reason: string;
-    reporter: string;
-    author: string;
-    timestamp: string;
+interface Props {
+    item: ContentReport;
+    onDismiss: () => void;
+    onRemove: () => void;
 }
 
-export const ModerationCard = ({ item }: { item: ModerationItem }) => {
+export const ModerationCard = ({ item, onDismiss, onRemove }: Props) => {
     return (
         <motion.div 
             layout
@@ -25,24 +22,24 @@ export const ModerationCard = ({ item }: { item: ModerationItem }) => {
                 <div className="p-6 flex-1 border-b md:border-b-0 md:border-r border-base-content/5">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="badge badge-error badge-outline font-black text-[10px] uppercase">
-                            {item.type}
+                            {item.targetType}
                         </div>
                         <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
-                            Reported {item.timestamp}
+                            Reported {new Date(item.createdAt).toLocaleDateString()}
                         </span>
                     </div>
 
                     <div className="bg-base-200/50 rounded-2xl p-4 mb-4 border border-base-content/5 italic text-sm text-base-content/80">
-                        "{item.content}"
+                        "{item.targetContent}"
                     </div>
 
                     <div className="flex items-center gap-2">
                         <div className="avatar placeholder">
                             <div className="bg-neutral text-neutral-content rounded-full w-6">
-                                <span className="text-[10px]">{item.author[0]}</span>
+                                <span className="text-[10px]">{item.authorName.charAt(0)}</span>
                             </div>
                         </div>
-                        <span className="text-xs font-bold">Author: <span className="text-primary">{item.author}</span></span>
+                        <span className="text-xs font-bold">Author: <span className="text-primary">{item.authorName}</span></span>
                     </div>
                 </div>
 
@@ -55,15 +52,15 @@ export const ModerationCard = ({ item }: { item: ModerationItem }) => {
                             <p className="text-sm font-bold leading-tight">{item.reason}</p>
                         </div>
                         <p className="text-xs font-medium opacity-60">
-                            Reported by: <span className="font-bold text-base-content">{item.reporter}</span>
+                            Reported by: <span className="font-bold text-base-content">{item.reporterName}</span>
                         </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mt-6">
-                        <button className="btn btn-sm btn-ghost gap-2 border border-base-content/10">
+                        <button className="btn btn-sm btn-ghost gap-2 border border-base-content/10" onClick={onDismiss}>
                             <ThumbsUp size={14} /> Dismiss
                         </button>
-                        <button className="btn btn-sm btn-error gap-2">
+                        <button className="btn btn-sm btn-error gap-2" onClick={onRemove}>
                             <Trash2 size={14} /> Delete
                         </button>
                         <button className="btn btn-sm btn-outline btn-error col-span-2 gap-2">
