@@ -1,5 +1,5 @@
 from django.utils import timezone
-
+from rest_framework.pagination import PageNumberPagination
 
 def format_time_ago(dt):
     """
@@ -20,3 +20,17 @@ def format_time_ago(dt):
         return f"{hours}h ago"
     minutes = (diff.seconds % 3600) // 60
     return f"{minutes}m ago"
+
+
+class StandardPagination(PageNumberPagination):
+    page_size = 15
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+def _paginate(queryset, request, serializer_fn):
+    """Helper: run standard pagination and return a Response."""
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(queryset, request)
+    data = [serializer_fn(item) for item in page]
+    return paginator.get_paginated_response(data)

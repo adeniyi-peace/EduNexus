@@ -2,6 +2,7 @@ from django.db import models
 from uuid import uuid4
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
+from django.db.models import Sum, Avg
 
 
 from .fields import OrderField
@@ -57,6 +58,10 @@ class Course(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def rating(self):
+        avg_rating = self.reviews.aggregate(avg=Avg('rating'))['avg']
+        return round(avg_rating, 1) if avg_rating else None
 
 class Module(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)

@@ -1,7 +1,7 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import BasePermission, IsAuthenticated
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
 from datetime import timedelta
@@ -12,36 +12,11 @@ from django.contrib.auth import get_user_model
 from courses.models import Course, Enrollment, Review, Category
 from payments.models import Payment
 from .models import AdminSetting
-from .utils import format_time_ago
+from .utils import format_time_ago, StandardPagination, _paginate
+from .permissions import IsAdmin
+from .serializers_admin import AdminDashboardSerializer, UserAdminSerializer, CourseAdminSerializer, CourseDeleteSerializer
 
 User = get_user_model()
-
-# -------------------------------------------------------------------
-# Shared Utilities
-# -------------------------------------------------------------------
-
-class IsAdmin(BasePermission):
-    """Custom permission: only allows users with role='admin' or superusers."""
-    def has_permission(self, request, view):
-        return (
-            request.user
-            and request.user.is_authenticated
-            and (request.user.role == 'admin' or request.user.is_superuser)
-        )
-
-
-class StandardPagination(PageNumberPagination):
-    page_size = 15
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
-
-def _paginate(queryset, request, serializer_fn):
-    """Helper: run standard pagination and return a Response."""
-    paginator = StandardPagination()
-    page = paginator.paginate_queryset(queryset, request)
-    data = [serializer_fn(item) for item in page]
-    return paginator.get_paginated_response(data)
 
 
 # -------------------------------------------------------------------
@@ -53,131 +28,13 @@ class AdminDashboardView(APIView):
 
     @extend_schema(
         summary="Admin Dashboard KPI Stats",
-        description="Returns platform-wide KPIs, pending approval queue, and a recent activity feed. Admin only.",
-        responses={200: OpenApiResponse(description="Dashboard data returned.")},
+        responses={200: AdminDashboardSerializer},
         tags=["Admin"]
     )
     def get(self, request):
-        now = timezone.now()
-        one_month_ago = now - relativedelta(months=1)
-
-        # --- KPI Cards ---
-        total_students = User.objects.filter(role='student', is_active=True).count()
-        prev_students = User.objects.filter(role='student', is_active=True, date_joined__lt=one_month_ago).count()
-        student_trend = round(((total_students - prev_students) / prev_students * 100), 1) if prev_students else 0.0
-
-        total_revenue = Payment.objects.filter(status='success').aggregate(t=Sum('amount'))['t'] or 0
-        prev_revenue = Payment.objects.filter(
-            status='success', created_at__lt=one_month_ago
-        ).aggregate(t=Sum('amount'))['t'] or 0
-        revenue_trend = round(((float(total_revenue) - float(prev_revenue)) / float(prev_revenue) * 100), 1) if prev_revenue else 0.0
-
-        course_completions = Enrollment.objects.filter(
-            progress__completed_lessons__isnull=False
-        ).distinct().count()
-
-        pending_count = Course.objects.filter(status='PendingApproval').count()
-
-        kpi_stats = [
-            {
-                "title": "Active Students",
-                "value": f"{total_students:,}",
-                "rawValue": total_students,
-                "trend": student_trend,
-                "description": "vs. last month",
-            },
-            {
-                "title": "Total Revenue",
-                "value": f"${float(total_revenue):,.2f}",
-                "rawValue": float(total_revenue),
-                "trend": revenue_trend,
-                "description": "Current billing cycle",
-            },
-            {
-                "title": "Course Completions",
-                "value": f"{course_completions:,}",
-                "rawValue": course_completions,
-                "trend": 0,
-                "description": "All time",
-            },
-            {
-                "title": "Pending Approvals",
-                "value": str(pending_count),
-                "rawValue": pending_count,
-                "trend": 0,
-                "description": "Items in queue",
-            },
-        ]
-
-        # --- Pending Approvals Mini-List (top 5) ---
-        pending_courses = Course.objects.filter(
-            status='PendingApproval'
-        ).select_related('instructor', 'category').order_by('-created_at')[:5]
-
-        pending_list = []
-        for c in pending_courses:
-            pending_list.append({
-                "id": str(c.id),
-                "title": c.title,
-                "instructor": c.instructor.fullname,
-                "category": c.category.name if c.category else "Uncategorized",
-                "submittedAt": format_time_ago(c.created_at),
-                "price": float(c.price),
-                "thumbnail": c.thumbnail.url if c.thumbnail else None,
-            })
-
-        # --- Activity Feed ---
-        recent_enrollments = Enrollment.objects.select_related(
-            'student', 'course'
-        ).order_by('-enrolled_at')[:6]
-
-        recent_payments = Payment.objects.filter(
-            status='success'
-        ).order_by('-created_at')[:4]
-
-        feed = []
-        for enr in recent_enrollments:
-            feed.append({
-                "id": f"enr-{enr.id}",
-                "user": enr.student.fullname,
-                "action": "enrolled in",
-                "target": enr.course.title,
-                "time": format_time_ago(enr.enrolled_at),
-                "type": "enrollment",
-            })
-        for pay in recent_payments:
-            feed.append({
-                "id": f"pay-{pay.id}",
-                "user": pay.email,
-                "action": "completed payment",
-                "target": f"${float(pay.amount):.2f}",
-                "time": format_time_ago(pay.created_at),
-                "type": "payment",
-            })
-
-        # Sort by actual timestamp (assuming 'time' field contains sortable date)
-        feed = sorted(feed, key=lambda x: x['time'], reverse=True)[:8]
-
-        # --- Revenue Chart (last 6 months) ---
-        revenue_chart = []
-        for i in range(5, -1, -1):
-            month_date = now - relativedelta(months=i)
-            month_revenue = Payment.objects.filter(
-                status='success',
-                created_at__year=month_date.year,
-                created_at__month=month_date.month,
-            ).aggregate(t=Sum('amount'))['t'] or 0
-            revenue_chart.append({
-                "name": month_date.strftime("%b"),
-                "revenue": float(month_revenue),
-            })
-
-        return Response({
-            "kpiStats": kpi_stats,
-            "pendingApprovals": pending_list,
-            "activityFeed": feed,
-            "revenueChart": revenue_chart,
-        })
+        # We pass None because we aren't serializing a specific model instance
+        serializer = AdminDashboardSerializer(instance=None)
+        return Response(serializer.data)
 
 
 # -------------------------------------------------------------------
@@ -189,7 +46,7 @@ class AdminUserListView(APIView):
 
     @extend_schema(
         summary="Admin — List All Users (paginated)",
-        description="Returns a paginated, filterable list of all platform users. Supports ?role=, ?is_active=, ?search=. Admin only.",
+        responses={200: UserAdminSerializer(many=True)},
         tags=["Admin"]
     )
     def get(self, request):
@@ -211,63 +68,44 @@ class AdminUserListView(APIView):
                 Q(last_name__icontains=search)
             )
 
-        def serialize(user):
-            return {
-                "id": user.id,
-                "fullname": user.fullname,
-                "email": user.email,
-                "role": user.role,
-                "is_active": user.is_active,
-                "date_joined": user.date_joined.strftime("%b %d, %Y") if user.date_joined else None,
-                "avatar": user.profile_picture.url if user.profile_picture else None,
-            }
+        # Using the serializer inside your pagination helper
+        def serialize_user(user):
+            return UserAdminSerializer(user).data
 
-        return _paginate(qs, request, serialize)
+        return _paginate(qs, request, serialize_user)
 
 
 class AdminUserDetailView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
+
     @extend_schema(
-        summary="Admin — Update User (suspend / activate / change role)",
-        description="PATCH to toggle is_active or update role. Admin only.",
+        summary="Admin — Update User",
+        request=UserAdminSerializer, # Swagger now knows exactly what's editable
+        responses={200: UserAdminSerializer},
         tags=["Admin"]
     )
     def patch(self, request, user_id):
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({"error": "User not found."}, status=404)
-
-        # Prevent admin from suspending themselves
-        if user == request.user:
-            return Response({"error": "You cannot modify your own account via this endpoint."}, status=400)
-
-        is_active = request.data.get('is_active')
-        role = request.data.get('role')
-
-        if is_active is not None:
-            user.is_active = bool(is_active)
-
-        if role is not None:
-            if role not in [r[0] for r in User.Roles.choices]:
-                return Response({"error": f"Invalid role '{role}'."}, status=400)
-            user.role = role
-
-        user.save()
-
-        action = "activated" if user.is_active else "suspended"
-        return Response({
-            "success": True,
-            "message": f"User {user.email} has been {action}.",
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "role": user.role,
-                "is_active": user.is_active,
-            }
-        })
-
+        user = get_object_or_404(User, id=user_id)
+        
+        # 'partial=True' allows the frontend to only send 'role' or 'is_active'
+        # note to self, uncoment role in serializer after migrations to allow role changes from admin dashboard
+        serializer = UserAdminSerializer(
+            user, 
+            data=request.data, 
+            partial=True, 
+            context={'request': request}
+        )
+        
+        if serializer.is_valid():
+            updated_user = serializer.save()
+            action = "activated" if updated_user.is_active else "suspended"
+            return Response({
+                "success": True,
+                "message": f"User {updated_user.email} has been {action}.",
+                "user": serializer.data
+            })
+        return Response(serializer.errors, status=400)
 
 # -------------------------------------------------------------------
 # 3. Admin Courses  GET /api/admin/courses/
@@ -278,14 +116,16 @@ class AdminCourseListView(APIView):
 
     @extend_schema(
         summary="Admin — List All Courses (paginated)",
-        description="Returns all courses with filters: ?status=, ?category=, ?search=. Admin only.",
+        responses={200: CourseAdminSerializer(many=True)},
         tags=["Admin"]
     )
     def get(self, request):
+        # Optimization: select_related for 1:1/FK, annotate for counts
         qs = Course.objects.select_related('instructor', 'category').annotate(
             student_count=Count('enrollments')
         ).order_by('-created_at')
 
+        # --- Filters ---
         status = request.query_params.get('status')
         category = request.query_params.get('category')
         search = request.query_params.get('search', '').strip()
@@ -301,39 +141,30 @@ class AdminCourseListView(APIView):
                 Q(instructor__last_name__icontains=search)
             )
 
-        def serialize(course):
-            return {
-                "id": str(course.id),
-                "title": course.title,
-                "instructor": course.instructor.fullname,
-                "category": course.category.name if course.category else "Uncategorized",
-                "status": course.status,
-                "price": float(course.price),
-                "students": course.student_count,
-                "rating": 0,  # computed separately if needed
-                "thumbnail": course.thumbnail.url if course.thumbnail else None,
-                "created_at": course.created_at.strftime("%b %d, %Y"),
-            }
+        def serialize_course(course):
+            return CourseAdminSerializer(course).data
 
-        return _paginate(qs, request, serialize)
+        return _paginate(qs, request, serialize_course)
 
     @extend_schema(
         summary="Admin — Hard-delete a course",
-        description="DELETE a course entirely from the platform. Admin only.",
+        request=CourseDeleteSerializer,
+        responses={200: OpenApiResponse(description="Course deleted successfully")},
         tags=["Admin"]
     )
     def delete(self, request):
-        course_id = request.data.get('course_id')
-        if not course_id:
-            return Response({"error": "course_id is required"}, status=400)
+        serializer = CourseDeleteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+            
+        course_id = serializer.validated_data['course_id']
         try:
             course = Course.objects.get(id=course_id)
+            title = course.title
+            course.delete()
+            return Response({"success": True, "message": f"Course '{title}' permanently deleted."})
         except Course.DoesNotExist:
             return Response({"error": "Course not found."}, status=404)
-        title = course.title
-        course.delete()
-        return Response({"success": True, "message": f"Course '{title}' permanently deleted."})
-
 
 # -------------------------------------------------------------------
 # 4. Course Approval  GET /api/admin/courses/pending/

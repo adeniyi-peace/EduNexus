@@ -43,3 +43,13 @@ class IsStudent(permissions.BasePermission):
     """Allows access only to students."""
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.role == 'student')
+
+
+class IsAdmin(permissions.BasePermission):
+    """Custom permission: only allows users with role='admin' or superusers."""
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and (request.user.role == 'admin' or request.user.is_superuser)
+        )
