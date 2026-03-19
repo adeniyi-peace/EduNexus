@@ -6,7 +6,8 @@ from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 from django.contrib.auth import get_user_model
 
 from courses.models import Course, Enrollment, Review, Category
@@ -149,7 +150,18 @@ class AdminCourseListView(APIView):
     @extend_schema(
         summary="Admin — Hard-delete a course",
         request=CourseDeleteSerializer,
-        responses={200: OpenApiResponse(description="Course deleted successfully")},
+        responses={
+            200: OpenApiResponse(
+                description="Course deleted successfully",
+                response=OpenApiTypes.OBJECT, # Forces the JSON response to show
+                examples=[
+                    OpenApiExample(
+                        'Success Response',
+                        value={"success": True, "message": "Course permanently deleted"}
+                    )
+                ]
+            )
+        },
         tags=["Admin"]
     )
     def delete(self, request):
