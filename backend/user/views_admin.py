@@ -15,7 +15,12 @@ from payments.models import Payment
 from .models import AdminSetting
 from .utils import format_time_ago, StandardPagination, _paginate
 from .permissions import IsAdmin
-from .serializers_admin import AdminDashboardSerializer, UserAdminSerializer, CourseAdminSerializer, CourseDeleteSerializer
+from .serializers_admin import (
+    AdminDashboardSerializer, UserAdminSerializer, CourseAdminSerializer, CourseDeleteSerializer,
+    AdminPendingCourseSerializer, AdminCourseApproveSerializer, AdminCourseRejectSerializer,
+    AdminReportSerializer, AdminReviewDismissSerializer, AdminSettingsPatchSerializer,
+    AdminSettingResponseSerializer, AdminFinanceSerializer, AdminAnalyticsSerializer
+)
 
 User = get_user_model()
 
@@ -200,24 +205,7 @@ class AdminPendingCoursesView(APIView):
         ).order_by('-created_at')
 
         def serialize(c):
-            avg_rating = Review.objects.filter(
-                course__instructor=c.instructor
-            ).aggregate(avg=Avg('rating'))['avg'] or 0
-            return {
-                "id": str(c.id),
-                "title": c.title,
-                "instructor": {
-                    "name": c.instructor.fullname,
-                    "avatar": c.instructor.profile_picture.url if c.instructor.profile_picture else None,
-                    "rating": round(avg_rating, 1),
-                },
-                "category": c.category.name if c.category else "Uncategorized",
-                "price": float(c.price),
-                "submittedAt": format_time_ago(c.created_at),
-                "thumbnail": c.thumbnail.url if c.thumbnail else None,
-                "description": c.description,
-                "modulesCount": c.modules_count,
-            }
+            return AdminPendingCourseSerializer(c).data
 
         return _paginate(qs, request, serialize)
 
@@ -228,6 +216,8 @@ class AdminApproveCourseView(APIView):
     @extend_schema(
         summary="Admin — Approve a Course",
         description="Sets course status to Published and notifies the instructor. Admin only.",
+        request=None,
+        responses={200: OpenApiTypes.OBJECT},
         tags=["Admin"]
     )
     def post(self, request, course_id):
@@ -236,35 +226,16 @@ class AdminApproveCourseView(APIView):
         except Course.DoesNotExist:
             return Response({"error": "Course not found."}, status=404)
 
-        if course.status != 'PendingApproval':
-            return Response({"error": f"Course is not pending approval (current status: {course.status})."}, status=400)
-
-        course.status = 'Published'
-        course.rejection_reason = None
-        course.save(update_fields=['status', 'rejection_reason'])
-
-        # Ripple: Create notification for instructor
-        try:
-            from django.contrib.contenttypes.models import ContentType
-            from user.models import Notification
-            ContentType.objects.get_for_model(Course)
-            Notification.objects.create(
-                sender=request.user,
-                receiver=course.instructor,
-                notification_type='course_update',
-                title="Course Approved! 🎉",
-                message=f'Your course "{course.title}" has been approved and is now live.',
-                link=f"/courses/{course.slug}",
-            )
-        except Exception:
-            pass  # Non-fatal
-
-        return Response({
-            "success": True,
-            "message": f'Course "{course.title}" has been published.',
-            "courseId": str(course.id),
-            "newStatus": "Published",
-        })
+        serializer = AdminCourseApproveSerializer(course, data={}, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "success": True,
+                "message": f'Course "{course.title}" has been published.',
+                "courseId": str(course.id),
+                "newStatus": "Published",
+            })
+        return Response(serializer.errors, status=400)
 
 
 class AdminRejectCourseView(APIView):
@@ -273,6 +244,8 @@ class AdminRejectCourseView(APIView):
     @extend_schema(
         summary="Admin — Reject a Course",
         description="Sets course status to Rejected, stores rejection_reason, notifies instructor. Admin only.",
+        request=AdminCourseRejectSerializer,
+        responses={200: OpenApiTypes.OBJECT},
         tags=["Admin"]
     )
     def post(self, request, course_id):
@@ -281,37 +254,16 @@ class AdminRejectCourseView(APIView):
         except Course.DoesNotExist:
             return Response({"error": "Course not found."}, status=404)
 
-        reason = request.data.get('reason', '').strip()
-        if not reason:
-            return Response({"error": "A rejection reason is required."}, status=400)
-
-        if course.status != 'PendingApproval':
-            return Response({"error": f"Course is not pending approval (current status: {course.status})."}, status=400)
-
-        course.status = 'Rejected'
-        course.rejection_reason = reason
-        course.save(update_fields=['status', 'rejection_reason'])
-
-        # Ripple: Notify instructor
-        try:
-            from user.models import Notification
-            Notification.objects.create(
-                sender=request.user,
-                receiver=course.instructor,
-                notification_type='course_update',
-                title="Course Needs Revision",
-                message=f'Your course "{course.title}" was not approved. Reason: {reason}',
-                link="/cms",
-            )
-        except Exception:
-            pass
-
-        return Response({
-            "success": True,
-            "message": f'Course "{course.title}" has been rejected.',
-            "courseId": str(course.id),
-            "newStatus": "Rejected",
-        })
+        serializer = AdminCourseRejectSerializer(course, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "success": True,
+                "message": f'Course "{course.title}" has been rejected.',
+                "courseId": str(course.id),
+                "newStatus": "Rejected",
+            })
+        return Response(serializer.errors, status=400)
 
 
 # -------------------------------------------------------------------
@@ -326,6 +278,7 @@ class AdminReportListView(APIView):
     @extend_schema(
         summary="Admin — List Flagged Reviews",
         description="Returns all reviews with is_flagged=True for moderation. Admin only.",
+        responses={200: OpenApiTypes.OBJECT},
         tags=["Admin"]
     )
     def get(self, request):
@@ -333,26 +286,11 @@ class AdminReportListView(APIView):
             'student', 'course', 'flagged_by'
         ).order_by('-flagged_at')
 
-        def serialize(r):
-            return {
-                "id": r.id,
-                "type": "review",
-                "content": r.comment or "",
-                "rating": r.rating,
-                "reason": r.flag_reason or "Flagged by user",
-                "reporter": r.flagged_by.fullname if r.flagged_by else "System",
-                "author": r.student.fullname,
-                "authorId": r.student.id,
-                "courseTitle": r.course.title,
-                "courseId": str(r.course.id),
-                "timestamp": format_time_ago(r.flagged_at) if r.flagged_at else format_time_ago(r.created_at),
-            }
-
         # Moderation stats
         total_flagged = qs.count()
         resolved_today = 0  # Would need a resolved log; placeholder
 
-        data = [serialize(r) for r in qs]
+        data = AdminReportSerializer(qs, many=True).data
         return Response({
             "stats": {
                 "totalFlagged": total_flagged,
@@ -370,6 +308,8 @@ class AdminDismissReportView(APIView):
     @extend_schema(
         summary="Admin — Dismiss a Flagged Review",
         description="Clears the is_flagged flag; keeps the review content. Admin only.",
+        request=None,
+        responses={200: OpenApiTypes.OBJECT},
         tags=["Admin"]
     )
     def post(self, request, review_id):
@@ -378,13 +318,11 @@ class AdminDismissReportView(APIView):
         except Review.DoesNotExist:
             return Response({"error": "Review not found."}, status=404)
 
-        review.is_flagged = False
-        review.flag_reason = None
-        review.flagged_by = None
-        review.flagged_at = None
-        review.save(update_fields=['is_flagged', 'flag_reason', 'flagged_by', 'flagged_at'])
-
-        return Response({"success": True, "message": "Report dismissed. Review kept."})
+        serializer = AdminReviewDismissSerializer(review, data={}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, "message": "Report dismissed. Review kept."})
+        return Response(serializer.errors, status=400)
 
 
 class AdminRemoveReviewView(APIView):
@@ -415,6 +353,7 @@ class AdminFinanceView(APIView):
     @extend_schema(
         summary="Admin — Financial Overview",
         description="Returns revenue KPIs, monthly revenue chart, recent transactions, and instructor payout summaries. Admin only.",
+        responses={200: AdminFinanceSerializer},
         tags=["Admin"]
     )
     def get(self, request):
@@ -506,7 +445,7 @@ class AdminFinanceView(APIView):
                 "status": "Pending",
             })
 
-        return Response({
+        data = {
             "stats": finance_stats,
             "revenueChart": revenue_chart,
             "transactions": {
@@ -516,7 +455,9 @@ class AdminFinanceView(APIView):
                 "pageSize": page_size,
             },
             "payouts": payouts,
-        })
+        }
+        serializer = AdminFinanceSerializer(data)
+        return Response(serializer.data)
 
 
 # -------------------------------------------------------------------
@@ -529,6 +470,7 @@ class AdminAnalyticsView(APIView):
     @extend_schema(
         summary="Admin — Platform Analytics",
         description="Returns platform-wide KPIs, growth charts, top courses, and engagement data. Admin only.",
+        responses={200: AdminAnalyticsSerializer},
         tags=["Admin"]
     )
     def get(self, request):
@@ -616,13 +558,15 @@ class AdminAnalyticsView(APIView):
             for cat in categories
         ]
 
-        return Response({
+        data = {
             "kpis": kpis,
             "userGrowth": user_growth,
             "engagementChart": engagement_chart,
             "topCourses": top_courses_data,
             "categoryDistribution": category_dist,
-        })
+        }
+        serializer = AdminAnalyticsSerializer(data)
+        return Response(serializer.data)
 
 
 # -------------------------------------------------------------------
@@ -647,6 +591,7 @@ class AdminSettingsView(APIView):
     @extend_schema(
         summary="Admin — Get Platform Settings",
         description="Returns all AdminSetting key-value pairs. Seeds defaults on first call. Admin only.",
+        responses={200: OpenApiTypes.OBJECT},
         tags=["Admin"]
     )
     def get(self, request):
@@ -660,47 +605,24 @@ class AdminSettingsView(APIView):
                 )
 
         settings = AdminSetting.objects.all().order_by('key')
-        data = [
-            {
-                "key": s.key,
-                "value": s.value,
-                "label": s.label,
-                "updated_at": s.updated_at.strftime("%b %d, %Y %H:%M"),
-            }
-            for s in settings
-        ]
+        data = AdminSettingResponseSerializer(settings, many=True).data
         return Response({"settings": data})
 
     @extend_schema(
         summary="Admin — Update Platform Settings",
         description="PATCH with {settings: [{key, value}, ...]} to bulk-update settings. Admin only.",
+        request=AdminSettingsPatchSerializer,
+        responses={200: OpenApiTypes.OBJECT},
         tags=["Admin"]
     )
     def patch(self, request):
-        settings_data = request.data.get('settings', [])
-        if not settings_data:
-            return Response({"error": "No settings provided. Send {settings: [{key, value}, ...]}."}, status=400)
-
-        updated = []
-        errors = []
-        for item in settings_data:
-            key = item.get('key')
-            value = item.get('value')
-            if not key:
-                errors.append("Each setting must have a 'key'.")
-                continue
-            setting, _ = AdminSetting.objects.get_or_create(key=key)
-            if key == 'maintenance_mode':
-                if str(value).lower() not in ['true', 'false']:
-                    errors.append(f"Invalid value for {key}: must be 'true' or 'false'")
-                    continue
-            setting.value = str(value) if value is not None else ''
-            setting.save()
-            updated.append(key)
-
-        return Response({
-            "success": True,
-            "message": f"Updated {len(updated)} setting(s).",
-            "updatedKeys": updated,
-            "errors": errors,
-        })
+        serializer = AdminSettingsPatchSerializer(data=request.data)
+        if serializer.is_valid():
+            result = serializer.save()
+            return Response({
+                "success": True,
+                "message": f"Updated {len(result['updated'])} setting(s).",
+                "updatedKeys": result['updated'],
+                "errors": result['errors'],
+            })
+        return Response(serializer.errors, status=400)
