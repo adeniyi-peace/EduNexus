@@ -57,8 +57,23 @@ export function EnrollmentCard({ price, courseId }: { price: number, courseId: s
                 </div>
 
                 <div className="space-y-4">
-                    <button className="btn btn-primary btn-lg w-full shadow-lg shadow-primary/20 font-black">
-                        Enroll Now
+                    <button 
+                        onClick={async () => {
+                            if (price === 0) {
+                                try {
+                                    const source = localStorage.getItem("first_touch_source") || "Direct";
+                                    await api.post("/enrollments/", { course: courseId, traffic_source: source });
+                                    window.location.href = `/courses/${courseId}/learn`;
+                                } catch (err) {
+                                    console.error("Enrollment failed", err);
+                                }
+                            } else {
+                                window.location.href = "/checkout";
+                            }
+                        }}
+                        className="btn btn-primary btn-lg w-full shadow-lg shadow-primary/20 font-black"
+                    >
+                        {price === 0 ? "Enroll for Free" : "Buy Now"}
                     </button>
                     <button
                         onClick={toggleWishlist}

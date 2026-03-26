@@ -558,12 +558,43 @@ class AdminAnalyticsView(APIView):
             for cat in categories
         ]
 
+        # --- Geographic Distribution ---
+        geo_data = Enrollment.objects.values('country_code').annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+        total_e = total_enrollments or 1
+        geo_dist = [
+            {"name": g['country_code'] if g['country_code'] != 'Unknown' else 'Global', "percent": round((g['count'] / total_e) * 100)}
+            for g in geo_data
+        ]
+
+        # --- Device Distribution ---
+        device_data = Enrollment.objects.values('device_type').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        device_stats = [
+            {"name": d['device_type'], "value": round((d['count'] / total_e) * 100)}
+            for d in device_data if d['device_type']
+        ]
+
+        # --- Traffic Sources ---
+        traffic_data = Enrollment.objects.values('traffic_source').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        traffic_sources = [
+            {"label": t['traffic_source'], "percent": round((t['count'] / total_e) * 100)}
+            for t in traffic_data if t['traffic_source']
+        ]
+
         data = {
             "kpis": kpis,
             "userGrowth": user_growth,
             "engagementChart": engagement_chart,
             "topCourses": top_courses_data,
             "categoryDistribution": category_dist,
+            "geographicDistribution": geo_dist,
+            "deviceStats": device_stats,
+            "trafficSources": traffic_sources,
         }
         serializer = AdminAnalyticsSerializer(data)
         return Response(serializer.data)

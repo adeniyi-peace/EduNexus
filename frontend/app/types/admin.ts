@@ -212,6 +212,9 @@ export interface AdminAnalyticsData {
     engagementChart: { name: string; enrollments: number }[];
     topCourses: AdminTopCourse[];
     categoryDistribution: { name: string; courses: number }[];
+    geographicDistribution: { name: string; percent: number }[];
+    deviceStats: { name: string; value: number }[];
+    trafficSources: { label: string; percent: number }[];
 }
 
 // --- Settings ---

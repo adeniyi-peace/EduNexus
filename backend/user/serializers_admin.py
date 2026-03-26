@@ -560,10 +560,25 @@ class AdminAnalyticsCategorySerializer(serializers.Serializer):
     name = serializers.CharField()
     courses = serializers.IntegerField()
 
+class AdminAnalyticsGeoSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    percent = serializers.IntegerField()
+
+class AdminAnalyticsDeviceSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    value = serializers.IntegerField()
+
+class AdminAnalyticsTrafficSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    percent = serializers.IntegerField()
+
 class AdminAnalyticsSerializer(serializers.Serializer):
     kpis = AdminAnalyticsKPISerializer()
     userGrowth = AdminAnalyticsGrowthSerializer(many=True)
     engagementChart = AdminAnalyticsEngagementSerializer(many=True)
     topCourses = AdminAnalyticsTopCourseSerializer(many=True)
     categoryDistribution = AdminAnalyticsCategorySerializer(many=True)
+    geographicDistribution = AdminAnalyticsGeoSerializer(many=True)
+    deviceStats = AdminAnalyticsDeviceSerializer(many=True)
+    trafficSources = AdminAnalyticsTrafficSerializer(many=True)
 

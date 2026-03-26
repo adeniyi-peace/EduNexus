@@ -126,6 +126,11 @@ class Enrollment(models.Model):
     payment_reference = models.CharField(max_length=100, blank=True, null=True)
     enrolled_at = models.DateTimeField(auto_now_add=True)
     
+    # Telemetry fields
+    device_type = models.CharField(max_length=50, blank=True, null=True) # 'Mobile', 'Desktop', 'Tablet'
+    traffic_source = models.CharField(max_length=100, blank=True, null=True) # 'Google', 'Facebook', 'Direct'
+    country_code = models.CharField(max_length=10, blank=True, null=True) # 'US', 'NG'
+
     class Meta:
         unique_together = ('student', 'course')
 

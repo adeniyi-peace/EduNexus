@@ -19,9 +19,21 @@ export default function CheckoutPage() {
         }
     }, [user]);
 
-    // Prepare metadata for Django (IDs of courses being bought)
+    const firstTouchSource = (typeof window !== "undefined") ? localStorage.getItem("first_touch_source") || "Direct" : "Direct";
+    
+    // Simple device detection
+    const getDeviceType = () => {
+        const ua = navigator.userAgent;
+        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return "Tablet";
+        if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return "Mobile";
+        return "Desktop";
+    };
+
+    // Prepare metadata for Django (IDs of courses being bought + telemetry)
     const metadata = {
         course_ids: cart.map(item => item.id),
+        traffic_source: firstTouchSource,
+        device_type: getDeviceType(),
         custom_fields: [
             { display_name: "Platform", variable_name: "platform", value: "EduNexus" }
         ]
@@ -108,7 +120,9 @@ export default function CheckoutPage() {
                                 <div key={item.id} className="flex justify-between items-center">
                                     <div className="flex-1">
                                         <p className="text-sm font-black truncate max-w-50">{item.title}</p>
-                                        <p className="text-[10px] font-bold opacity-40 uppercase">{item.instructor}</p>
+                                        <p className="text-[10px] font-bold opacity-40 uppercase">
+                                            {typeof item.instructor === 'string' ? item.instructor : item.instructor.fullname}
+                                        </p>
                                     </div>
                                     <p className="font-black text-sm text-primary">${item.price}</p>
                                 </div>

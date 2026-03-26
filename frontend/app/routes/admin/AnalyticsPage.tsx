@@ -4,8 +4,9 @@ import { EngagementCards } from "~/components/admin/analytics/EngagementCards";
 import { TopCourses } from "~/components/admin/analytics/TopCourses";
 import { AnalyticsChart } from "~/components/admin/analytics/AnalyticsChart";
 import { EngagementLineChart } from "~/components/admin/analytics/EngagementLineChart";
-import { DeviceDonutChart } from "~/components/admin/analytics/DeviceDonutChart";
 import { AdminStatSkeleton, AdminTableSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
+import { DeviceStats } from "~/components/admin/analytics/DeviceStats";
+import { TrafficSources } from "~/components/admin/analytics/TrafficSources";
 
 export default function AnalyticsPage() {
     const { data, isLoading, isError, refetch } = useAdminAnalytics();
@@ -98,14 +99,27 @@ export default function AnalyticsPage() {
                 </AnalyticsChart>
 
                 <AnalyticsChart title="Geographic Distribution" subtitle="Top 5 active regions">
-                    <div className="space-y-4 w-full max-w-xs mx-auto">
-                        <div className="flex justify-between text-xs font-bold"><span>🇺🇸 USA</span><span>45%</span></div>
-                        <progress className="progress progress-primary w-full" value="45" max="100" />
-                        <div className="flex justify-between text-xs font-bold"><span>🇬🇧 UK</span><span>20%</span></div>
-                        <progress className="progress progress-secondary w-full" value="20" max="100" />
-                        <div className="flex justify-between text-xs font-bold"><span>🇮🇳 India</span><span>15%</span></div>
-                        <progress className="progress progress-accent w-full" value="15" max="100" />
-                    </div>
+                    {isLoading ? (
+                        <div className="h-40 bg-base-300/50 rounded-xl animate-pulse" />
+                    ) : (
+                        <div className="space-y-4 w-full max-w-xs mx-auto">
+                            {(data?.geographicDistribution && data.geographicDistribution.length > 0) ? (
+                                data.geographicDistribution.map((geo, i) => {
+                                    const colors = ['progress-primary', 'progress-secondary', 'progress-accent', 'progress-info', 'progress-warning'];
+                                    return (
+                                        <div key={geo.name}>
+                                            <div className="flex justify-between text-xs font-bold mb-1">
+                                                <span>{geo.name}</span><span>{geo.percent}%</span>
+                                            </div>
+                                            <progress className={`progress ${colors[i % colors.length]} w-full`} value={geo.percent} max="100" />
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p className="text-center opacity-40 py-10 font-bold uppercase text-xs">No geographic data</p>
+                            )}
+                        </div>
+                    )}
                 </AnalyticsChart>
             </div>
 
@@ -125,9 +139,27 @@ export default function AnalyticsPage() {
                 <div className="lg:col-span-1 card bg-base-100 border border-base-content/5 p-6 shadow-sm">
                     <div className="mb-6">
                         <h3 className="text-lg font-black tracking-tight">Device Distribution</h3>
+                        <p className="text-xs opacity-50 font-bold uppercase">Traffic by Device</p>
+                    </div>
+                    {isLoading ? (
+                        <div className="h-48 bg-base-300 rounded-xl animate-pulse" />
+                    ) : (
+                        <DeviceStats stats={data?.deviceStats} />
+                    )}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 card bg-base-100 border border-base-content/5 p-6 shadow-sm">
+                    <div className="mb-6">
+                        <h3 className="text-lg font-black tracking-tight">Traffic Sources</h3>
                         <p className="text-xs opacity-50 font-bold uppercase">Traffic by platform</p>
                     </div>
-                    <DeviceDonutChart />
+                    {isLoading ? (
+                        <div className="h-48 bg-base-300 rounded-xl animate-pulse" />
+                    ) : (
+                        <TrafficSources sources={data?.trafficSources} />
+                    )}
                 </div>
             </div>
         </div>

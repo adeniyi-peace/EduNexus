@@ -215,12 +215,20 @@ class LessonCompletionSerializer(serializers.Serializer):
         }
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    course = CourseSerializer(read_only=True)
+    course_details = CourseSerializer(source='course', read_only=True)
     progress = ProgressSerializer(read_only=True)
     
     class Meta:
         model = Enrollment
-        fields = ['id', 'course', 'progress', 'enrolled_at']
+        fields = [
+            'id', 'course', 'course_details', 'progress', 'enrolled_at', 
+            'device_type', 'traffic_source', 'country_code'
+        ]
+        read_only_fields = [
+            'id', 'progress', 'enrolled_at', 'device_type', 
+            'traffic_source', 'country_code'
+        ]
+        # 'course' remains writeable (FK) for creation
 
 class CertificateSerializer(serializers.ModelSerializer):
     course_name = serializers.CharField(source='course.title', read_only=True)

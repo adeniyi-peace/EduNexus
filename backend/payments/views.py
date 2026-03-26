@@ -16,6 +16,7 @@ from drf_spectacular.types import OpenApiTypes
 
 from courses.models import Course, Enrollment
 from .models import Payment
+from courses.utils_telemetry import resolve_country_from_ip
 
 
 User = get_user_model()
@@ -80,11 +81,17 @@ class PaystackWebhookView(APIView):
             status = data.get('status')
             metadata = data.get('metadata', {})
             course_ids = metadata.get('course_ids', [])
+            traffic_source = metadata.get('traffic_source', 'Direct')
+            device_type = metadata.get('device_type', 'Desktop')
             
             # Check if payment already exists
             if Payment.objects.filter(reference=reference).exists():
-                return HttpResponse(status=200)  # Already processed
-                
+                return Response({"status": "already processed"}, status=200)
+
+            # Geographic tracking: Paystack data often has ip_address
+            ip_address = data.get('ip_address')
+            country_code = resolve_country_from_ip(ip_address)
+            
             # Find the user
             try:
                 user = User.objects.get(email=email)
@@ -109,7 +116,12 @@ class PaystackWebhookView(APIView):
                         Enrollment.objects.get_or_create(
                             student=user,
                             course=course,
-                            defaults={'payment_reference': reference}
+                            defaults={
+                                'payment_reference': reference,
+                                'traffic_source': traffic_source,
+                                'device_type': device_type,
+                                'country_code': country_code
+                            }
                         )
                     except Course.DoesNotExist:
                         # Log error or handle missing course

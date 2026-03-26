@@ -106,14 +106,32 @@ export default function App() {
   const { maintenanceMode } = useLoaderData<typeof loader>();
   const [isOnline, setIsOnline] = useState(true);
 
-  // Sync Offline State
+  // Sync Offline State & Telemetry Tracking
   useEffect(() => {
+      // 1. Offline Detection
       setIsOnline(navigator.onLine);
       const goOnline = () => setIsOnline(true);
       const goOffline = () => setIsOnline(false);
 
       window.addEventListener("online", goOnline);
       window.addEventListener("offline", goOffline);
+
+      // 2. First-Touch Attribution Logic
+      const params = new URLSearchParams(window.location.search);
+      const utmSource = params.get("utm_source");
+      const referrer = document.referrer;
+      
+      if (!localStorage.getItem("first_touch_source")) {
+        // Only set if we find a source OR if it's currently empty
+        let source = "Direct";
+        if (utmSource) {
+          source = utmSource;
+        } else if (referrer && !referrer.includes(window.location.host)) {
+          // Simplistic check: if referrer is from another domain
+          source = referrer;
+        }
+        localStorage.setItem("first_touch_source", source);
+      }
 
       return () => {
           window.removeEventListener("online", goOnline);

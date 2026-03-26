@@ -14,6 +14,7 @@ from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, 
                         )
 from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate
 from user.permissions import  *
+from .utils_telemetry import get_telemetry_data
 
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -347,14 +348,38 @@ class LessonCompletionView(GenericAPIView):
     list=extend_schema(summary="List user enrollments", tags=['Students']),
     retrieve=extend_schema(summary="Get enrollment details", tags=['Students']),
 )
-class EnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
+class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializer
+    
+    # Exclude PUT/DELETE as enrollments are typically final (or handled elsewhere)
+    http_method_names = ['get', 'post', 'options', 'head']
 
     def get_queryset(self):
         # Users can only see their own enrollments
         if self.request.user.is_authenticated:
             return Enrollment.objects.filter(student=self.request.user)
         return Enrollment.objects.none()
+
+    def perform_create(self, serializer):
+        # 1. Prevent multiple enrollments
+        course = serializer.validated_data.get('course')
+        if Enrollment.objects.filter(student=self.request.user, course=course).exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("You are already enrolled in this course.")
+
+        # 2. Get Telemetry Data from request
+        telemetry = get_telemetry_data(self.request)
+        
+        # 3. Get Traffic Source from frontend payload (passed as part of the POST body)
+        traffic_source = self.request.data.get('traffic_source', 'Direct')
+
+        # 4. Save with all data
+        serializer.save(
+            student=self.request.user,
+            device_type=telemetry['device_type'],
+            country_code=telemetry['country_code'],
+            traffic_source=traffic_source
+        )
 
 @extend_schema_view(
     list=extend_schema(summary="List user certificates", tags=['Students']),

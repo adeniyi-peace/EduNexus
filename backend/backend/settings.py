@@ -109,6 +109,9 @@ INSTALLED_APPS = [
     "courses",
     "user",
     "payments",
+
+    # for site telemetry
+    'django_user_agents',
 ]
 
 SITE_ID = 1
@@ -128,6 +131,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
+    'django_user_agents.middleware.UserAgentMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -237,6 +241,9 @@ PAYSTACK_WEBHOOK_SECRET = 'your_webhook_secret'
 # Email Settings
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'EduNexus <noreply@edunexus.com>'
+
+# GeoIP Path
+GEOIP_PATH = BASE_DIR / 'geoip'
 
 # Token expiry (30 minutes)
 PASSWORD_RESET_TIMEOUT = 1800 # 30 minutes in seconds
