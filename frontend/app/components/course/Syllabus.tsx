@@ -2,9 +2,10 @@
 
 import { Lock, PlayCircle } from "lucide-react";
 import { Link } from "react-router";
+import type { Module } from "~/types/course";
 
 // 2. Updated Syllabus Component
-export function Syllabus({ modules, courseId }: { modules: any[], courseId: string }) {
+export function Syllabus({ modules, courseId }: { modules: Module[], courseId: string }) {
     return (
         <section>
             <h2 className="text-3xl font-black mb-8 italic">Course Content</h2>

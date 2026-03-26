@@ -66,10 +66,10 @@ export default function ResetPassword() {
         }
 
         const response = await resetPassword({
-            uid,
-            token,
-            new_password1: formData.password,
-            new_password2: formData.confirmPassword,
+           uid: uid.trim(),
+           token: token.trim(),
+           new_password1: formData.password,
+           new_password2: formData.confirmPassword,
         });
 
         if (response.success) {

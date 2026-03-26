@@ -79,6 +79,14 @@ export default function Login() {
             {error && (
                 <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
                     <p className="text-error text-sm font-bold">{error}</p>
+                    {error.toLowerCase().includes("inactive") && (
+                        <Link 
+                            to="/email-verification" 
+                            className="text-[10px] font-black uppercase text-primary mt-2 block hover:underline"
+                        >
+                            Resend activation link?
+                        </Link>
+                    )}
                 </div>
             )}
 

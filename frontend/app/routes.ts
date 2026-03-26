@@ -33,6 +33,8 @@ export default [
         route("login", "routes/auth/login.tsx"),
         route("forgot-password", "routes/auth/forgot-password.tsx"),
         route("reset-password", "routes/auth/reset-password.tsx"),
+        route("activate/:uid/:token", "routes/auth/activate.$uid.$token.tsx"),
+        route("email-verification", "routes/auth/EmailVerification.tsx"),
     ]),
 
     // --- STUDENT DASHBOARD ---

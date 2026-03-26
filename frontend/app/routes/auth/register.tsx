@@ -71,6 +71,8 @@ export default function Register() {
         setTouched(prev => ({ ...prev, [e.target.name]: true }));
     };
 
+    const [isRegistered, setIsRegistered] = useState(false);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const result = registerSchema.safeParse(formData);
@@ -80,18 +82,46 @@ export default function Register() {
         }
 
         try {
-            await register({
+            const res = await register({
                 first_name: formData.firstName,
                 last_name: formData.lastName,
                 email: formData.email,
                 password1: formData.password,
                 password2: formData.password,
             });
-            // Redirect is handled inside the store
+            
+            if (res.success) {
+                setIsRegistered(true);
+            }
         } catch {
             // Error is set in the store
         }
     };
+
+    if (isRegistered) {
+        return (
+            <div className="animate-in fade-in zoom-in duration-500 text-center py-10">
+                <div className="w-24 h-24 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-8 text-4xl animate-bounce">
+                    📩
+                </div>
+                <h1 className="text-3xl font-black mb-4 uppercase italic">Check your Transmission</h1>
+                <p className="text-base-content/60 mb-8 max-w-sm mx-auto leading-relaxed">
+                    Identity provisioned! We've sent an activation link to <span className="text-primary font-bold">{formData.email}</span>. Please verify your account to access the Nexus.
+                </p>
+                <div className="space-y-4">
+                    <Link to="/login" className="btn btn-primary btn-block rounded-2xl h-16 font-black uppercase italic">
+                        Return to Authentication
+                    </Link>
+                    <button 
+                        onClick={() => setIsRegistered(false)} 
+                        className="btn btn-ghost btn-sm opacity-50 uppercase font-black"
+                    >
+                        Entered wrong email?
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     // Simple strength logic for UI feedback
     const passStrength = formData.password.length === 0 ? 0 : formData.password.length < 8 ? 1 : 2;

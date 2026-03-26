@@ -43,6 +43,9 @@ REST_AUTH = {
     'JWT_TOKEN_CLAIMS_SERIALIZER': 'authentication.serializers.CustomTokenClaimsSerializer',
     'USER_DETAILS_SERIALIZER': 'authentication.serializers.UserSerializer', # Use your app name
     "REGISTER_SERIALIZER": "authentication.serializers.RegisterUserSerializer",
+    "PASSWORD_RESET_SERIALIZER": "authentication.serializers.CustomPasswordResetSerializer",
+    "PASSWORD_RESET_CONFIRM_SERIALIZER": "authentication.serializers.CustomPasswordResetConfirmSerializer",
+    # 'LOGIN_SERIALIZER': "authentication.serializers.UserLoginSerializer",
 }
 
 
@@ -84,6 +87,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'django_filters',
     'corsheaders',
 
     # social authentication
@@ -193,11 +197,13 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+FRONTEND_URL = 'http://localhost:5173'
+
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    FRONTEND_URL,
     "http://127.0.0.1:5173",
 ]
-CORS_ALLOWS_CREDENTIAL = True
+CORS_ALLOW_CREDENTIALS = True
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -221,9 +227,16 @@ SOCIALACCOUNT_PROVIDERS = {
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-# AUTH_USER_MODEL = "user.User"
+AUTH_USER_MODEL = "user.User"
 
 # Paystack Settings
 PAYSTACK_PUBLIC_KEY = 'pk_test_your_public_key'
 PAYSTACK_SECRET_KEY = 'sk_test_your_secret_key'
 PAYSTACK_WEBHOOK_SECRET = 'your_webhook_secret'
+
+# Email Settings
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'EduNexus <noreply@edunexus.com>'
+
+# Token expiry (30 minutes)
+PASSWORD_RESET_TIMEOUT = 1800 # 30 minutes in seconds

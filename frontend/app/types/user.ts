@@ -31,7 +31,7 @@ export interface AuthState {
 export interface AuthActions {
     // Core auth
     login: (email: string, password: string) => Promise<void>;
-    register: (data: RegisterData) => Promise<void>;
+    register: (data: RegisterData) => Promise<{ success: boolean }>;
     logout: () => Promise<void>;
 
     // Password management
@@ -51,6 +51,10 @@ export interface AuthActions {
     initializeAuth: () => void;
     refreshToken: () => Promise<boolean>;
     clearError: () => void;
+
+    // Account activation
+    loginWithToken: (tokens: { access: string; refresh: string }, user: AuthUser) => void;
+    resendActivation: (email: string) => Promise<{ success: boolean }>;
 
     // Helpers
     getDashboardByRole: (role?: UserRole) => string;

@@ -5,60 +5,66 @@ import {
     Form, 
     useNavigation 
 } from "react-router";
-import { Search, Filter, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, SearchX } from "lucide-react";
 import { CourseCard } from "~/components/ui/CourseCard";
 import { SectionHeader } from "~/components/ui/SectionHeader";
-import { DUMMY_COURSES } from "~/utils/mockData";
 import { MarketplaceSkeleton } from "~/components/ui/Skeletons";
 import type { Route } from "../+types/courses";
+import api from "~/utils/api.client";
+import type { CourseData } from "~/types/course";
 
 // ... loader function stays exactly the same as your logic is perfect ...
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.ClientLoaderArgs) {
     const url = new URL(request.url);
-    const search = url.searchParams.get("q")?.toLowerCase() || "";
+    const search = url.searchParams.get("q") || "";
     const category = url.searchParams.get("category") || "";
     const sort = url.searchParams.get("sort") || "-created_at";
     const page = parseInt(url.searchParams.get("page") || "1", 10);
     const pageSize = 6;
 
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    try {
+        const queryParams = new URLSearchParams();
+        if (search) queryParams.set("search", search);
+        if (category) queryParams.set("category", category);
+        
+        // Map frontend expected sorting defaults to backend expectations
+        let backendSort = sort;
+        if (sort === "-rating") backendSort = "-annotated_rating";
+        queryParams.set("ordering", backendSort);
+        queryParams.set("page", page.toString());
+        
+        const response = await api.get(`/courses/?${queryParams.toString()}`);
 
-    let filtered = [...DUMMY_COURSES];
+        const paginatedCourses = response.data.results as CourseData[];
+        const totalCourses = response.data.count as number;
+        const totalPages = Math.ceil(totalCourses / pageSize);
 
-    if (search) {
-        filtered = filtered.filter(c => 
-            c.title.toLowerCase().includes(search) || 
-            c.description.toLowerCase().includes(search)
-        );
+        return { 
+            courses: paginatedCourses,
+            meta: {
+                totalCourses,
+                totalPages,
+                currentPage: page,
+                hasNextPage: !!response.data.next,
+                hasPrevPage: !!response.data.previous,
+            },
+            filters: { search, category, sort }
+        };
+    } catch (error) {
+        console.error("Failed to fetch courses:", error);
+        return {
+            courses: [],
+            meta: {
+                totalCourses: 0,
+                totalPages: 0,
+                currentPage: page,
+                hasNextPage: false,
+                hasPrevPage: false,
+            },
+            filters: { search, category, sort }
+        };
     }
-    if (category) {
-        filtered = filtered.filter(c => c.category === category);
-    }
-
-    filtered.sort((a, b) => {
-        if (sort === "price") return parseFloat(a.price.replace('$', '')) - parseFloat(b.price.replace('$', ''));
-        if (sort === "-price") return parseFloat(b.price.replace('$', '')) - parseFloat(a.price.replace('$', ''));
-        if (sort === "-rating") return b.rating - a.rating;
-        return b.id - a.id;
-    });
-
-    const totalCourses = filtered.length;
-    const totalPages = Math.ceil(totalCourses / pageSize);
-    const start = (page - 1) * pageSize;
-    const paginatedCourses = filtered.slice(start, start + pageSize);
-
-    return { 
-        courses: paginatedCourses,
-        meta: {
-            totalCourses,
-            totalPages,
-            currentPage: page,
-            hasNextPage: page < totalPages,
-            hasPrevPage: page > 1,
-        },
-        filters: { search, category, sort }
-    };
 }
 
 export function HydrateFallback() {
@@ -192,15 +198,18 @@ export default function CourseMarketplace() {
                                 </div>
                             </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-40 bg-base-200/30 rounded-[3rem] border-2 border-dashed border-base-content/10 text-center animate-fade-in">
-                                <div className="w-24 h-24 bg-base-100 rounded-full flex items-center justify-center text-5xl mb-8 shadow-2xl">🕵️‍♂️</div>
-                                <h3 className="text-3xl font-black tracking-tight">Zero nodes found</h3>
-                                <p className="text-base-content/50 mt-3 max-w-sm font-medium">
-                                    We couldn't find any courses matching your specific filters. Try expanding your search horizons.
+                            <div className="flex flex-col items-center justify-center py-32 bg-base-100/30 backdrop-blur-sm rounded-[3rem] border border-base-content/5 shadow-sm text-center animate-fade-in relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50"></div>
+                                <div className="relative w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-8 shadow-inner border border-primary/20">
+                                    <SearchX className="text-primary w-10 h-10 opacity-80" />
+                                </div>
+                                <h3 className="relative text-2xl md:text-3xl font-bold tracking-tight text-base-content">No Results Found</h3>
+                                <p className="relative text-base-content/60 mt-3 max-w-md font-medium px-4">
+                                    We couldn't find any courses matching your specific filters. Try adjusting your parameters to see more options.
                                 </p>
                                 <button 
                                     onClick={() => submit({})} 
-                                    className="btn btn-primary mt-10 px-12 rounded-2xl font-black uppercase tracking-widest text-xs"
+                                    className="relative btn btn-outline btn-primary mt-10 px-10 rounded-2xl font-bold tracking-wide transition-all hover:shadow-lg hover:shadow-primary/20"
                                 >
                                     Reset All Filters
                                 </button>
@@ -221,7 +230,7 @@ function CategoryRadio({ label, value, current }: { label: string; value: string
                 type="radio" 
                 name="category" 
                 value={value}
-                checked={isActive}
+                defaultChecked={isActive}
                 className="hidden" 
             />
             <span className={`text-sm font-bold tracking-tight ${isActive ? "text-white" : "text-base-content/60 group-hover:text-base-content"}`}>

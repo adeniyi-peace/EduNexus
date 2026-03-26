@@ -23,6 +23,7 @@ const AUTH_ENDPOINTS = {
     REGISTER:               "/auth/registration/",
     VERIFY_EMAIL:           "/auth/registration/verify-email/",
     RESEND_EMAIL:           "/auth/registration/resend-email/",
+    RESEND_ACTIVATION:      "/auth/resend-activation/",
 
     // Social auth
     GOOGLE_LOGIN:           "/auth/api/auth/google/",
@@ -142,20 +143,10 @@ export const useUserContext = create<AuthState & AuthActions>()(
             register: async (registerData: RegisterData) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const { data } = await api.post(AUTH_ENDPOINTS.REGISTER, registerData);
-                    const { access, refresh, user } = extractAuthResponse(data);
-                    storeTokens(access, refresh);
-
-                    set({
-                        user,
-                        isAuthenticated: true,
-                        isLoading: false,
-                        error: null,
-                    });
-
-                    // Redirect to role-based dashboard
-                    const dashboard = get().getDashboardByRole(user.role);
-                    window.location.href = dashboard;
+                    await api.post(AUTH_ENDPOINTS.REGISTER, registerData);
+                    // registration view now returns a message and no tokens if inactive
+                    set({ isLoading: false });
+                    return { success: true };
                 } catch (err: any) {
                     const message =
                         err.response?.data?.non_field_errors?.[0] ||
@@ -447,6 +438,35 @@ export const useUserContext = create<AuthState & AuthActions>()(
                 const userRole = role || get().user?.role;
                 if (!userRole) return "/login";
                 return DASHBOARD_MAP[userRole] || "/dashboard";
+            },
+
+            // ========================================
+            // LOGIN WITH TOKEN (From Activation)
+            // ========================================
+            loginWithToken: (tokens: { access: string; refresh: string }, user: AuthUser) => {
+                storeTokens(tokens.access, tokens.refresh);
+                set({
+                    user,
+                    isAuthenticated: true,
+                    isLoading: false,
+                    error: null,
+                });
+            },
+
+            // ========================================
+            // RESEND ACTIVATION
+            // ========================================
+            resendActivation: async (email: string) => {
+                set({ isLoading: true, error: null });
+                try {
+                    await api.post(AUTH_ENDPOINTS.RESEND_ACTIVATION, { email });
+                    set({ isLoading: false });
+                    return { success: true };
+                } catch (err: any) {
+                    const message = err.response?.data?.error || "Failed to resend activation email.";
+                    set({ isLoading: false, error: message });
+                    return { success: false };
+                }
             },
         }),
         {

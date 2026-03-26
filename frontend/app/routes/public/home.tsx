@@ -2,10 +2,35 @@ import type { Route } from "../+types/home";
 import { Hero } from "~/components/home/Hero";
 import { SectionHeader } from "~/components/ui/SectionHeader";
 import { CourseCard } from "~/components/ui/CourseCard";
-import { DUMMY_COURSES } from "~/utils/mockData";
-import { Link } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import api from "~/utils/api.client";
+import type { CourseData } from "~/types/course";
+
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("search") || "";
+  const page = url.searchParams.get("page") || "1";
+
+  try {
+    const response = await api.get(`/courses/`);
+
+    return {
+      courses: response.data as CourseData[], 
+      response: response
+    };
+  } catch (err) {
+    console.error("Failed to fetch courses:", err);
+    return {
+        courses: [],
+        response: err
+    }
+  }
+} 
 
 export default function HomePage() {
+    const { courses, response } = useLoaderData<typeof clientLoader>();
+
+
     return (
         <div className="space-y-0 overflow-x-hidden">
             <Hero />
@@ -23,11 +48,17 @@ export default function HomePage() {
                     />
                 </div>
 
+                {courses.length === 0 ? (
+                    <div className="text-center mt-16">
+                        <p className="text-gray-500">No courses found</p>
+                    </div>
+                ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16 animate-fade-in [animation-delay:200ms]">
-                    {DUMMY_COURSES.slice(0, 3).map((course) => (
-                        <CourseCard key={course.id} course={course as any} />
+                    {courses.slice(0, 3).map((course) => (
+                        <CourseCard key={course.id} course={course} />
                     ))}
                 </div>
+                )}
 
                 <div className="mt-20 text-center animate-fade-in [animation-delay:400ms]">
                     <Link 

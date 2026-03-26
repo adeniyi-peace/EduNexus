@@ -108,7 +108,7 @@ export default function ForgotPassword() {
                 <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
                     <p className="text-[11px] opacity-70 leading-relaxed">
                         <span className="font-black text-primary uppercase mr-1">Security Note:</span> 
-                        For your protection, reset links expire after 60 minutes. If you don't see the email, check your spam folder or "Promotions" tab.
+                        For your protection, reset links expire after 30 minutes. If you don't see the email, check your spam folder or "Promotions" tab.
                     </p>
                 </div>
 

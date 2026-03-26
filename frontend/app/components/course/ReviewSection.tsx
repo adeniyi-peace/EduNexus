@@ -1,8 +1,9 @@
 import { useState } from "react";
 import api from "~/utils/api.client";
 import { Star, MessageSquarePlus } from "lucide-react";
+import type { Reviews } from "~/types/course";
 
-export function ReviewSection({ reviews: initialReviews, courseId, isEnrolled }: { reviews: any[], courseId: string, isEnrolled: boolean }) {
+export function ReviewSection({ reviews: initialReviews, courseId, isEnrolled }: { reviews: Reviews[], courseId: string, isEnrolled: boolean }) {
     const [reviews, setReviews] = useState(initialReviews);
     const [isWritingReview, setIsWritingReview] = useState(false);
     const [rating, setRating] = useState(5);
@@ -143,11 +144,11 @@ export function ReviewSection({ reviews: initialReviews, courseId, isEnrolled }:
                             <div className="flex gap-5 items-start mb-4">
                                 <div className="avatar placeholder">
                                     <div className="bg-neutral text-neutral-content rounded-2xl w-14 shadow-lg group-hover:rotate-3 transition-transform">
-                                        <span className="text-xl font-bold">{review.user ? review.user[0] : 'U'}</span>
+                                        <span className="text-xl font-bold">{review.student.fullName ? review.student.fullName[0] : 'U'}</span>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <div className="font-black text-lg">{review.user || "Anonymous"}</div>
+                                    <div className="font-black text-lg">{review.student.fullName || "Anonymous"}</div>
                                     <div className="rating rating-xs">
                                         {[...Array(5)].map((_, i) => (
                                             <input 

@@ -1,9 +1,11 @@
 // types/course.ts
 
+import type { User } from "~/utils/db.server";
+
 export interface CourseData {
     id: string;
     title: string;
-    instructor: string;
+    instructor: Instructor;
     description?: string;
     thumbnail?: string;
     price?: number;
@@ -17,6 +19,7 @@ export interface CourseData {
     language?: string;
     modules: Module[];
     isEnrolled?: boolean;
+    reviews?: Reviews[];
 }
 
 export interface QuizOption {
@@ -74,4 +77,28 @@ export interface Certificate {
     instructor_name: string;
     student_name: string;
     issued_at: string;
+}
+
+export interface Reviews {
+    id: number,
+    student: User,
+    rating: number,
+    comment: string,
+    created_at: string,
+}
+
+export interface Instructor {
+    id: number,
+    email: string,
+    first_name: string,
+    last_name: string,
+    fullname: string,
+    role: string,
+    phone: string,
+    date_joined: string,
+    xp: string,
+    profile_picture: string,
+    student_count: number,
+    instructor_rating: string,
+    premium_courses_count: string
 }

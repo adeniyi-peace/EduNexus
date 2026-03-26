@@ -6,12 +6,33 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from drf_spectacular.types import OpenApiTypes
 from django.http import FileResponse
 from django.utils import timezone
+from rest_framework.permissions import AllowAny
 
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
                           LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer
                         )
 from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate
+from user.permissions import  *
+
+import django_filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Avg
+
+class CourseFilter(django_filters.FilterSet):
+    category = django_filters.CharFilter(field_name='category__name', lookup_expr='iexact')
+
+    class Meta:
+        model = Course
+        fields = ['category']
+
+class CoursePagination(PageNumberPagination):
+    page_size = 6
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 
 @extend_schema_view(
     list=extend_schema(summary="Get all courses", tags=['Courses']),
@@ -23,7 +44,33 @@ from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollm
 )
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
-    queryset = Course.objects.all()
+    
+    pagination_class = CoursePagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = CourseFilter
+    search_fields = ['title', 'description']
+    ordering_fields = ['price', 'annotated_rating', 'created_at']
+
+    def get_queryset(self):
+        # Annotate course with average rating so we can sort by it via 'annotated_rating'
+        return Course.objects.annotate(annotated_rating=Avg('reviews__rating'))
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions 
+        that this view requires.
+        """
+        if self.action in ['list', 'retrieve']:
+            # Anyone can view the list or details
+            permission_classes = [AllowAny]
+        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Only authenticated users (or instructors) can modify
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            # Fallback for any other actions
+            permission_classes = [permissions.IsAuthenticated]
+            
+        return [permission() for permission in permission_classes]
 
 
 @extend_schema_view(

@@ -5,58 +5,23 @@ import { Syllabus } from "~/components/course/Syllabus";
 import { InstructorBio } from "~/components/course/InstructorBio";
 import { ReviewSection } from "~/components/course/ReviewSection";
 import { EnrollmentCard } from "~/components/course/EnrollmentCard";
+import type { CourseData } from "~/types/course";
 
-export async function loader({ params }: { params: { id: string } }) {
+export async function clientLoader({ params }: { params: { id: string } }) {
     try {
         // Placeholder for future Django API call
-        // const res = await api.get(`/courses/${params.id}/preview/`);
-        // return res.data;
+        const res = await api.get(`/courses/${params.id}/`);
+        return res.data as CourseData;
 
-        // Dummy Data Fallback
-        return {
-            id: params.id,
-            title: "Advanced Full-Stack Engineering with Django & React",
-            subtitle: "Master the architecture of scalable web applications using the Nexus methodology.",
-            description: "This isn't just a coding course. It's a deep dive into system design, database optimization, and modern frontend patterns.",
-            price: 199.99,
-            lastUpdated: "February 2026",
-            language: "English",
-            studentCount: 1542,
-            rating: 4.9,
-            instructor: {
-                name: "Dr. Aris Thorne",
-                title: "Ex-Google Engineer & System Architect",
-                bio: "Aris has spent 15 years building distributed systems. He now focuses on bridging the gap between junior syntax and senior architecture.",
-                avatar: "https://i.pravatar.cc/150?u=aris",
-            },
-            syllabus: [
-                {
-                    title: "Foundation & Architecture",
-                    lessons: [
-                        { id: "les_1", title: "Monolith vs Microservices", isPreview: true },
-                        { id: "les_2", title: "Database Schema Design", isPreview: true }
-                    ]
-                },
-                {
-                    title: "Advanced Backend with Django",
-                    lessons: [
-                        { id: "les_3", title: "Custom Middleware", isPreview: false },
-                        { id: "les_4", title: "Query Optimization", isPreview: false }
-                    ]
-                },
-            ],
-            reviews: [
-                { id: 1, user: "Sarah L.", rating: 5, comment: "The best architectural breakdown I've ever seen.", created_at: "2026-02-15T12:00:00Z" },
-            ],
-            isEnrolled: true, // Default to false for public view
-        };
     } catch (error) {
+        console.log(error)
         throw new Response("Not Found", { status: 404 });
     }
 }
 
+
 export default function CourseLandingPage() {
-    const course = useLoaderData<typeof loader>();
+    const course = useLoaderData<typeof clientLoader>();
 
     return (
         <div className="bg-base-100 min-h-screen pb-20">
@@ -71,17 +36,14 @@ export default function CourseLandingPage() {
                         <h1 className="text-4xl lg:text-6xl font-black mb-6 leading-tight">
                             {course.title}
                         </h1>
-                        <p className="text-xl opacity-80 mb-8 max-w-2xl">
-                            {course.subtitle}
-                        </p>
                         <div className="flex flex-wrap gap-6 items-center text-sm font-medium">
                             <div className="flex items-center gap-1">
                                 <span className="text-warning text-lg">★</span>
                                 <span className="font-bold">{course.rating}</span>
                                 <span className="opacity-60">(428 ratings)</span>
                             </div>
-                            <div>{course.studentCount.toLocaleString()} students</div>
-                            <div>Created by <span className="text-secondary link link-hover">{course.instructor.name}</span></div>
+                            <div>{course.students?.toLocaleString()} students</div>
+                            <div>Created by <span className="text-secondary link link-hover">{course.instructor.fullname}</span></div>
                         </div>
                     </div>
                 </div>
@@ -98,18 +60,22 @@ export default function CourseLandingPage() {
                             </p>
                         </section>
 
-                        <Syllabus modules={course.syllabus} courseId={course.id} />
+                        <Syllabus modules={course.modules} courseId={course.id} />
 
                         <InstructorBio instructor={course.instructor} />
 
-                        <ReviewSection reviews={course.reviews} courseId={course.id} isEnrolled={course.isEnrolled} />
-                    </div>
+                        {course.reviews && course.reviews.length > 0 ? (
+                            <ReviewSection reviews={course.reviews} courseId={course.id} isEnrolled={!!course.isEnrolled} />
+                        ) : (
+                            <p>No reviews yet</p>
+                        )}
+                    </div>  
 
                     {/* Right Column: Sticky Enrollment Card */}
                     {/* Only show enrollment card if NOT enrolled */}
                     {!course.isEnrolled && (
                         <aside className="w-full lg:w-[400px]">
-                            <EnrollmentCard price={course.price} courseId={course.id} />
+                            <EnrollmentCard price={course.price ?? 0} courseId={course.id} />
                         </aside>
                     )}
 
