@@ -1,55 +1,56 @@
-import { useParams, Link, useLoaderData, type ClientLoaderFunctionArgs } from "react-router";
-import api from "~/utils/api.client";
+import { useParams, Link } from "react-router";
 import {
     DollarSign,
     Users,
     Star,
     ChevronLeft,
     TrendingUp,
-    Download
+    Download,
+    Loader2,
+    RefreshCw
 } from "lucide-react";
 import { StatCard } from "~/components/cms/analytics/AnalyticsStats";
 import { RetentionFunnel } from "~/components/cms/analytics/RetentionFunnel";
 import { RevenueChart } from "~/components/cms/analytics/RevenueChart";
 import { StudentDistribution } from "~/components/cms/analytics/StudentDistribution";
 import { RatingAnalysis } from "~/components/cms/analytics/RatingAnalysis";
-
-interface AnalyticsData {
-    courseTitle: string;
-    stats: {
-        revenue: string;
-        students: string;
-        rating: string;
-        completion: string;
-    };
-    revenueChart: { name: string; revenue: number }[];
-    progressDistribution: { name: string; value: number; color: string }[];
-    ratingAnalysis: { stars: number; count: number; percentage: number }[];
-    funnelData: { stage: string; students: number; percent: number }[];
-    dropoutRates: {
-        id: number;
-        name: string;
-        views: number;
-        completed: number;
-        dropout: number;
-    }[];
-}
-
-export async function clientLoader({ params }: ClientLoaderFunctionArgs) {
-    try {
-        const response = await api.get(`/user/instructor/course-analytics/${params.id}/`);
-        return response.data as AnalyticsData;
-    } catch (error) {
-        console.error("Course analytics loader error:", error);
-        throw error;
-    }
-}
+import { useCourseAnalytics } from "~/hooks/instructor/useCourseAnalytics";
 
 export default function CourseAnalyticsPage() {
     const { id } = useParams();
-    const data = useLoaderData<AnalyticsData>();
+    const { data, isLoading, isError, refetch } = useCourseAnalytics(id);
 
     const courseTitle = data?.courseTitle || "Course Analytics";
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="animate-spin text-primary" size={48} />
+                    <p className="text-base-content/60">Loading course analytics...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (isError) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
+                        <RefreshCw size={28} className="text-error" />
+                    </div>
+                    <h3 className="font-black text-lg">Failed to load course analytics</h3>
+                    <p className="text-sm opacity-60 max-w-xs">Could not fetch analytics for this course.</p>
+                    <button onClick={() => refetch()} className="btn btn-primary btn-sm gap-2">
+                        <RefreshCw size={14} /> Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen space-y-6 p-4 lg:p-8">
@@ -120,16 +121,16 @@ export default function CourseAnalyticsPage() {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2">
-                    <RevenueChart data={data?.revenueChart} />
+                    <RevenueChart data={data?.revenueChart || []} />
                 </div>
                 <div className="h-full">
-                    <StudentDistribution data={data?.progressDistribution} />
+                    <StudentDistribution data={data?.progressDistribution || []} />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <RetentionFunnel data={data?.funnelData} />
-                <RatingAnalysis ratings={data?.ratingAnalysis} averageRating={data?.stats?.rating} courseId={id} />
+                <RetentionFunnel data={data?.funnelData || []} />
+                <RatingAnalysis ratings={data?.ratingAnalysis || []} averageRating={data?.stats?.rating} courseId={id} />
                 
                 {/* Lesson Dropout Rates */}
                 <div className="card bg-base-100 border border-base-content/5 shadow-sm p-6">

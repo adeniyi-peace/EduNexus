@@ -7,6 +7,7 @@ import type { AdminDashboardData } from "~/types/admin";
 
 async function fetchAdminDashboard(): Promise<AdminDashboardData> {
     const { data } = await api.get<AdminDashboardData>("/users/admin/dashboard/");
+    console.log(data)
     return data;
 }
 

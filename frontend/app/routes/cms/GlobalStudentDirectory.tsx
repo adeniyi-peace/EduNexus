@@ -1,56 +1,12 @@
 import { useState } from "react";
-import { useLoaderData } from "react-router";
-import { Search, Download, Users, Loader2 } from "lucide-react";
+import { Search, Download, Users, Loader2, RefreshCw } from "lucide-react";
 import type { Student } from "~/types/students";
 import { StudentTable } from "~/components/cms/student/StudentTable";
 import { StudentDrawer } from "~/components/cms/student/StudentDrawer";
-import api from "~/utils/api.client";
-import type { Route } from "./+types/GlobalStudentDirectory";
-
-// Client loader - fetches global students data
-export async function clientLoader({}: Route.ClientLoaderArgs) {
-    try {
-        const response = await api.get(`/users/instructor/students/`);
-        return { students: response.data.students as Student[] };
-    } catch (error) {
-        throw new Response("Failed to load students", { status: 500 });
-    }
-}
-
-// Loading state shown while clientLoader fetches
-export function HydrateFallback() {
-    return (
-        <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="animate-spin text-primary" size={48} />
-                <p className="text-base-content/60">Loading students...</p>
-            </div>
-        </div>
-    );
-}
-
-// Mock Data for Global View
-const GLOBAL_STUDENTS_MOCK: Student[] = [
-    { 
-        id: "1", name: "Alice Johnson", email: "alice@demo.com", avatar: "https://i.pravatar.cc/150?u=1", joinedDate: "Oct 2025", 
-        totalSpent: 129.99, enrolledCoursesCount: 3,
-        enrolledCoursesList: [
-            { id: "101", title: "Python Bootcamp", progress: 75, lastAccessed: "2h ago" },
-            { id: "102", title: "React Masterclass", progress: 10, lastAccessed: "1w ago" },
-            { id: "103", title: "UI Design", progress: 0, lastAccessed: "Never" }
-        ]
-    },
-    { 
-        id: "2", name: "Bob Smith", email: "bob@demo.com", avatar: "https://i.pravatar.cc/150?u=2", joinedDate: "Nov 2025", 
-        totalSpent: 49.99, enrolledCoursesCount: 1,
-        enrolledCoursesList: [
-            { id: "101", title: "Python Bootcamp", progress: 100, lastAccessed: "1d ago" }
-        ]
-    },
-];
+import { useGlobalStudents } from "~/hooks/instructor/useGlobalStudents";
 
 export default function GlobalStudentDirectory() {
-    const { students } = useLoaderData<typeof clientLoader>();
+    const { data: students, isLoading, isError, refetch } = useGlobalStudents();
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -81,6 +37,36 @@ export default function GlobalStudentDirectory() {
         link.click();
         document.body.removeChild(link);
     };
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="animate-spin text-primary" size={48} />
+                    <p className="text-base-content/60">Loading students...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (isError) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
+                        <RefreshCw size={28} className="text-error" />
+                    </div>
+                    <h3 className="font-black text-lg">Failed to load students</h3>
+                    <p className="text-sm opacity-60 max-w-xs">Could not fetch the global student directory.</p>
+                    <button onClick={() => refetch()} className="btn btn-primary btn-sm gap-2">
+                        <RefreshCw size={14} /> Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen p-4 lg:p-8">

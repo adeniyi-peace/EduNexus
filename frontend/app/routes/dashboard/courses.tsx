@@ -1,36 +1,74 @@
-import { useState, useMemo } from "react";
-import { useLoaderData } from "react-router";
-import { DUMMY_COURSES } from "~/utils/mockData";
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
 import { CourseCard } from "~/components/ui/CourseCard";
 import { CourseFilters } from "~/components/course/CourseFilters";
+import api from "~/utils/api.client";
 
-export async function loader() {
-    return { courses: DUMMY_COURSES };
+interface PaginatedResponse {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: any[];
 }
 
 export default function CoursesPage() {
-    const { courses } = useLoaderData<typeof loader>();
-    
     // --- STATE ---
+    const [courses, setCourses] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const [categories, setCategories] = useState<string[]>([]);
     const itemsPerPage = 6;
 
-    // --- LOGIC: FILTERING ---
-    const filteredCourses = useMemo(() => {
-        return courses.filter(course => {
-            const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                 course.instructor.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesCategory = selectedCategory === "All" || course.category === selectedCategory;
-            return matchesSearch && matchesCategory;
-        });
-    }, [courses, searchQuery, selectedCategory]);
+    // --- FETCH COURSES FROM API ---
+    useEffect(() => {
+        const fetchCourses = async () => {
+            setIsLoading(true);
+            try {
+                const params: Record<string, any> = {
+                    page: currentPage,
+                    page_size: itemsPerPage,
+                };
+                if (searchQuery) params.search = searchQuery;
+                if (selectedCategory !== "All") params.category = selectedCategory;
 
-    // --- LOGIC: PAGINATION ---
-    const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedCourses = filteredCourses.slice(startIndex, startIndex + itemsPerPage);
+                const res = await api.get<PaginatedResponse>("/courses/", { params });
+                
+                // Handle both paginated and unpaginated
+                if (res.data.results) {
+                    setCourses(res.data.results);
+                    setTotalCount(res.data.count);
+                } else if (Array.isArray(res.data)) {
+                    setCourses(res.data);
+                    setTotalCount(res.data.length);
+                }
+            } catch (err) {
+                console.error("Failed to fetch courses", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchCourses();
+    }, [currentPage, searchQuery, selectedCategory]);
+
+    // Fetch categories once on mount
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get("/courses/", { params: { page_size: 100 } });
+                const allCourses = res.data.results || res.data || [];
+                const uniqueCats = Array.from(new Set(allCourses.map((c: any) => c.category?.name || c.category).filter(Boolean)));
+                setCategories(uniqueCats as string[]);
+            } catch {
+                // Silently fail - categories are optional
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
 
     // Reset page to 1 when filters change
     const handleFilterChange = (cat: string) => {
@@ -64,78 +102,84 @@ export default function CoursesPage() {
             {/* Filters */}
             <div className="bg-base-100/40 backdrop-blur-md p-2 rounded-4xl border border-base-content/5">
                 <CourseFilters 
-                    categories={Array.from(new Set(courses.map(c => c.category)))} 
+                    categories={categories} 
                     onSearch={handleSearch} 
                     onCategoryChange={handleFilterChange} 
                 />
             </div>
 
-            {/* Main Content Area */}
-            {paginatedCourses.length > 0 ? (
+            {/* Loading State */}
+            {isLoading ? (
+                <div className="flex items-center justify-center min-h-[40vh]">
+                    <span className="loading loading-dots loading-lg text-primary"></span>
+                </div>
+            ) : courses.length > 0 ? (
                 <div className="space-y-16">
                     {/* Course Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                        {paginatedCourses.map((course, idx) => (
+                        {courses.map((course, idx) => (
                             <div 
                                 key={course.id} 
                                 className="animate-in zoom-in-95 duration-500 fill-mode-both"
                                 style={{ animationDelay: `${idx * 50}ms` }}
                             >
-                                <CourseCard course={course as any} />
+                                <CourseCard course={course} />
                             </div>
                         ))}
                     </div>
 
-                    {/* --- SOPHISTICATED PAGINATION UI --- */}
-                    <div className="flex flex-col items-center gap-6 pt-10 border-t border-base-content/5">
-                        <div className="flex items-center gap-2">
-                            {/* Previous Button */}
-                            <button 
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                disabled={currentPage === 1}
-                                className="btn btn-ghost btn-square rounded-2xl border border-base-content/5 hover:border-primary/50 disabled:opacity-10 group"
-                            >
-                                <span className="group-hover:-translate-x-1 transition-transform">←</span>
-                            </button>
+                    {/* --- PAGINATION UI --- */}
+                    {totalPages > 1 && (
+                        <div className="flex flex-col items-center gap-6 pt-10 border-t border-base-content/5">
+                            <div className="flex items-center gap-2">
+                                {/* Previous Button */}
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="btn btn-ghost btn-square rounded-2xl border border-base-content/5 hover:border-primary/50 disabled:opacity-10 group"
+                                >
+                                    <span className="group-hover:-translate-x-1 transition-transform">←</span>
+                                </button>
 
-                            {/* Page Numbers */}
-                            <div className="flex items-center gap-2 bg-base-200/50 p-1.5 rounded-3xl border border-base-content/5">
-                                {[...Array(totalPages)].map((_, i) => {
-                                    const pageNum = i + 1;
-                                    const isActive = currentPage === pageNum;
-                                    return (
-                                        <button
-                                            key={pageNum}
-                                            onClick={() => setCurrentPage(pageNum)}
-                                            className={`
-                                                w-10 h-10 rounded-xl font-mono text-xs font-black transition-all duration-300
-                                                ${isActive 
-                                                    ? "bg-primary text-black shadow-[0_0_20px_rgba(var(--p),0.4)] scale-110 z-10" 
-                                                    : "hover:bg-base-content/10 opacity-40 hover:opacity-100 active:scale-90"
-                                                }
-                                            `}
-                                        >
-                                            {pageNum < 10 ? `0${pageNum}` : pageNum}
-                                        </button>
-                                    );
-                                })}
+                                {/* Page Numbers */}
+                                <div className="flex items-center gap-2 bg-base-200/50 p-1.5 rounded-3xl border border-base-content/5">
+                                    {[...Array(totalPages)].map((_, i) => {
+                                        const pageNum = i + 1;
+                                        const isActive = currentPage === pageNum;
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={`
+                                                    w-10 h-10 rounded-xl font-mono text-xs font-black transition-all duration-300
+                                                    ${isActive 
+                                                        ? "bg-primary text-black shadow-[0_0_20px_rgba(var(--p),0.4)] scale-110 z-10" 
+                                                        : "hover:bg-base-content/10 opacity-40 hover:opacity-100 active:scale-90"
+                                                    }
+                                                `}
+                                            >
+                                                {pageNum < 10 ? `0${pageNum}` : pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Next Button */}
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="btn btn-ghost btn-square rounded-2xl border border-base-content/5 hover:border-primary/50 disabled:opacity-10 group"
+                                >
+                                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </button>
                             </div>
 
-                            {/* Next Button */}
-                            <button 
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                disabled={currentPage === totalPages}
-                                className="btn btn-ghost btn-square rounded-2xl border border-base-content/5 hover:border-primary/50 disabled:opacity-10 group"
-                            >
-                                <span className="group-hover:translate-x-1 transition-transform">→</span>
-                            </button>
+                            {/* Status Label */}
+                            <p className="text-[9px] font-mono font-black uppercase tracking-[0.2em] opacity-30">
+                                Showing {((currentPage - 1) * itemsPerPage) + 1}—{Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} results
+                            </p>
                         </div>
-
-                        {/* Status Label */}
-                        <p className="text-[9px] font-mono font-black uppercase tracking-[0.2em] opacity-30">
-                            Showing {startIndex + 1}—{Math.min(startIndex + itemsPerPage, filteredCourses.length)} of {filteredCourses.length} results
-                        </p>
-                    </div>
+                    )}
                 </div>
             ) : (
                 /* Empty State */

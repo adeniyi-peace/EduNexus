@@ -22,3 +22,43 @@ export interface Student {
     status?: 'Active' | 'At Risk' | 'Completed';
     lastActive?: string;
 }
+
+// --- Student Dashboard API Types ---
+
+export interface DashboardNotification {
+    id: number;
+    type: string;
+    text: string;
+    title: string;
+    time: string;
+    is_read: boolean;
+    link?: string;
+}
+
+export interface AchievementDetail {
+    id: number;
+    name: string;
+    description: string;
+    icon_name: string;
+    points: number;
+}
+
+export interface DashboardAchievement {
+    id: number;
+    achievement: AchievementDetail;
+    earned_at: string;
+}
+
+export interface DashboardStats {
+    xp_points: number;
+    courses_completed: number;
+    active_streak: number;
+    rank: string;
+    total_enrolled: number;
+}
+
+export interface StudentDashboardData {
+    notifications: DashboardNotification[];
+    achievements: DashboardAchievement[];
+    stats: DashboardStats;
+}

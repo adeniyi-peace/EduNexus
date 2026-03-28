@@ -8,52 +8,12 @@ import {
     MoreVertical,
     Zap,
     Users,
-    DollarSign
+    DollarSign,
+    Loader2,
+    RefreshCw
 } from "lucide-react";
-import { useLoaderData, type ClientLoaderFunctionArgs } from "react-router";
-import api from "~/utils/api.client";
-
-interface DashboardData {
-    quickStats: {
-        label: string;
-        value: string;
-        icon: string;
-        color: string;
-    }[];
-    myCourses: {
-        id: string;
-        title: string;
-        status: string;
-        progress: number;
-        students: number;
-        revenue: string;
-    }[];
-    activityFeed: {
-        id: string;
-        user: string;
-        action: string;
-        target: string;
-        time: string;
-    }[];
-    instructorName: string;
-}
-
-export async function clientLoader({ }: ClientLoaderFunctionArgs) {
-    try {
-        // Updated URL to move to 'user' app context
-        const response = await api.get("/user/instructor/dashboard/");
-        return response.data as DashboardData;
-    } catch (error) {
-        console.error("Dashboard loader error:", error);
-        // Return a shape that won't crash the UI even on failure
-        return {
-            quickStats: [],
-            myCourses: [],
-            activityFeed: [],
-            instructorName: "Instructor"
-        } as DashboardData;
-    }
-}
+import { useInstructorDashboard } from "~/hooks/instructor/useInstructorDashboard";
+import type { InstructorDashboardData } from "~/types/instructor";
 
 const IconMap: Record<string, React.ReactNode> = {
     DollarSign: <DollarSign size={18} />,
@@ -62,13 +22,43 @@ const IconMap: Record<string, React.ReactNode> = {
 };
 
 export default function CMSDashboard() {
-    const data = useLoaderData<DashboardData>();
+    const { data, isLoading, isError, refetch } = useInstructorDashboard();
     
     // Safeguard against missing data
     const quickStats = data?.quickStats || [];
     const myCourses = data?.myCourses || [];
     const activityFeed = data?.activityFeed || [];
     const instructorName = data?.instructorName || "Instructor";
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="animate-spin text-primary" size={48} />
+                    <p className="text-base-content/60 font-medium">Loading workspace...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (isError) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
+                        <RefreshCw size={28} className="text-error" />
+                    </div>
+                    <h3 className="font-black text-lg">Failed to load dashboard</h3>
+                    <p className="text-sm opacity-60 max-w-xs">Something went wrong while fetching your workspace data.</p>
+                    <button onClick={() => refetch()} className="btn btn-primary btn-sm gap-2">
+                        <RefreshCw size={14} /> Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-10 p-4 lg:p-8 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -224,4 +214,4 @@ export default function CMSDashboard() {
             </div>
         </div>
     );
-}
+}

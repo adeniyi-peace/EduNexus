@@ -1,6 +1,9 @@
-import { Link, useLoaderData } from "react-router";
+import { Link } from "react-router";
 import { useEffect, useState } from "react";
 import api from "~/utils/api.client";
+import { useStudentDashboard } from "~/hooks/student/useStudentDashboard";
+import { useUserContext } from "~/hooks/useUserContext";
+import type { DashboardNotification, DashboardAchievement, DashboardStats } from "~/types/students";
 
 // --- SVG COMPONENTS ---
 const DashboardIcons = {
@@ -27,34 +30,17 @@ const DashboardIcons = {
     )
 };
 
-export async function loader() {
-    return {
-        enrolledCourses: [
-            { id: 1, title: "Advanced Distributed Systems", progress: 72, totalLessons: 24, lastAccessed: "2 hours ago", color: "bg-primary" },
-            { id: 2, title: "Cloud Architecture & Scalability", progress: 45, totalLessons: 18, lastAccessed: "Yesterday", color: "bg-secondary" },
-            { id: 3, title: "Next.js 15: Production Patterns", progress: 10, totalLessons: 40, lastAccessed: "3 days ago", color: "bg-accent" },
-        ],
-        notifications: [
-            { id: 1, type: "mentor", text: "Dr. Aris Thorne replied to your code review.", time: "10m ago" },
-            { id: 2, type: "system", text: "New module: 'Serverless Edge Functions' is live.", time: "4h ago" },
-        ],
-        deadlines: [
-            { id: 1, task: "Distributed Systems Lab 04", due: "Tomorrow", priority: "high" },
-            { id: 2, task: "Cloud Scalability Quiz", due: "In 3 days", priority: "medium" },
-        ],
-        achievements: [
-            { id: '1', name: 'Nexus Pioneer', icon: 'ShieldCheck', color: 'text-blue-400' },
-            { id: '2', name: 'Logic Master', icon: 'Code', color: 'text-primary' },
-            { id: '3', name: 'Data Architect', icon: 'Database', color: 'text-purple-400' },
-            { id: '4', name: 'Speed Runner', icon: 'Flame', color: 'text-orange-400' },
-        ],
-    };
+// Helper to format large numbers
+function formatNumber(num: number): string {
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+    return String(num);
 }
 
 export default function StudentDashboard() {
-    const { notifications, deadlines, achievements } = useLoaderData<typeof loader>();
+    const { user } = useUserContext();
+    const { data: dashboardData, isLoading: isDashboardLoading } = useStudentDashboard();
     const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isCoursesLoading, setIsCoursesLoading] = useState(true);
 
     useEffect(() => {
         const fetchEnrollments = async () => {
@@ -62,8 +48,8 @@ export default function StudentDashboard() {
                 const res = await api.get("/enrollments/");
                 const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
                 const transformed = data.map((e: any, index: number) => ({
-                    id: e.course.id,
-                    title: e.course.title,
+                    id: e.course_details?.id || e.course,
+                    title: e.course_details?.title || "Untitled Course",
                     progress: e.progress?.percentage_complete || 0,
                     lastAccessed: e.progress?.last_accessed 
                         ? new Date(e.progress.last_accessed).toLocaleDateString() 
@@ -74,15 +60,19 @@ export default function StudentDashboard() {
             } catch (err) {
                 console.error("Failed to fetch enrollments", err);
             } finally {
-                setIsLoading(false);
+                setIsCoursesLoading(false);
             }
         };
         fetchEnrollments();
     }, []);
 
+    const notifications = dashboardData?.notifications || [];
+    const achievements = dashboardData?.achievements || [];
+    const stats = dashboardData?.stats;
     const continueLearning = enrolledCourses.length > 0 ? enrolledCourses[0] : null;
+    const displayName = user?.first_name || "Developer";
 
-    if (isLoading) {
+    if (isCoursesLoading && isDashboardLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <span className="loading loading-dots loading-lg text-primary"></span>
@@ -101,7 +91,7 @@ export default function StudentDashboard() {
                     <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[80px] -mr-20 -mt-20" />
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="text-center md:text-left">
-                            <h1 className="text-4xl font-black mb-4 tracking-tight">Hello, <span className="text-primary italic">Developer</span>.</h1>
+                            <h1 className="text-4xl font-black mb-4 tracking-tight">Hello, <span className="text-primary italic">{displayName}</span>.</h1>
                             {enrolledCourses.length > 0 ? (
                                 <>
                                     <p className="opacity-60 max-w-sm mb-6 font-medium leading-relaxed">
@@ -140,38 +130,40 @@ export default function StudentDashboard() {
                     <div className="bg-base-100 rounded-sxl p-6 border border-base-content/5">
                         <h3 className="font-black text-[10px] uppercase tracking-[0.2em] mb-4 opacity-40 text-center">System Feed</h3>
                         <div className="space-y-3">
-                            {notifications.map((n) => (
-                                <div key={n.id} className="flex gap-3 p-3 bg-base-200/50 rounded-xl border border-transparent hover:border-primary/10 transition-all cursor-pointer group">
-                                    <div className="text-primary opacity-60 group-hover:opacity-100 transition-opacity">
-                                        {n.type === 'mentor' ? <DashboardIcons.Mentor /> : <DashboardIcons.System />}
+                            {notifications.length > 0 ? (
+                                notifications.map((n) => (
+                                    <div key={n.id} className="flex gap-3 p-3 bg-base-200/50 rounded-xl border border-transparent hover:border-primary/10 transition-all cursor-pointer group">
+                                        <div className="text-primary opacity-60 group-hover:opacity-100 transition-opacity">
+                                            {n.type === 'mentor_reply' ? <DashboardIcons.Mentor /> : <DashboardIcons.System />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[11px] font-bold leading-tight truncate">{n.text}</p>
+                                            <p className="text-[9px] opacity-40 font-black mt-1 uppercase tracking-tighter">{n.time}</p>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[11px] font-bold leading-tight truncate">{n.text}</p>
-                                        <p className="text-[9px] opacity-40 font-black mt-1 uppercase tracking-tighter">{n.time}</p>
-                                    </div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="text-[11px] opacity-30 text-center py-4 font-medium">No new notifications</p>
+                            )}
                         </div>
                     </div>
 
-                    {/* Deadlines */}
-                    <div className="bg-base-100 rounded-4xl p-6 border border-base-content/5">
-                        <h3 className="font-black text-[10px] uppercase tracking-[0.2em] mb-4 opacity-40 text-center">Upcoming Deadlines</h3>
-                        <div className="space-y-3">
-                            {deadlines.map((d) => (
-                                <div key={d.id} className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${d.priority === 'high' ? 'bg-error' : 'bg-warning'}`} />
-                                        <p className="text-[11px] font-bold">{d.task}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-40">
-                                        <DashboardIcons.Clock />
-                                        <span className="text-[9px] font-black uppercase">{d.due}</span>
-                                    </div>
+                    {/* Quick Stats Mini Card */}
+                    {stats && (
+                        <div className="bg-base-100 rounded-4xl p-6 border border-base-content/5">
+                            <h3 className="font-black text-[10px] uppercase tracking-[0.2em] mb-4 opacity-40 text-center">Quick Stats</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="text-center">
+                                    <p className="text-xl font-black text-primary">{formatNumber(stats.xp_points)}</p>
+                                    <p className="text-[9px] opacity-30 font-black uppercase tracking-widest">XP</p>
                                 </div>
-                            ))}
+                                <div className="text-center">
+                                    <p className="text-xl font-black">{stats.rank}</p>
+                                    <p className="text-[9px] opacity-30 font-black uppercase tracking-widest">Rank</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -207,7 +199,7 @@ export default function StudentDashboard() {
                 </div>
             </section>
 
-            {/* --- NEW: ACHIEVEMENT SHOWCASE --- */}
+            {/* --- ACHIEVEMENT SHOWCASE --- */}
             <section className="animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
                 <div className="flex justify-between items-end mb-6 px-2">
                     <div>
@@ -223,33 +215,40 @@ export default function StudentDashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {achievements.slice(0, 5).map((badge) => (
-                        <div 
-                            key={badge.id} 
-                            className="bg-base-100 border border-base-content/5 p-4 rounded-3xl hover:border-primary/40 transition-all duration-500 group relative overflow-hidden flex items-center gap-4"
-                        >
-                            {/* Background Glow */}
-                            <div className="absolute -right-2 -bottom-2 w-12 h-12 bg-primary/5 blur-xl group-hover:bg-primary/20 transition-all" />
-                            
-                            <div className="w-12 h-12 rounded-2xl bg-base-200 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-all duration-500 shrink-0 shadow-lg">
-                                {/* Reusing icons or specific badge SVGs */}
-                                <DashboardIcons.XP /> 
+                    {achievements.length > 0 ? (
+                        achievements.slice(0, 5).map((item) => (
+                            <div 
+                                key={item.id} 
+                                className="bg-base-100 border border-base-content/5 p-4 rounded-3xl hover:border-primary/40 transition-all duration-500 group relative overflow-hidden flex items-center gap-4"
+                            >
+                                {/* Background Glow */}
+                                <div className="absolute -right-2 -bottom-2 w-12 h-12 bg-primary/5 blur-xl group-hover:bg-primary/20 transition-all" />
+                                
+                                <div className="w-12 h-12 rounded-2xl bg-base-200 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-all duration-500 shrink-0 shadow-lg">
+                                    <DashboardIcons.XP /> 
+                                </div>
+                                
+                                <div className="min-w-0">
+                                    <p className="text-[11px] font-black uppercase tracking-tight truncate">{item.achievement.name}</p>
+                                    <p className="text-[9px] opacity-30 font-bold truncate">+{item.achievement.points} XP</p>
+                                </div>
                             </div>
-                            
-                            <div className="min-w-0">
-                                <p className="text-[11px] font-black uppercase tracking-tight truncate">{badge.name}</p>
-                                <p className="text-[9px] opacity-30 font-bold truncate">Verified Achievement</p>
-                            </div>
+                        ))
+                    ) : (
+                        <div className="col-span-full text-center py-8 opacity-30">
+                            <p className="text-sm font-medium">No achievements earned yet. Complete courses to unlock badges!</p>
                         </div>
-                    ))}
+                    )}
                     
-                    {/* Quick "Empty Slot" or "More" card for UX */}
-                    <Link 
-                        to="/dashboard/achievements"
-                        className="hidden lg:flex bg-base-100/30 border border-dashed border-base-content/10 p-4 rounded-3xl items-center justify-center group hover:bg-base-100 transition-all"
-                    >
-                        <p className="text-[10px] font-black opacity-20 group-hover:opacity-100 uppercase tracking-[0.2em]">+ {achievements.length > 5 ? achievements.length - 5 : 0} More</p>
-                    </Link>
+                    {/* Quick "More" card */}
+                    {achievements.length > 5 && (
+                        <Link 
+                            to="/dashboard/achievements"
+                            className="hidden lg:flex bg-base-100/30 border border-dashed border-base-content/10 p-4 rounded-3xl items-center justify-center group hover:bg-base-100 transition-all"
+                        >
+                            <p className="text-[10px] font-black opacity-20 group-hover:opacity-100 uppercase tracking-[0.2em]">+ {achievements.length - 5} More</p>
+                        </Link>
+                    )}
                 </div>
             </section>
 
@@ -257,10 +256,10 @@ export default function StudentDashboard() {
             <section className="bg-base-100 rounded-[2.5rem] border border-base-content/5 p-8">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                     {[
-                        { label: "XP Points", val: "12.4k", icon: <DashboardIcons.XP /> },
-                        { label: "Labs Cleared", val: "42", icon: <DashboardIcons.Lab /> },
-                        { label: "Active Streak", val: "05", icon: <DashboardIcons.Flame /> },
-                        { label: "Rank", val: "Senior", icon: <DashboardIcons.Rank /> }
+                        { label: "XP Points", val: stats ? formatNumber(stats.xp_points) : "—", icon: <DashboardIcons.XP /> },
+                        { label: "Completed", val: stats ? String(stats.courses_completed) : "—", icon: <DashboardIcons.Lab /> },
+                        { label: "Active Streak", val: stats ? String(stats.active_streak).padStart(2, '0') : "—", icon: <DashboardIcons.Flame /> },
+                        { label: "Rank", val: stats?.rank || "—", icon: <DashboardIcons.Rank /> }
                     ].map((stat, i) => (
                         <div key={stat.label} className={`flex flex-col items-center text-center ${i !== 3 ? 'md:border-r border-base-content/5' : ''}`}>
                             <div className="text-primary mb-3 opacity-80">{stat.icon}</div>

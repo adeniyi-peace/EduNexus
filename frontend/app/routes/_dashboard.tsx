@@ -11,9 +11,6 @@ const Icons = {
     Courses: () => (
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" /><path d="M8 7h6" /><path d="M8 11h8" /></svg>
     ),
-    Paths: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
-    ),
     Wishlist: () => (
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5L12 21l7-7Z" /></svg>
     ),
@@ -54,7 +51,6 @@ export default function DashboardLayout() {
     const navLinks = [
         { to: "/dashboard", label: "Overview", icon: <Icons.Overview /> },
         { to: "/dashboard/courses", label: "My Courses", icon: <Icons.Courses /> },
-        { to: "/dashboard/paths", label: "Learning Paths", icon: <Icons.Paths /> },
         { to: "/dashboard/achievements", label: "Achievements", icon: <Icons.Achievements /> },
         { to: "/dashboard/certificates", label: "Certificates", icon: <Icons.Certificates /> },
         { to: "/dashboard/wishlist", label: "My Wishlist", icon: <Icons.Wishlist /> },

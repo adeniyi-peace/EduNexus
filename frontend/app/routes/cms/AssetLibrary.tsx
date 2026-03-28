@@ -1,33 +1,34 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Plus, AlertTriangle, Search } from "lucide-react";
+import { Plus, AlertTriangle, Search, Loader2, RefreshCw } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
-import type { CourseData } from "~/types/course";
 import { LibraryToolbar } from "~/components/cms/library/LibraryToolbar";
 import { CourseCard } from "~/components/ui/CourseCard";
 import { CourseRow } from "~/components/cms/library/CourseRow";
-
-// Mock Data Source
-const MOCK_DATA: CourseData[] = [
-    { id: "1", title: "Complete Python Bootcamp 2026", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=Python", category: "Development", students: 1250, rating: 4.8, status: "Published", lastUpdated: "2d ago", price: 49.99, instructor: "Dr. Angela", duration: "25h", modules: [], difficulty: "Beginner" },
-    { id: "2", title: "Advanced React Patterns", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=React", category: "Frontend", students: 850, rating: 4.9, status: "Draft", lastUpdated: "1w ago", price: 59.99, instructor: "Kent C.", duration: "12h", modules: [], difficulty: "Advanced" },
-    { id: "3", title: "UI/UX Design Masterclass", thumbnail: "https://placehold.co/600x400/2a323c/a6adbb?text=UI/UX", category: "Design", students: 0, rating: 0, status: "Archived", lastUpdated: "3mo ago", price: 29.99, instructor: "Gary Simon", duration: "10h", modules: [], difficulty: "Intermediate" },
-];
+import { useInstructorLibrary, useDeleteCourse } from "~/hooks/instructor/useInstructorLibrary";
+import type { InstructorLibraryCourse } from "~/types/instructor";
 
 export default function InstructorLibrary() {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [searchQuery, setSearchQuery] = useState("");
-    const [courses, setCourses] = useState(MOCK_DATA);
+    
+    // Data Fetching
+    const { data: courses, isLoading, isError, refetch } = useInstructorLibrary();
+    const deleteMutation = useDeleteCourse();
     
     // Deletion Logic
-    const [courseToDelete, setCourseToDelete] = useState<CourseData | null>(null);
+    const [courseToDelete, setCourseToDelete] = useState<InstructorLibraryCourse | null>(null);
 
-    const handleDeleteConfirm = () => {
+    const handleDeleteConfirm = async () => {
         if (courseToDelete) {
-            setCourses(prev => prev.filter(c => c.id !== courseToDelete.id));
-            setCourseToDelete(null);
-            // In real app: call API here
+            try {
+                await deleteMutation.mutateAsync(courseToDelete.id);
+                setCourseToDelete(null);
+            } catch (error) {
+                console.error("Failed to delete course:", error);
+                alert("Failed to delete course. Please try again.");
+            }
         }
     };
 
@@ -36,22 +37,52 @@ export default function InstructorLibrary() {
     };
 
     // Filter Logic
-    const filteredCourses = courses.filter(c => 
+    const filteredCourses = (courses || []).filter(c => 
         c.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // Loading State
+    if (isLoading) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="animate-spin text-primary" size={48} />
+                    <p className="text-base-content/60 font-medium">Loading library...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error State
+    if (isError) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
+                        <RefreshCw size={28} className="text-error" />
+                    </div>
+                    <h3 className="font-black text-lg">Failed to load library</h3>
+                    <p className="text-sm opacity-60">Something went wrong while fetching your courses.</p>
+                    <button onClick={() => refetch()} className="btn btn-primary btn-sm gap-2">
+                        <RefreshCw size={14} /> Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen p-4 lg:p-8">
+        <div className="min-h-screen p-4 lg:p-8 animate-in fade-in duration-500">
             
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight text-base-content">Course Library</h1>
+                    <h1 className="text-3xl font-black tracking-tight text-base-content uppercase">Course_<span className="text-primary">Library</span></h1>
                     <p className="text-sm opacity-60 mt-1">Manage your curriculum content and assets.</p>
                 </div>
                 <button 
                     onClick={() => navigate("/cms/builder")}
-                    className="btn btn-primary gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+                    className="btn btn-primary gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-transform rounded-2xl"
                 >
                     <Plus size={18} />
                     <span>Create New Course</span>
@@ -70,12 +101,12 @@ export default function InstructorLibrary() {
             <AnimatePresence mode="wait">
                 {filteredCourses.length === 0 ? (
                     // Empty State
-                    <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                    <div className="flex flex-col items-center justify-center py-40 opacity-50 bg-base-200/50 rounded-[3rem] border-2 border-dashed border-base-content/5">
                         <div className="w-20 h-20 bg-base-300 rounded-full flex items-center justify-center mb-4">
                             <Search size={32} />
                         </div>
-                        <h3 className="font-bold text-lg">No courses found</h3>
-                        <p className="text-sm">Try adjusting your search terms.</p>
+                        <h3 className="font-black text-lg uppercase tracking-tight">No courses found</h3>
+                        <p className="text-sm">Try adjusting your search terms or create a new course.</p>
                     </div>
                 ) : viewMode === "grid" ? (
                     // Grid View
@@ -83,29 +114,31 @@ export default function InstructorLibrary() {
                         {filteredCourses.map((course) => (
                             <CourseCard 
                                 key={course.id} 
+                                // @ts-ignore - mapping compatibility
                                 course={course}
                                 onEdit={handleEdit} 
                                 isInstructorView={true}
-                                onDelete={(course) => setCourseToDelete(course)} 
+                                onDelete={(course) => setCourseToDelete(course as any)} 
                             />
                         ))}
                     </div>
                 ) : (
                     // List View
-                    <div className="rounded-2xl border border-base-content/5 shadow-xs overflow-hidden">
+                    <div className="rounded-[2.5rem] border border-base-content/5 shadow-xs overflow-hidden bg-base-100">
                         <table className="table w-full">
-                            <thead className="bg-base-200/50 text-xs uppercase font-bold text-base-content/50">
+                            <thead className="bg-base-200/50 text-xs uppercase font-black text-base-content/40 border-b border-base-content/5">
                                 <tr>
-                                    <th className="py-4 pl-6">Course Details</th>
+                                    <th className="py-6 pl-8">Course Details</th>
                                     <th>Status</th>
                                     <th>Performance</th>
-                                    <th className="text-right pr-6">Actions</th>
+                                    <th className="text-right pr-8">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredCourses.map((course) => (
                                     <CourseRow 
                                         key={course.id} 
+                                        // @ts-ignore - mapping compatibility
                                         course={course} 
                                         onEdit={handleEdit} 
                                         onDelete={() => setCourseToDelete(course)} 
@@ -120,23 +153,32 @@ export default function InstructorLibrary() {
             {/* Delete Confirmation Modal */}
             {courseToDelete && (
                 <dialog className="modal modal-open">
-                    <div className="modal-box">
+                    <div className="modal-box rounded-[2.5rem] border border-base-content/10 shadow-2xl p-8">
                         <div className="flex flex-col items-center text-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center text-error">
-                                <AlertTriangle size={32} />
+                            <div className="w-20 h-20 rounded-3xl bg-error/10 flex items-center justify-center text-error animate-bounce">
+                                <AlertTriangle size={40} />
                             </div>
-                            <h3 className="font-bold text-lg">Delete this course?</h3>
-                            <p className="py-2 text-sm opacity-70">
-                                You are about to delete <span className="font-bold text-base-content">{courseToDelete.title}</span>. 
-                                This action cannot be undone and all student progress will be lost.
+                            <h3 className="font-black text-2xl uppercase tracking-tight">Delete_Course?</h3>
+                            <p className="py-2 text-sm opacity-60 leading-relaxed">
+                                You are about to initiate deletion for <span className="font-black text-base-content underline decoration-error/30">{courseToDelete.title}</span>. 
+                                <br/><br/>
+                                <span className="text-error font-black uppercase text-[10px] bg-error/10 px-2 py-1 rounded">Critical Warning</span>
+                                <br/>
+                                This action is irreversible and will purge all student records.
                             </p>
-                            <div className="modal-action w-full flex gap-2">
-                                <button className="btn flex-1" onClick={() => setCourseToDelete(null)}>Cancel</button>
-                                <button className="btn btn-error flex-1" onClick={handleDeleteConfirm}>Delete Forever</button>
+                            <div className="modal-action w-full flex gap-3 mt-6">
+                                <button className="btn flex-1 rounded-2xl font-black uppercase text-xs" onClick={() => setCourseToDelete(null)}>Abort</button>
+                                <button 
+                                    className="btn btn-error flex-1 rounded-2xl font-black uppercase text-xs shadow-lg shadow-error/20" 
+                                    onClick={handleDeleteConfirm}
+                                    disabled={deleteMutation.isPending}
+                                >
+                                    {deleteMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : "Execute Delete"}
+                                </button>
                             </div>
                         </div>
                     </div>
-                    <form method="dialog" className="modal-backdrop">
+                    <form method="dialog" className="modal-backdrop bg-base-300/60 backdrop-blur-md">
                         <button onClick={() => setCourseToDelete(null)}>close</button>
                     </form>
                 </dialog>

@@ -32,7 +32,7 @@ export default function AdminDashboard() {
                 <AdminErrorState message="Could not load platform stats." onRetry={refetch} />
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    {data?.kpiStats.map((stat, i) => (
+                    {data?.kpi_stats.map((stat, i) => (
                         <StatCard
                             key={stat.title}
                             title={stat.title}
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
                 {/* Left: Pending Table & Revenue Chart */}
                 <div className="lg:col-span-2 space-y-8">
                     <PendingApprovals
-                        items={data?.pendingApprovals ?? []}
+                        items={data?.pending_approvals ?? []}
                         isLoading={isLoading}
                     />
 
@@ -61,8 +61,8 @@ export default function AdminDashboard() {
                             <div className="h-48 bg-base-300 rounded-xl animate-pulse" />
                         ) : (
                             <div className="flex items-end justify-between h-48 w-full gap-2">
-                                {data?.revenueChart.map((point) => {
-                                    const maxVal = Math.max(...(data.revenueChart.map(p => p.revenue)), 1);
+                                {data?.revenue_chart.map((point) => {
+                                    const maxVal = Math.max(...(data.revenue_chart.map(p => p.revenue)), 1);
                                     const heightPct = Math.max((point.revenue / maxVal) * 100, 4);
                                     return (
                                         <div key={point.name} className="flex-1 flex flex-col items-center gap-1 group">
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
                 {/* Right: Activity Feed */}
                 <div className="lg:col-span-1">
                     <ActivityFeed
-                        items={data?.activityFeed ?? []}
+                        items={data?.activity_feed ?? []}
                         isLoading={isLoading}
                     />
                 </div>

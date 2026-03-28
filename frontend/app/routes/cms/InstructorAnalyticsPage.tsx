@@ -1,125 +1,67 @@
-import { DollarSign, Users, Star, Clock, Loader2 } from "lucide-react";
-import { useLoaderData, type ClientLoaderFunctionArgs } from "react-router";
+import { DollarSign, Users, Star, Clock, Loader2, RefreshCw } from "lucide-react";
 import { StatCard } from "~/components/cms/analytics/AnalyticsStats";
 import { RatingAnalysis } from "~/components/cms/analytics/RatingAnalysis";
 import { RevenueChart } from "~/components/cms/analytics/RevenueChart";
 import { StudentDistribution } from "~/components/cms/analytics/StudentDistribution";
 import { TopPerformingCourses } from "~/components/cms/analytics/TopPerformingCourses";
-import api from "~/utils/api.client";
+import { useInstructorAnalytics } from "~/hooks/instructor/useInstructorAnalytics";
 
-interface AnalyticsData {
-    stats: {
-        totalRevenue: string;
-        activeStudents: string;
-        avgRating: string;
-        hoursWatched: string;
-        revenueTrend: string;
-        revenueTrendDirection: 'up' | 'down' | 'neutral';
-        studentsTrend: string;
-        studentsTrendDirection: 'up' | 'down' | 'neutral';
-        ratingTrend: string;
-        ratingTrendDirection: 'up' | 'down' | 'neutral';
-        hoursTrend: string;
-        hoursTrendDirection: 'up' | 'down' | 'neutral';
-    };
-    revenueChart: { name: string; revenue: number }[];
-    studentDistribution: { name: string; value: number; color: string }[];
-    ratingAnalysis: { stars: number; count: number; percentage: number }[];
-    quickStats: {
-        newEnrollments: number;
-        certificates: number;
-        refundRate: number;
-        completionRate: number;
-    };
-    topCourses: {
-        id: string;
-        title: string;
-        students: number;
-        revenue: string;
-        rating: number;
-    }[];
-}
+const EMPTY_STATS = {
+    totalRevenue: "$0",
+    activeStudents: "0",
+    avgRating: "0.0",
+    hoursWatched: "0h",
+    revenueTrend: "0.0%",
+    revenueTrendDirection: "neutral" as const,
+    studentsTrend: "0.0%",
+    studentsTrendDirection: "neutral" as const,
+    ratingTrend: "0.0%",
+    ratingTrendDirection: "neutral" as const,
+    hoursTrend: "0.0%",
+    hoursTrendDirection: "neutral" as const,
+};
 
-export async function clientLoader({ }: ClientLoaderFunctionArgs) {
-    try {
-        const response = await api.get("/user/instructor/analytics/");
-        return response.data as AnalyticsData;
-    } catch (error) {
-        console.error("Instructor analytics loader error:", error);
-        // Return safe fallback data instead of throwing to prevent page crash
-        return {
-            stats: {
-                totalRevenue: "$0",
-                activeStudents: "0",
-                avgRating: "0.0",
-                hoursWatched: "0h",
-                revenueTrend: "0.0%",
-                revenueTrendDirection: "neutral" as const,
-                studentsTrend: "0.0%",
-                studentsTrendDirection: "neutral" as const,
-                ratingTrend: "0.0%",
-                ratingTrendDirection: "neutral" as const,
-                hoursTrend: "0.0%",
-                hoursTrendDirection: "neutral" as const,
-            },
-            revenueChart: [],
-            studentDistribution: [
-                {"name": "0-20%", "value": 0, "color": "#f87171"},
-                {"name": "21-40%", "value": 0, "color": "#fb923c"},
-                {"name": "41-60%", "value": 0, "color": "#fbbf24"},
-                {"name": "61-80%", "value": 0, "color": "#818cf8"},
-                {"name": "81-100%", "value": 0, "color": "#34d399"},
-            ],
-            ratingAnalysis: [],
-            quickStats: {
-                newEnrollments: 0,
-                certificates: 0,
-                refundRate: 0,
-                completionRate: 0
-            },
-            topCourses: []
-        } as AnalyticsData;
-    }
-}
-
-export function HydrateFallback() {
-    return (
-        <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="animate-spin text-primary" size={48} />
-                <p className="text-base-content/60">Loading analytics...</p>
-            </div>
-        </div>
-    );
-}
+const EMPTY_QUICK_STATS = {
+    newEnrollments: 0,
+    certificates: 0,
+    refundRate: 0,
+    completionRate: 0,
+};
 
 export default function InstructorAnalyticsPage() {
-    const data = useLoaderData<AnalyticsData>();
+    const { data, isLoading, isError, refetch } = useInstructorAnalytics();
 
-    const stats = data?.stats || {
-        totalRevenue: "$0",
-        activeStudents: "0",
-        avgRating: "0.0",
-        hoursWatched: "0h",
-        revenueTrend: "0.0%",
-        revenueTrendDirection: "neutral" as const,
-        studentsTrend: "0.0%",
-        studentsTrendDirection: "neutral" as const,
-        ratingTrend: "0.0%",
-        ratingTrendDirection: "neutral" as const,
-        hoursTrend: "0.0%",
-        hoursTrendDirection: "neutral" as const,
-    };
+    const stats = data?.stats || EMPTY_STATS;
+    const quickStats = data?.quickStats || EMPTY_QUICK_STATS;
 
-    const quickStats = data?.quickStats || {
-        newEnrollments: 0,
-        certificates: 0,
-        refundRate: 0,
-        completionRate: 0
-    };
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="animate-spin text-primary" size={48} />
+                    <p className="text-base-content/60">Loading analytics...</p>
+                </div>
+            </div>
+        );
+    }
 
-    if (!data) {
-        return <HydrateFallback />;
+    // Error state
+    if (isError) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
+                        <RefreshCw size={28} className="text-error" />
+                    </div>
+                    <h3 className="font-black text-lg">Failed to load analytics</h3>
+                    <p className="text-sm opacity-60 max-w-xs">Something went wrong while fetching analytics data.</p>
+                    <button onClick={() => refetch()} className="btn btn-primary btn-sm gap-2">
+                        <RefreshCw size={14} /> Try Again
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -130,7 +72,7 @@ export default function InstructorAnalyticsPage() {
                 <div>
                     <h1 className="text-3xl font-black tracking-tight text-base-content">Analytics</h1>
                     <p className="text-sm opacity-60 mt-1">
-                        Overview of your performance for <span className="font-bold text-base-content">Feb 2026</span>
+                        Overview of your performance for <span className="font-bold text-base-content">{new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                     </p>
                 </div>
             </div>
@@ -175,17 +117,17 @@ export default function InstructorAnalyticsPage() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {/* Main Chart (Takes up 2 cols on huge screens, full width on smaller) */}
                 <div className="xl:col-span-2">
-                    <RevenueChart data={data.revenueChart} />
+                    <RevenueChart data={data?.revenueChart || []} />
                 </div>
                 {/* Student Progress Distribution (Takes up 1 col) */}
                 <div className="h-full">
-                    <StudentDistribution data={data.studentDistribution} />
+                    <StudentDistribution data={data?.studentDistribution || []} />
                 </div>
             </div>
 
             {/* Level 3: Rating Analysis & Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <RatingAnalysis ratings={data.ratingAnalysis} averageRating={stats.avgRating} />
+                <RatingAnalysis ratings={data?.ratingAnalysis || []} averageRating={stats.avgRating} />
                 <div className="card bg-base-100 border border-base-content/5 shadow-sm h-full">
                     <div className="card-body p-6">
                         <h3 className="font-black text-lg text-base-content">Quick Stats</h3>
@@ -217,7 +159,7 @@ export default function InstructorAnalyticsPage() {
 
             {/* Level 3: Detailed Tables */}
             <div className="grid grid-cols-1">
-                <TopPerformingCourses courses={data.topCourses} />
+                <TopPerformingCourses courses={data?.topCourses || []} />
             </div>
         </div>
     );

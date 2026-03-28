@@ -1,55 +1,43 @@
-import { useParams, Link, useLoaderData, type ClientLoaderFunctionArgs } from "react-router";
-import { ChevronLeft, Star, MessageSquare, Filter, MoreHorizontal, Reply } from "lucide-react";
-import api from "~/utils/api.client";
-
-interface Review {
-    id: string;
-    student: {
-        fullname: string;
-        avatar?: string;
-    };
-    rating: number;
-    comment: string;
-    created_at: string;
-}
-
-interface PageData {
-    courseTitle: string;
-    reviews: Review[];
-}
-
-export async function clientLoader({ params }: ClientLoaderFunctionArgs) {
-    try {
-        // Step 1: Get Course Analytics (this supports SLUG) to get the real course ID
-        const courseRes = await api.get(`/user/instructor/course-analytics/${params.id}/`);
-        const courseData = courseRes.data;
-        const realCourseId = courseData.id || params.id;
-
-        // Step 2: Get Reviews using the realCourseId
-        let reviewsData = [];
-        try {
-            const reviewsRes = await api.get(`/courses/${realCourseId}/reviews/`);
-            // Handle both Array and DRF Paginated Response ({ results: [] })
-            reviewsData = Array.isArray(reviewsRes.data) 
-                ? reviewsRes.data 
-                : (reviewsRes.data?.results || []);
-        } catch (revErr) {
-            console.error("Secondary reviews fetch error:", revErr);
-        }
-        
-        return {
-            courseTitle: courseData.courseTitle || "Course",
-            reviews: reviewsData
-        } as PageData;
-    } catch (error) {
-        console.error("Course reviews loader error:", error);
-        return { courseTitle: "Course", reviews: [] };
-    }
-}
+import { useParams, Link } from "react-router";
+import { ChevronLeft, Star, MessageSquare, Filter, MoreHorizontal, Reply, Loader2, RefreshCw } from "lucide-react";
+import { useCourseReviews } from "~/hooks/instructor/useCourseReviews";
 
 export default function CourseReviewsPage() {
     const { id } = useParams();
-    const { courseTitle, reviews } = useLoaderData<PageData>();
+    const { data, isLoading, isError, refetch } = useCourseReviews(id);
+
+    const courseTitle = data?.courseTitle || "Course";
+    const reviews = data?.reviews || [];
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="animate-spin text-primary" size={48} />
+                    <p className="text-base-content/60">Loading reviews...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (isError) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
+                        <RefreshCw size={28} className="text-error" />
+                    </div>
+                    <h3 className="font-black text-lg">Failed to load reviews</h3>
+                    <p className="text-sm opacity-60 max-w-xs">Could not fetch reviews for this course.</p>
+                    <button onClick={() => refetch()} className="btn btn-primary btn-sm gap-2">
+                        <RefreshCw size={14} /> Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen space-y-6 p-4 lg:p-8">

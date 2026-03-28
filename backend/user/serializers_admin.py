@@ -174,7 +174,7 @@ class AdminDashboardSerializer(serializers.Serializer):
 class UserAdminSerializer(serializers.ModelSerializer):
     # These are explicitly marked as read_only so they never appear in PATCH requirements
     fullname = serializers.CharField(read_only=True)
-    date_joined = serializers.DateTimeField(format="%b %d, %Y", read_only=True)
+    date_joined = serializers.DateField(format="%b %d, %Y", read_only=True)
     avatar = serializers.ImageField(source='profile_picture', read_only=True)
 
     class Meta:

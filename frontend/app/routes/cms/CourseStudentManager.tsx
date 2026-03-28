@@ -1,60 +1,29 @@
 import { useState } from "react";
-import { useLoaderData, useNavigate } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { 
     Search, 
     Filter, 
-    MoreVertical, 
     Mail, 
-    Ban, 
-    CheckCircle2, 
-    Clock, 
-    ChevronDown, 
     Download,
-    UserX,
     Loader2,
-    AlertCircle,
     X,
     Send,
-    Users
+    Users,
+    RefreshCw
 } from "lucide-react";
 import type { Student } from "~/types/students";
 import { StudentTable } from "~/components/cms/student/StudentTable";
 import { StudentDrawer } from "~/components/cms/student/StudentDrawer";
-import api from "~/utils/api.client";
-import type { Route } from "./+types/CourseStudentManager";
-
-// Client loader - fetches data on the client side
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-    const courseId = params.id;
-    
-    if (!courseId) {
-        throw new Response("Course ID is required", { status: 400 });
-    }
-    
-    try {
-        const response = await api.get(`/users/instructor/courses/${courseId}/students/`);
-        return { students: response.data.students as Student[], courseId };
-    } catch (error) {
-        throw new Response("Failed to load students", { status: 500 });
-    }
-}
-
-// Loading state shown while clientLoader fetches
-export function HydrateFallback() {
-    return (
-        <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="animate-spin text-primary" size={48} />
-                <p className="text-base-content/60">Loading students...</p>
-            </div>
-        </div>
-    );
-}
+import { useCourseStudents } from "~/hooks/instructor/useCourseStudents";
+import { useMessageAllStudents, useMessageStudent } from "~/hooks/instructor/useMessageStudents";
 
 export default function CourseStudentManager() {
-    const { students, courseId } = useLoaderData<typeof clientLoader>();
+    const { id: courseId } = useParams();
     const navigate = useNavigate();
-    const [selectedCourse, setSelectedCourse] = useState("Python Bootcamp");
+    const { data: students, isLoading, isError, refetch } = useCourseStudents(courseId);
+    const messageAllMutation = useMessageAllStudents();
+    const messageStudentMutation = useMessageStudent();
+
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     
@@ -64,7 +33,8 @@ export default function CourseStudentManager() {
     const [selectedMessageStudent, setSelectedMessageStudent] = useState<Student | null>(null);
     const [messageSubject, setMessageSubject] = useState("");
     const [messageBody, setMessageBody] = useState("");
-    const [isSending, setIsSending] = useState(false);
+
+    const isSending = messageAllMutation.isPending || messageStudentMutation.isPending;
 
     // Filter students based on search query
     const filteredStudents = (students || []).filter(student => 
@@ -90,7 +60,7 @@ export default function CourseStudentManager() {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `students-${selectedCourse.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `students-course-${courseId}-${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -114,24 +84,22 @@ export default function CourseStudentManager() {
         setIsMessageModalOpen(true);
     };
 
-    // Send message
+    // Send message using mutation hooks
     const handleSendMessage = async () => {
-        if (!messageSubject.trim() || !messageBody.trim()) return;
+        if (!messageSubject.trim() || !messageBody.trim() || !courseId) return;
         
-        setIsSending(true);
         try {
             if (messageMode === 'all') {
-                // Send to all students in course
-                await api.post(`/users/instructor/courses/${courseId}/message-all/`, {
+                await messageAllMutation.mutateAsync({
+                    courseId,
                     subject: messageSubject,
-                    message: messageBody
+                    message: messageBody,
                 });
             } else if (messageMode === 'individual' && selectedMessageStudent) {
-                // Send to individual student
-                await api.post(`/users/instructor/message-student/`, {
-                    student_id: selectedMessageStudent.id,
+                await messageStudentMutation.mutateAsync({
+                    studentId: selectedMessageStudent.id,
                     subject: messageSubject,
-                    message: messageBody
+                    message: messageBody,
                 });
             }
             
@@ -142,8 +110,6 @@ export default function CourseStudentManager() {
         } catch (error) {
             console.error('Failed to send message:', error);
             alert('Failed to send message. Please try again.');
-        } finally {
-            setIsSending(false);
         }
     };
 
@@ -155,22 +121,43 @@ export default function CourseStudentManager() {
         setSelectedMessageStudent(null);
     };
 
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="animate-spin text-primary" size={48} />
+                    <p className="text-base-content/60">Loading students...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (isError) {
+        return (
+            <div className="min-h-screen p-4 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
+                        <RefreshCw size={28} className="text-error" />
+                    </div>
+                    <h3 className="font-black text-lg">Failed to load students</h3>
+                    <p className="text-sm opacity-60 max-w-xs">Could not fetch student data for this course.</p>
+                    <button onClick={() => refetch()} className="btn btn-primary btn-sm gap-2">
+                        <RefreshCw size={14} /> Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen p-4 lg:p-8">
             {/* Header with Context Switcher */}
             <div className="flex flex-col gap-4 mb-8">
                 <div className="text-sm font-bold opacity-40 uppercase tracking-widest">Course Manager</div>
                 <div className="flex items-center gap-2">
-                    <h1 className="text-3xl font-black">Students in</h1>
-                    <div className="dropdown dropdown-bottom">
-                        <label tabIndex={0} className="btn btn-lg btn-ghost text-3xl font-black text-primary px-2 min-h-0 h-auto normal-case underline decoration-dashed underline-offset-8">
-                            {selectedCourse} <ChevronDown size={24} />
-                        </label>
-                        <ul tabIndex={0} className="dropdown-content z-1 menu p-2 shadow-xl rounded-box w-72 mt-2">
-                            <li><a onClick={() => setSelectedCourse("Python Bootcamp")}>Python Bootcamp</a></li>
-                            <li><a onClick={() => setSelectedCourse("React Masterclass")}>React Masterclass</a></li>
-                        </ul>
-                    </div>
+                    <h1 className="text-3xl font-black">Student Management</h1>
                 </div>
             </div>
 

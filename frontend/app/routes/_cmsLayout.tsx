@@ -19,7 +19,10 @@ import {
 import { ThemeToggle } from "~/components/ThemeToggle";
 import ProtectedRoute from "~/components/ProtectedRoute";
 
+import { useUserContext } from "~/hooks/useUserContext";
+
 export default function CMSLayout() {
+    const { user } = useUserContext();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const location = useLocation();
@@ -149,7 +152,10 @@ export default function CMSLayout() {
 
                         <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-accent p-px">
                             <div className="w-full h-full bg-base-100 rounded-[11px] flex items-center justify-center overflow-hidden">
-                                <img src="https://i.pravatar.cc/150?u=admin" alt="Admin" />
+                                <img 
+                                    src={user?.profile_picture || `https://i.pravatar.cc/150?u=${user?.id || 'admin'}`} 
+                                    alt={user?.first_name || "Instructor"} 
+                                />
                             </div>
                         </div>
                     </div>
@@ -171,6 +177,6 @@ export default function CMSLayout() {
                 </div>
             </div>
             </div>
-        // </Protected  Route>
+        // </ProtectedRoute>
     );
 }

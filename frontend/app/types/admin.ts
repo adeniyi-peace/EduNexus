@@ -37,10 +37,10 @@ export interface AdminRevenueChartPoint {
 }
 
 export interface AdminDashboardData {
-    kpiStats: AdminKpiStat[];
-    pendingApprovals: AdminPendingCoursePreview[];
-    activityFeed: AdminActivityItem[];
-    revenueChart: AdminRevenueChartPoint[];
+    kpi_stats: AdminKpiStat[];
+    pending_approvals: AdminPendingCoursePreview[];
+    activity_feed: AdminActivityItem[];
+    revenue_chart: AdminRevenueChartPoint[];
 }
 
 // --- User Management ---
