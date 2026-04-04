@@ -303,45 +303,124 @@ export function useCourseBuilder(initialData: CourseData) {
     };
 
     // --- QUIZ SPECIFIC HELPERS ---
+    // --- QUIZ ACTIONS ---
     const addQuizQuestion = async (moduleId: string, lessonId: string) => {
-        const module = course.modules.find(m => m.id === moduleId);
-        const lesson = module?.lessons.find(l => l.id === lessonId);
-        const currentQuestions = lesson?.quizConfig?.questions || [];
-
-        const newQuestionPayload = {
-            text: "New Question",
-            options: [
-                { text: "Option A", isCorrect: true },
-                { text: "Option B", isCorrect: false },
-                { text: "Option C", isCorrect: false },
-                { text: "Option D", isCorrect: false }
-            ]
-        };
-
+        setSyncStatus("saving");
         try {
-            // We send the update to the lesson, and the backend should return the new lesson with the added question (and its ID)
-            const updatedLesson = await updateLesson(moduleId, lessonId, {
-                quizConfig: {
-                    timeLimit: lesson?.quizConfig?.timeLimit || 10,
-                    questions: [...currentQuestions, newQuestionPayload as any]
-                }
+            const response = await apiClient.post(`/lessons/${lessonId}/questions/`, {
+                text: "New Question",
+                options: [
+                    { text: "Option A", isCorrect: true },
+                    { text: "Option B", isCorrect: false },
+                    { text: "Option C", isCorrect: false },
+                    { text: "Option D", isCorrect: false }
+                ]
             });
-
-            // The updateLesson already sets the course state, but we might want to ensure 
-            // the returned lesson from server (with IDs) is what we have in state.
+            const newQuestion = response.data;
+            
             setCourse(prev => ({
                 ...prev,
                 modules: prev.modules.map(m =>
                     m.id === moduleId ? {
                         ...m,
-                        lessons: m.lessons.map(l => l.id === lessonId ? updatedLesson : l)
+                        lessons: m.lessons.map(l =>
+                            l.id === lessonId ? {
+                                ...l,
+                                quizConfig: {
+                                    ...l.quizConfig!,
+                                    questions: [...(l.quizConfig?.questions || []), newQuestion]
+                                }
+                            } : l
+                        )
                     } : m
                 )
             }));
+            setSyncStatus("idle");
+            return newQuestion;
         } catch (err) {
-            console.error("Failed to add quiz question", err);
+            setSyncStatus("error");
+            setErrorMessage("Failed to add quiz question.");
+            throw err;
         }
     };
+
+    const updateQuizQuestion = async (moduleId: string, lessonId: string, questionId: string, fields: Partial<QuizQuestion>) => {
+        // Optimistic update
+        setCourse(prev => ({
+            ...prev,
+            modules: prev.modules.map(m =>
+                m.id === moduleId ? {
+                    ...m,
+                    lessons: m.lessons.map(l =>
+                        l.id === lessonId ? {
+                            ...l,
+                            quizConfig: {
+                                ...l.quizConfig!,
+                                questions: l.quizConfig!.questions.map(q => q.id === questionId ? { ...q, ...fields } : q)
+                            }
+                        } : l
+                    )
+                } : m
+            )
+        }));
+
+        await syncToBackend(() => 
+            apiClient.patch(`/lessons/${lessonId}/questions/${questionId}/`, fields)
+        );
+    };
+
+    const deleteQuizQuestion = async (moduleId: string, lessonId: string, questionId: string) => {
+        setCourse(prev => ({
+            ...prev,
+            modules: prev.modules.map(m =>
+                m.id === moduleId ? {
+                    ...m,
+                    lessons: m.lessons.map(l =>
+                        l.id === lessonId ? {
+                            ...l,
+                            quizConfig: {
+                                ...l.quizConfig!,
+                                questions: l.quizConfig!.questions.filter(q => q.id !== questionId)
+                            }
+                        } : l
+                    )
+                } : m
+            )
+        }));
+
+        await syncToBackend(() => 
+            apiClient.delete(`/lessons/${lessonId}/questions/${questionId}/`)
+        );
+    };
+
+    const updateQuizOption = async (moduleId: string, lessonId: string, questionId: string, optionId: string, fields: any) => {
+         // Optimistic update
+         setCourse(prev => ({
+            ...prev,
+            modules: prev.modules.map(m =>
+                m.id === moduleId ? {
+                    ...m,
+                    lessons: m.lessons.map(l =>
+                        l.id === lessonId ? {
+                            ...l,
+                            quizConfig: {
+                                ...l.quizConfig!,
+                                questions: l.quizConfig!.questions.map(q => q.id === questionId ? { 
+                                    ...q, 
+                                    options: q.options.map(o => o.id === optionId ? { ...o, ...fields } : o)
+                                } : q)
+                            }
+                        } : l
+                    )
+                } : m
+            )
+        }));
+
+        await syncToBackend(() => 
+            apiClient.patch(`/lessons/${lessonId}/questions/${questionId}/options/${optionId}/`, fields)
+        );
+    };
+
 
 
     // --- VIDEO & METADATA LOGIC ---
@@ -465,7 +544,11 @@ export function useCourseBuilder(initialData: CourseData) {
         deleteLesson,
         uploadVideo,
         addResource,
-        deleteResource
+        deleteResource,
+        updateQuizQuestion,
+        deleteQuizQuestion,
+        updateQuizOption
+
     };
 }
 

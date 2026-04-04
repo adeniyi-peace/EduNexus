@@ -8,11 +8,15 @@ interface WorkbenchProps {
     moduleId: string;
     onUpdateLesson: (modId: string, lesId: string, data: Partial<Lesson>) => void;
     onAddQuizQuestion: (modId: string, lesId: string) => void;
+    onUpdateQuizQuestion: (modId: string, lesId: string, quesId: string, data: Partial<QuizQuestion>) => void;
+    onDeleteQuizQuestion: (modId: string, lesId: string, quesId: string) => void;
+    onUpdateQuizOption: (modId: string, lesId: string, quesId: string, optId: string, data: any) => void;
     onUploadVideo: (modId: string, lesId: string, file: File) => void;
     onAddResource: (modId: string, lesId: string, file: File) => void;
     onDeleteResource: (modId: string, lesId: string, resourceId: string) => void;
     uploadProgress?: number;
 }
+
 
 export function Workbench({ 
     lesson, 
@@ -21,9 +25,13 @@ export function Workbench({
     onAddResource, 
     onUpdateLesson, 
     onAddQuizQuestion, 
+    onUpdateQuizQuestion,
+    onDeleteQuizQuestion,
+    onUpdateQuizOption,
     onDeleteResource,
     uploadProgress = 0
 }: WorkbenchProps) {
+
     // --- LOCAL DRAFT STATE (For Debouncing) ---
     const [localTitle, setLocalTitle] = useState(lesson?.title || "");
     const [localDesc, setLocalDesc] = useState(lesson?.description || "");
@@ -220,12 +228,11 @@ export function Workbench({
                                         key={q.id}
                                         question={q}
                                         index={qIdx}
-                                        onUpdate={(updatedQuestion) => {
-                                            const newQuestions = [...(lesson.quizConfig?.questions || [])];
-                                            newQuestions[qIdx] = updatedQuestion;
-                                            onUpdateLesson(moduleId, lesson.id, { quizConfig: { ...lesson.quizConfig!, questions: newQuestions }});
-                                        }}
+                                        onUpdate={(fields) => onUpdateQuizQuestion(moduleId, lesson.id, q.id, fields)}
+                                        onDelete={() => onDeleteQuizQuestion(moduleId, lesson.id, q.id)}
+                                        onUpdateOption={(optId, fields) => onUpdateQuizOption(moduleId, lesson.id, q.id, optId, fields)}
                                     />
+
                                 ))}
                             </div>
 

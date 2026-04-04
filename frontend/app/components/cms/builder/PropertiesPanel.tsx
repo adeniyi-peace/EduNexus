@@ -22,6 +22,8 @@ export function PropertiesPanel({ lesson, onUpdate, onDelete }: PropertiesProps)
         );
     }
 
+    const isOnline = !!(lesson.videoUrl || lesson.content || (lesson.quizConfig?.questions?.length ?? 0) > 0);
+
     return (
         <aside className="w-80 h-full bg-base-200/50 border-l border-white/5 flex flex-col backdrop-blur-xl">
             {/* --- HEADER --- */}
@@ -101,9 +103,9 @@ export function PropertiesPanel({ lesson, onUpdate, onDelete }: PropertiesProps)
                         <div className="flex justify-between items-center">
                             <span className="text-[9px] opacity-30 uppercase">Status</span>
                             <div className="flex items-center gap-1.5">
-                                <div className={`w-1 h-1 rounded-full animate-pulse ${lesson.videoUrl || lesson.content ? 'bg-success' : 'bg-error'}`} />
-                                <span className={`text-[9px] ${lesson.videoUrl || lesson.content ? 'text-success' : 'text-error'}`}>
-                                    {lesson.videoUrl || lesson.content ? 'ONLINE' : 'OFFLINE'}
+                                <div className={`w-1 h-1 rounded-full animate-pulse ${isOnline ? 'bg-success' : 'bg-error'}`} />
+                                <span className={`text-[9px] ${isOnline ? 'text-success' : 'text-error'}`}>
+                                    {isOnline ? 'ONLINE' : 'OFFLINE'}
                                 </span>
                             </div>
                         </div>

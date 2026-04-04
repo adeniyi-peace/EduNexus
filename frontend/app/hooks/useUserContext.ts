@@ -413,7 +413,7 @@ export const useUserContext = create<AuthState & AuthActions>()(
             refreshToken: async () => {
                 try {
                     // Body is empty because refresh token is sent via cookie
-                    const { data } = await api.post(AUTH_ENDPOINTS.TOKEN_REFRESH);
+                    const { data } = await api.post(AUTH_ENDPOINTS.TOKEN_REFRESH, {});
                     localStorage.setItem(ACCESS_TOKEN, data.access);
                     return true;
                 } catch {

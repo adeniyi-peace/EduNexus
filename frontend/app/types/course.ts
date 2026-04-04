@@ -11,11 +11,11 @@ export interface Category {
 export interface CourseData {
     id: string;
     title: string;
-    instructor: Instructor;
+    instructor?: Instructor;
     description?: string;
     thumbnail?: string;
     price?: number;
-    duration: string;
+    duration?: string;
     category?: string;
     difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
     students?: number;
@@ -29,6 +29,7 @@ export interface CourseData {
 }
 
 export interface QuizOption {
+    id: string;
     text: string;
     isCorrect: boolean;
 }

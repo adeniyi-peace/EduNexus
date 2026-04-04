@@ -12,9 +12,11 @@ from rest_framework.response import Response
 
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
-                          LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer, CategorySerializer
+                          LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer, CategorySerializer,
+                          QuizQuestionSerializer, QuizOptionSerializer
                         )
-from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate, Category
+from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate, Category, QuizQuestion, QuizOption
+
 from user.permissions import  *
 from .utils_telemetry import get_telemetry_data
 from user.permissions import IsInstructor
@@ -475,3 +477,53 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+@extend_schema_view(
+    list=extend_schema(summary="List questions for a specific lesson", tags=['Instructor Actions']),
+    retrieve=extend_schema(summary="Get quiz question details", tags=['Instructor Actions']),
+    create=extend_schema(summary="Add a question to a quiz lesson (with nested options)", tags=['Instructor Actions']),
+    update=extend_schema(summary="Update quiz question", tags=['Instructor Actions']),
+    partial_update=extend_schema(summary="Partial update quiz question", tags=['Instructor Actions']),
+    destroy=extend_schema(summary="Delete quiz question", tags=['Instructor Actions']),
+)
+class QuizQuestionViewSet(viewsets.ModelViewSet):
+    serializer_class = QuizQuestionSerializer
+    queryset = QuizQuestion.objects.all()
+
+    def get_queryset(self):
+        lesson_pk = self.kwargs.get('lesson_pk')
+        if lesson_pk:
+            return self.queryset.filter(lesson_id=lesson_pk)
+        return self.queryset
+
+    def perform_create(self, serializer):
+        lesson_pk = self.kwargs.get('lesson_pk')
+        if lesson_pk:
+            serializer.save(lesson_id=lesson_pk)
+        else:
+            raise ValidationError("Lesson ID is required. Pass it in the URL")
+
+@extend_schema_view(
+    list=extend_schema(summary="List options for a specific question", tags=['Instructor Actions']),
+    retrieve=extend_schema(summary="Get quiz option details", tags=['Instructor Actions']),
+    create=extend_schema(summary="Add an option to a quiz question", tags=['Instructor Actions']),
+    update=extend_schema(summary="Update quiz option", tags=['Instructor Actions']),
+    partial_update=extend_schema(summary="Partial update quiz option", tags=['Instructor Actions']),
+    destroy=extend_schema(summary="Delete quiz option", tags=['Instructor Actions']),
+)
+class QuizOptionViewSet(viewsets.ModelViewSet):
+    serializer_class = QuizOptionSerializer
+    queryset = QuizOption.objects.all()
+
+    def get_queryset(self):
+        question_pk = self.kwargs.get('question_pk')
+        if question_pk:
+            return self.queryset.filter(question_id=question_pk)
+        return self.queryset
+
+    def perform_create(self, serializer):
+        question_pk = self.kwargs.get('question_pk')
+        if question_pk:
+            serializer.save(question_id=question_pk)
+        else:
+            raise ValidationError("Question ID is required. Pass it in the URL")

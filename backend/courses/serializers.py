@@ -104,22 +104,41 @@ class QuizOptionSerializer(serializers.ModelSerializer):
         fields = ['id', 'text', 'isCorrect']
 
 class QuizQuestionSerializer(serializers.ModelSerializer):
-    options = QuizOptionSerializer(many=True, read_only=True)
+    options = QuizOptionSerializer(many=True, required=False)
 
     class Meta:
         model = QuizQuestion
         fields = ['id', 'text', 'options']
 
+    def create(self, validated_data):
+        options_data = validated_data.pop('options', [])
+        question = QuizQuestion.objects.create(**validated_data)
+        
+        # Optimize by bulk creating options in a single database hit
+        options = [
+            QuizOption(question=question, **option_data)
+            for option_data in options_data
+        ]
+        QuizOption.objects.bulk_create(options)
+        
+        return question
+
+
+
 class LessonSerializer(serializers.ModelSerializer):
     resources = ResourceSerializer(many=True, read_only=True)
     notes = NoteSerializer(many=True, read_only=True)  # Assuming a related name of 'notes' on Lesson model
     
+    # Mapping snake_case Django fields to camelCase TypeScript fields
+    videoUrl = serializers.FileField(source='video_url', required=False, allow_null=True)
+    allowDownload = serializers.BooleanField(source='allow_download', required=False)
+
     class Meta:
         model = Lesson
         fields = [
             'id', 'title', 'type', 'description', 'isPublished', 
-            'isPreview', 'isHidden', 'allow_download', 'order',
-            'video_url', 'duration', 'content', 'quiz_time_limit',"resources",
+            'isPreview', 'isHidden', 'allowDownload', 'order',
+            'videoUrl', 'duration', 'content', 'quiz_time_limit', "resources",
             "notes"
         ]
 
@@ -134,13 +153,13 @@ class LessonSerializer(serializers.ModelSerializer):
             
         # 2. Handle Article Type
         elif instance.type == 'article':
-            data.pop('video_url', None)
+            data.pop('videoUrl', None)
             data.pop('duration', None)
             data.pop('quiz_time_limit', None)
             
         # 3. Handle Quiz Type
         elif instance.type == 'quiz':
-            data.pop('video_url', None)
+            data.pop('videoUrl', None)
             data.pop('duration', None)
             data.pop('content', None)
             # Nest the questions inside a quizConfig object to match your TS interface

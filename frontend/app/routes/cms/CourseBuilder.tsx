@@ -43,6 +43,9 @@ export default function CourseBuilderLayout() {
         addResource,
         deleteResource,
         uploadCourseThumbnail,
+        updateQuizQuestion,
+        deleteQuizQuestion,
+        updateQuizOption
     } = useCourseBuilder(INITIAL_DATA);
 
     // Load existing course if ID exists
@@ -306,6 +309,9 @@ export default function CourseBuilderLayout() {
                         onAddResource={addResource}
                         onUpdateLesson={updateLesson} 
                         onAddQuizQuestion={addQuizQuestion}
+                        onUpdateQuizQuestion={updateQuizQuestion}
+                        onDeleteQuizQuestion={deleteQuizQuestion}
+                        onUpdateQuizOption={updateQuizOption}
                         onDeleteResource={deleteResource}
                         uploadProgress={uploadProgress}
                     />

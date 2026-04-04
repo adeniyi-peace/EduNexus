@@ -9,7 +9,7 @@ const api = axios.create({
         "Content-Type": "application/json",
         "Accept": "application/json",
     },
-    withCredentials: true, 
+    withCredentials: true,
     xsrfCookieName: 'csrftoken',
     xsrfHeaderName: 'X-CSRFToken',
 });
@@ -30,20 +30,26 @@ api.interceptors.response.use(
         // Prevent infinite loops if the refresh endpoint itself fails
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
-            
+
             try {
                 // We no longer check localStorage for refresh token since it's in an HTTP-ONLY cookie.
                 // withCredentials: true ensures the cookie is sent automatically.
                 const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_API_HOST}/auth/token/refresh/`, {}, {
-                    withCredentials: true
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                    withCredentials: true,
+                    xsrfCookieName: 'csrftoken',
+                    xsrfHeaderName: 'X-CSRFToken'
                 });
 
                 localStorage.setItem(ACCESS_TOKEN, data.access);
-                
+
                 // Update the original request header and retry
                 originalRequest.headers.Authorization = `Bearer ${data.access}`;
                 return api(originalRequest);
-                
+
             } catch (refreshError) {
                 console.error("Session expired. Redirecting to login...");
                 // Clear tokens and reset auth state via the store
@@ -66,6 +72,8 @@ api.interceptors.response.use(
                 } catch {
                     // Store not available yet — tokens already cleared above
                 }
+
+                window.location.href = "/login";
 
                 return Promise.reject(refreshError);
             }

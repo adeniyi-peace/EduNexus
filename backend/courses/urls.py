@@ -4,7 +4,9 @@ from rest_framework_nested import routers
 from .views import (
     CourseViewSet, ModuleViewSet, LessonViewSet, ResourceViewSet, 
     ReOrderView, WishlistViewSet, ReviewViewSet, NoteViewSet, 
-    LessonCompletionView, EnrollmentViewSet, CertificateViewSet, CategoryViewSet
+    LessonCompletionView, EnrollmentViewSet, CertificateViewSet, CategoryViewSet,
+    QuizQuestionViewSet, QuizOptionViewSet
+
 )
 
 # Create a router and register our viewset with it.
@@ -38,6 +40,13 @@ notes_router.register(r'notes', NoteViewSet, basename='note-lessons')
 lesson_resources_router = routers.NestedSimpleRouter(lesson_sub_router, r'lessons', lookup='lesson')
 lesson_resources_router.register(r'resources', ResourceViewSet, basename='lesson-resources')
 
+quiz_questions_router = routers.NestedSimpleRouter(lesson_sub_router, r'lessons', lookup='lesson')
+quiz_questions_router.register(r'questions', QuizQuestionViewSet, basename='lesson-quiz-questions')
+
+quiz_options_router = routers.NestedSimpleRouter(quiz_questions_router, r'questions', lookup='question')
+quiz_options_router.register(r'options', QuizOptionViewSet, basename='quiz-question-options')
+
+
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -45,6 +54,9 @@ urlpatterns = [
     path('', include(modules_router.urls)),
     path("", include(notes_router.urls)),
     path("", include(lesson_resources_router.urls)),
+    path("", include(quiz_questions_router.urls)),
+    path("", include(quiz_options_router.urls)),
+
 
 
     path('modules/<uuid:module_pk>/reorder/', ReOrderView.as_view(), name='lesson-reorder'),
