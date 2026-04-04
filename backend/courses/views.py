@@ -7,14 +7,17 @@ from drf_spectacular.types import OpenApiTypes
 from django.http import FileResponse
 from django.utils import timezone
 from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
-                          LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer
+                          LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer, CategorySerializer
                         )
-from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate
+from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate, Category
 from user.permissions import  *
 from .utils_telemetry import get_telemetry_data
+from user.permissions import IsInstructor
 
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -54,7 +57,24 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Annotate course with average rating so we can sort by it via 'annotated_rating'
-        return Course.objects.annotate(annotated_rating=Avg('reviews__rating'))
+        queryset = Course.objects.annotate(annotated_rating=Avg('reviews__rating'))
+            
+        return queryset
+
+    @action(detail=False, methods=['get'], permission_classes=[IsInstructor])
+    def mine(self, request):
+        """
+        Endpoint to retrieve courses created by the authenticated instructor.
+        """
+        courses = self.get_queryset().filter(instructor=request.user)
+        page = self.paginate_queryset(courses)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+            
+        serializer = self.get_serializer(courses, many=True)
+        return Response(serializer.data)
+
 
     def get_permissions(self):
         """
@@ -64,13 +84,19 @@ class CourseViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             # Anyone can view the list or details
             permission_classes = [AllowAny]
-        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
-            # Only authenticated users (or instructors) can modify
-            permission_classes = [permissions.IsAuthenticated]
+        elif self.action == 'mine':
+            # Only authenticated instructors can see their library
+            permission_classes = [IsInstructor]
+        elif self.action == 'create':
+            # Only instructors can create courses
+            permission_classes = [IsInstructor]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            # Only authenticated instructors can modify their own courses
+            permission_classes = [IsInstructor, IsCourseOwner]
         else:
             # Fallback for any other actions
             permission_classes = [permissions.IsAuthenticated]
-            
+
         return [permission() for permission in permission_classes]
 
 
@@ -115,18 +141,44 @@ class LessonViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filters the lessons to only those belonging to the module 
-        specified in the URL path.
+        Filters the lessons based on the provided module_pk if present,
+        otherwise returns all lessons.
         """
-        # module_pk is automatically captured by the nested router
-        return Lesson.objects.filter(module_id=self.kwargs['module_pk'])
+        queryset = Lesson.objects.all()
+        module_pk = self.kwargs.get('module_pk')
+        if module_pk:
+            queryset = queryset.filter(module_id=module_pk)
+        return queryset
 
     def perform_create(self, serializer):
         """
-        Ensures that when a lesson is created via this endpoint, 
+        Ensures that when a lesson is created via a nested endpoint,
         it is automatically linked to the correct module.
         """
-        serializer.save(module_id=self.kwargs['module_pk'])
+        module_pk = self.kwargs.get('module_pk')
+        if module_pk:
+            serializer.save(module_id=module_pk)
+        else:
+            raise ValidationError("Lesson not found, please provide a valid lesson ID inside the url.")
+
+    @action(detail=True, methods=['post'], url_path='upload')
+    def upload_video(self, request, module_pk, pk=None):
+        """
+        Custom action to handle video uploads for a lesson.
+        Expects 'video_url' (file) and 'duration' (seconds).
+        """
+        lesson = self.get_object()
+        video_file = request.FILES.get('video_url')
+        duration = request.data.get('duration')
+
+        if video_file:
+            lesson.video_url = video_file
+        if duration:
+            lesson.duration = int(float(duration))
+            
+        lesson.save()
+        return Response(self.get_serializer(lesson).data)
+
 
 
 class ReOrderView(GenericAPIView):
@@ -205,18 +257,26 @@ class ResourceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filters the lessons to only those belonging to the module 
+        Filters the resources to only those belonging to the lesson 
         specified in the URL path.
         """
-        # module_pk is automatically captured by the nested router
-        return Lesson.objects.filter(module_id=self.kwargs['module_pk'])
+        queryset = Resource.objects.all()
+        lesson_pk = self.kwargs.get('lesson_pk')
+        if lesson_pk:
+            queryset = queryset.filter(lesson_id=lesson_pk)
+        return queryset
 
     def perform_create(self, serializer):
         """
-        Ensures that when a lesson is created via this endpoint, 
-        it is automatically linked to the correct module.
+        Ensures that when a resource is created via this endpoint, 
+        it is automatically linked to the correct lesson.
         """
-        serializer.save(module_id=self.kwargs['module_pk'])
+        lesson_pk = self.kwargs.get('lesson_pk')
+        if lesson_pk:
+            serializer.save(lesson_id=lesson_pk)
+        else:
+            raise ValidationError("Lesson not found, please provide a valid lesson ID inside the url.")
+
 
 
 @extend_schema_view(
@@ -257,12 +317,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
         
         # Optionally, check if the student is actually enrolled
         if not Enrollment.objects.filter(student=self.request.user, course=course).exists():
-            from rest_framework.exceptions import ValidationError
+            
             raise ValidationError("You must be enrolled in this course to leave a review.")
             
         # Check if review already exists
         if Review.objects.filter(student=self.request.user, course=course).exists():
-            from rest_framework.exceptions import ValidationError
+            
             raise ValidationError("You have already reviewed this course.")
 
         serializer.save(student=self.request.user, course=course)
@@ -364,7 +424,7 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         # 1. Prevent multiple enrollments
         course = serializer.validated_data.get('course')
         if Enrollment.objects.filter(student=self.request.user, course=course).exists():
-            from rest_framework.exceptions import ValidationError
+            
             raise ValidationError("You are already enrolled in this course.")
 
         # 2. Get Telemetry Data from request
@@ -407,3 +467,11 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
             as_attachment=True, 
             filename=f"Certificate_{certificate.certificate_id}.pdf"
         )
+
+@extend_schema_view(
+    list=extend_schema(summary="Get all categories", tags=['Courses']),
+)
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [AllowAny]
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer

@@ -4,7 +4,7 @@ from rest_framework_nested import routers
 from .views import (
     CourseViewSet, ModuleViewSet, LessonViewSet, ResourceViewSet, 
     ReOrderView, WishlistViewSet, ReviewViewSet, NoteViewSet, 
-    LessonCompletionView, EnrollmentViewSet, CertificateViewSet
+    LessonCompletionView, EnrollmentViewSet, CertificateViewSet, CategoryViewSet
 )
 
 # Create a router and register our viewset with it.
@@ -16,6 +16,7 @@ router.register(r'courses', CourseViewSet, basename='course')
 router.register(r'wishlists', WishlistViewSet, basename='wishlist')
 router.register(r'enrollments', EnrollmentViewSet, basename='enrollment')
 router.register(r'certificates', CertificateViewSet, basename='certificate')
+router.register(r'categories', CategoryViewSet, basename='category')
 lesson_router.register(r'modules', ModuleViewSet, basename='module')
 lesson_sub_router.register(r'lessons', LessonViewSet, basename='lesson')
 
@@ -30,18 +31,23 @@ courses_router.register(r'reviews', ReviewViewSet, basename='course-reviews')
 modules_router = routers.NestedSimpleRouter(lesson_router, r'modules', lookup='module')
 modules_router.register(r'lessons', LessonViewSet, basename='module-lessons')
 
-resource_router = routers.NestedSimpleRouter(modules_router, r"lessons", lookup="lesson")
-resource_router.register(r"resources", ResourceViewSet, basename="resource_lesson")
 
 notes_router = routers.NestedSimpleRouter(lesson_sub_router, r'lessons', lookup='lesson')
 notes_router.register(r'notes', NoteViewSet, basename='note-lessons')
+
+lesson_resources_router = routers.NestedSimpleRouter(lesson_sub_router, r'lessons', lookup='lesson')
+lesson_resources_router.register(r'resources', ResourceViewSet, basename='lesson-resources')
+
 
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(courses_router.urls)),
     path('', include(modules_router.urls)),
-    path("", include(resource_router.urls)),
     path("", include(notes_router.urls)),
-    path('modules/<uuid:module_pk>/reorder', ReOrderView.as_view(), name='lesson-reorder'),
+    path("", include(lesson_resources_router.urls)),
+
+
+    path('modules/<uuid:module_pk>/reorder/', ReOrderView.as_view(), name='lesson-reorder'),
+
     path("courses/<uuid:course_pk>/modules/<uuid:module_pk>/complete-lesson", LessonCompletionView.as_view(), name="complete-lesson"),
 ]

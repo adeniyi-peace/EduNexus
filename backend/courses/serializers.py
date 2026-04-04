@@ -53,7 +53,8 @@ class InstructorSerializer(UserSerializer):
         # Calculate the average rating across all courses taught by this instructor
         courses = obj.courses.all()  # Assuming 'courses' is the related name for Course's instructor FK
         if courses.exists():
-            return round(courses.aggregate(Avg('reviews__rating'))['reviews__rating__avg'], 2)
+            average = courses.aggregate(Avg('reviews__rating'))['reviews__rating__avg'] or 0
+            return round(average, 2)
         return None
     
     def get_premium_courses_count(self, obj):
@@ -61,9 +62,32 @@ class InstructorSerializer(UserSerializer):
         return obj.courses.filter(price__gt=0).count()
 
 class ResourceSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+    size = serializers.SerializerMethodField()
+
     class Meta:
         model = Resource
         fields = ['id', 'title', 'url', 'size']
+
+    def get_title(self, obj):
+        if obj.url:
+            return obj.url.name.split('/')[-1]
+        return "Untitled Resource"
+
+    def get_size(self, obj):
+        if obj.url:
+            try:
+                size_bytes = obj.url.size
+                if size_bytes < 1024:
+                    return f"{size_bytes}B"
+                elif size_bytes < 1024 * 1024:
+                    return f"{size_bytes / 1024:.1f}KB"
+                else:
+                    return f"{size_bytes / (1024 * 1024):.1f}MB"
+            except (ValueError, FileNotFoundError):
+                return "0B"
+        return "0B"
+
 
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -145,7 +169,7 @@ class CourseSerializer(serializers.ModelSerializer):
     isEnrolled = serializers.SerializerMethodField()
     reviews = ReviewSerializer(many=True, read_only=True)  # Assuming a related name of 'review' for course reviews
     rating = serializers.SerializerMethodField()
-    instructor = InstructorSerializer()  # Assuming you have an instructor field that is a ForeignKey to User
+    instructor = InstructorSerializer(read_only=True)  # Assuming you have an instructor field that is a ForeignKey to User
 
     class Meta:
         model = Course
@@ -155,11 +179,12 @@ class CourseSerializer(serializers.ModelSerializer):
             'difficulty', 'status', 'lastUpdated', 'created_at', 'modules',
             "students", "isEnrolled", "reviews", "rating", "instructor"
         ]
+        read_only_fields = ["instructor", "students", "isEnrolled", "reviews", "rating",]
 
     def get_isEnrolled(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.enrollments.filter(user=request.user).exists()
+            return obj.enrollments.filter(student=request.user).exists()
         return False
     
     def get_rating(self, obj):
@@ -167,6 +192,10 @@ class CourseSerializer(serializers.ModelSerializer):
         if reviews.exists():
             return round(reviews.aggregate(Avg('rating'))['rating__avg'], 2)
         return None
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        return Course.objects.create(instructor=user, **validated_data)
 
 class ReOrderRequestSerializer(serializers.Serializer):
     # This matches your TS: lessonIds: string[]

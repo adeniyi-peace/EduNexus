@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Trash2, ImagePlus } from "lucide-react";
-import type { CourseData } from "~/types/course";
+import type { CourseData, Category } from "~/types/course";
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -25,6 +25,7 @@ interface SettingsModalProps {
     onDelete: () => void;
     onDeleteConfirmTextChange: (text: string) => void;
     error: string | null;
+    categories: Category[];
 }
 
 export function SettingsModal({
@@ -38,7 +39,8 @@ export function SettingsModal({
     onCancel,
     onDelete,
     onDeleteConfirmTextChange,
-    error
+    error,
+    categories
 }: SettingsModalProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +51,7 @@ export function SettingsModal({
     }, [error]);
 
     return (
-        <dialog id="course_settings_modal" className="modal modal-bottom modal-middle backdrop-blur-sm">
+        <dialog id="course_settings_modal" className="modal modal-middle backdrop-blur-sm">
             <div ref={scrollRef} className="modal-box bg-base-100 border border-base-content/10 max-w-2xl p-8 rounded-4xl custom-scrollbar">
                 <h3 className="font-black text-xl mb-6 italic uppercase tracking-tighter">Course_Settings</h3>
                 
@@ -120,13 +122,18 @@ export function SettingsModal({
                             <label className="label py-1">
                                 <span className="label-text text-[10px] opacity-40 uppercase font-black tracking-widest">Category</span>
                             </label>
-                            <input 
-                                type="text" 
-                                className="input input-bordered w-full bg-base-200 border-none font-bold" 
-                                placeholder="e.g. Backend, Design"
-                                value={draftSettings.category} 
-                                onChange={(e) => onDraftChange({ category: e.target.value })} 
-                            />
+                            <select 
+                                className="select select-bordered w-full bg-base-200 border-none font-bold"
+                                value={typeof draftSettings.category === 'object' ? (draftSettings.category as any).id : draftSettings.category} 
+                                onChange={(e) => onDraftChange({ category: e.target.value })}
+                            >
+                                <option value="" disabled>Select a Category</option>
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="grid grid-cols-1 gap-4">
                             <div className="form-control">

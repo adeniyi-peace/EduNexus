@@ -2,13 +2,13 @@ from rest_framework import permissions
 
 class IsInstructor(permissions.BasePermission):
     """
-    Allows access only to users with the INSTRUCTOR role.
+    Allows access only to users with the instructor role.
     """
     def has_permission(self, request, view):
         return bool(
             request.user and 
             request.user.is_authenticated and 
-            (request.user.role == 'INSTRUCTOR' or request.user.is_staff)
+            (request.user.role == 'instructor' or request.user.is_staff)
         )
 
 class IsInstructorOrReadOnly(permissions.BasePermission):

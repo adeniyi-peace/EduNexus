@@ -40,7 +40,6 @@ class AdminDashboardView(APIView):
     def get(self, request):
         # We pass None because we aren't serializing a specific model instance
         serializer = AdminDashboardSerializer(instance={})
-        print(serializer.data)
         return Response(serializer.data)
 
 

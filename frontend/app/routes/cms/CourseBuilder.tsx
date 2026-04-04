@@ -23,6 +23,7 @@ export default function CourseBuilderLayout() {
 
     const { 
         course,
+        categories,
         syncStatus, 
         errorMessage,
         uploadProgress,
@@ -103,9 +104,8 @@ export default function CourseBuilderLayout() {
 
     const handleSaveSettings = async () => {
         try {
-            // 1. Initialize course or update core fields first. 
-            // We need the server-assigned ID for thumbnail upload if it's new.
-            const updatedCourse = await updateCourse({
+            // 1. Single call to update course data and upload thumbnail
+            await updateCourse({
                 title: draftSettings.title,
                 price: draftSettings.price,
                 difficulty: draftSettings.difficulty,
@@ -113,20 +113,7 @@ export default function CourseBuilderLayout() {
                 category: draftSettings.category,
                 language: draftSettings.language,
                 status: draftSettings.status,
-            });
-
-            const courseId = updatedCourse.id;
-            let finalThumbnail = draftSettings.thumbnail;
-
-            // 2. Now upload the thumbnail if a file is selected, using the guaranteed ID
-            if (draftSettings.thumbnailFile) {
-                finalThumbnail = await uploadCourseThumbnail(draftSettings.thumbnailFile, courseId);
-            }
-
-            // 3. Final sync for the thumbnail URL if it was uploaded
-            if (draftSettings.thumbnailFile) {
-                await updateCourse({ thumbnail: finalThumbnail });
-            }
+            }, draftSettings.thumbnailFile);
 
             setDraftSettings(prev => ({ ...prev, thumbnailFile: null }));
             
@@ -134,7 +121,6 @@ export default function CourseBuilderLayout() {
             (document.getElementById('course_settings_modal') as HTMLDialogElement)?.close();
         } catch (err) {
             console.error("Critical Save Failure:", err);
-            
             // Error is already handled/set in useCourseBuilder, 
             // the modal will stay open so the user can see the errorMessage prop.
         }
@@ -379,6 +365,7 @@ export default function CourseBuilderLayout() {
                 onDelete={deleteCourse}
                 onDeleteConfirmTextChange={setDeleteConfirmText}
                 error={errorMessage}
+                categories={categories}
             />
 
             {!isReady && (

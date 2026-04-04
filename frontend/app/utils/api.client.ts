@@ -4,7 +4,7 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants";
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_API_HOST,
-    timeout: 8000,
+    timeout: 60000,
     headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -32,12 +32,10 @@ api.interceptors.response.use(
             originalRequest._retry = true;
             
             try {
-                const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-                if (!refreshToken) throw new Error("No refresh token available");
-
-                // Assuming your Django DRF simplejwt endpoint for refreshing
-                const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_API_HOST}/auth/token/refresh/`, {
-                    refresh: refreshToken
+                // We no longer check localStorage for refresh token since it's in an HTTP-ONLY cookie.
+                // withCredentials: true ensures the cookie is sent automatically.
+                const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_API_HOST}/auth/token/refresh/`, {}, {
+                    withCredentials: true
                 });
 
                 localStorage.setItem(ACCESS_TOKEN, data.access);

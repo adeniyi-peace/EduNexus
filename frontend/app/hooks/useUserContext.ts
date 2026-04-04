@@ -61,14 +61,12 @@ function decodeTokenUser(accessToken: string): Partial<AuthUser> | null {
 
 // --- Helper: Store tokens ---
 
-function storeTokens(access: string, refresh: string) {
+function storeTokens(access: string) {
     localStorage.setItem(ACCESS_TOKEN, access);
-    localStorage.setItem(REFRESH_TOKEN, refresh);
 }
 
 function clearTokens() {
     localStorage.removeItem(ACCESS_TOKEN);
-    localStorage.removeItem(REFRESH_TOKEN);
 }
 
 // --- Helper: Handle auth response from dj-rest-auth ---
@@ -76,7 +74,7 @@ function clearTokens() {
 
 function extractAuthResponse(data: any): {
     access: string;
-    refresh: string;
+    refresh?: string;
     user: AuthUser;
 } {
     return {
@@ -110,8 +108,9 @@ export const useUserContext = create<AuthState & AuthActions>()(
                         email,
                         password,
                     });
-                    const { access, refresh, user } = extractAuthResponse(data);
-                    storeTokens(access, refresh);
+                    const { access, user } = extractAuthResponse(data);
+                    storeTokens(access);
+
 
                     set({
                         user,
@@ -260,8 +259,9 @@ export const useUserContext = create<AuthState & AuthActions>()(
                     const { data } = await api.post(AUTH_ENDPOINTS.GOOGLE_LOGIN, {
                         access_token: accessToken,
                     });
-                    const { access, refresh, user } = extractAuthResponse(data);
-                    storeTokens(access, refresh);
+                    const { access, user } = extractAuthResponse(data);
+                    storeTokens(access);
+
 
                     set({
                         user,
@@ -295,8 +295,9 @@ export const useUserContext = create<AuthState & AuthActions>()(
                         id_token: idToken,
                         code,
                     });
-                    const { access, refresh, user } = extractAuthResponse(data);
-                    storeTokens(access, refresh);
+                    const { access, user } = extractAuthResponse(data);
+                    storeTokens(access);
+
 
                     set({
                         user,
@@ -406,17 +407,13 @@ export const useUserContext = create<AuthState & AuthActions>()(
             // ========================================
             // REFRESH TOKEN
             // POST /auth/token/refresh/
-            // Body: { refresh }
+            // Body: {} (Refresh token is in HTTP-ONLY cookie)
             // Returns: { access }
             // ========================================
             refreshToken: async () => {
-                const refresh = localStorage.getItem(REFRESH_TOKEN);
-                if (!refresh) return false;
-
                 try {
-                    const { data } = await api.post(AUTH_ENDPOINTS.TOKEN_REFRESH, {
-                        refresh,
-                    });
+                    // Body is empty because refresh token is sent via cookie
+                    const { data } = await api.post(AUTH_ENDPOINTS.TOKEN_REFRESH);
                     localStorage.setItem(ACCESS_TOKEN, data.access);
                     return true;
                 } catch {
@@ -443,8 +440,9 @@ export const useUserContext = create<AuthState & AuthActions>()(
             // ========================================
             // LOGIN WITH TOKEN (From Activation)
             // ========================================
-            loginWithToken: (tokens: { access: string; refresh: string }, user: AuthUser) => {
-                storeTokens(tokens.access, tokens.refresh);
+            loginWithToken: (tokens: { access: string; refresh?: string }, user: AuthUser) => {
+                storeTokens(tokens.access);
+
                 set({
                     user,
                     isAuthenticated: true,

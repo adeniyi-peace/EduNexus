@@ -2,6 +2,12 @@
 
 import type { User } from "~/utils/db.server";
 
+export interface Category {
+    id: string;
+    name: string;
+    slug: string;
+}
+
 export interface CourseData {
     id: string;
     title: string;

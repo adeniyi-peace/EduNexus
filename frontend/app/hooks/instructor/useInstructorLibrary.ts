@@ -9,9 +9,8 @@ import type { InstructorLibraryCourse } from "~/types/instructor";
 async function fetchInstructorLibrary(): Promise<InstructorLibraryCourse[]> {
     // The instructor's courses are available via the courses endpoint
     // filtered by the authenticated instructor
-    const { data } = await api.get("/courses/courses/", {
-        params: { instructor: "me" },
-    });
+    const { data } = await api.get("/courses/mine/");
+
     // Handle paginated or flat response
     const courses = Array.isArray(data) ? data : (data?.results || []);
     return courses.map((course: any) => ({

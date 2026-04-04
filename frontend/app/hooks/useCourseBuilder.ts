@@ -1,16 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import apiClient from "~/utils/api.client";
-import type { CourseData, Module, Lesson, Resource, QuizQuestion } from "~/types/course";
+import type { CourseData, Module, Lesson, Resource, QuizQuestion, Category } from "~/types/course";
 import { v4 as uuidv4 } from "uuid";
 
 export type SyncStatus = "idle" | "saving" | "error" | "initializing";
 
 export function useCourseBuilder(initialData: CourseData) {
     const [course, setCourse] = useState<CourseData>(initialData);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [uploadProgress, setUploadProgress] = useState<number>(0);
     const [isReady, setIsReady] = useState(initialData.modules.length > 0 || initialData.id !== "new-course");
+
+    // Fetch categories on mount
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await apiClient.get("/categories/");
+                setCategories(response.data);
+            } catch (error) {
+                console.error("Failed to fetch categories", error);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     // Browser Warning for Unsaved Changes
     useEffect(() => {
@@ -57,38 +71,65 @@ export function useCourseBuilder(initialData: CourseData) {
     }, []);
 
     // --- COURSE ACTIONS ---  COURSE UPDATES (Title, Price, etc.)
-    const updateCourse = async (fields: Partial<CourseData>) => {
-        const previousCourse = { ...course };
+    const updateCourse = async (fields: Partial<CourseData>, thumbnailFile?: File | null) => {
         setCourse(prev => ({ ...prev, ...fields }));
         setErrorMessage(null);
+
+        const preparePayload = (basePayload: any) => {
+            if (thumbnailFile) {
+                const formData = new FormData();
+                formData.append("thumbnail", thumbnailFile);
+                Object.entries(basePayload).forEach(([key, value]) => {
+                    if (value !== undefined && key !== "thumbnail") {
+                        // Handle simple values; complex ones might need JSON.stringify if the backend expects it
+                        // but for course metadata these should be simple.
+                        formData.append(key, value as any);
+                    }
+                });
+                return formData;
+            }
+            return basePayload;
+        };
+
+        const config = thumbnailFile ? {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (progressEvent: any) => {
+                const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
+                setUploadProgress(percent);
+            }
+        } : {};
 
         try {
             if (!isReady) {
                 setSyncStatus("initializing");
                 // Remove temp ID before sending to backend
-                const { id, ...payload } = { ...course, ...fields };
-                const response = await apiClient.post(`/courses/`, payload);
+                const { id, ...basePayload } = { ...course, ...fields };
+                const payload = preparePayload(basePayload);
+                const response = await apiClient.post(`/courses/`, payload, config);
                 const serverData = response.data;
-                
+
                 // CRITICAL: Replace temporary ID with server ID
                 setCourse(prev => ({ ...prev, ...serverData }));
                 setIsReady(true);
                 setSyncStatus("idle");
+                setUploadProgress(0);
                 return serverData;
             } else {
+                const payload = preparePayload(fields);
                 const response = await syncToBackend(
-                    () => apiClient.patch(`/courses/${course.id}/`, fields),
-                    () => setCourse(previousCourse)
+                    () => apiClient.patch(`/courses/${course.id}/`, payload, config),
                 );
+                setUploadProgress(0);
                 return response.data;
             }
         } catch (err: any) {
-            console.error("Failed to sync course content", err);
+            console.error("Failed to sync course content", err.response);
             setSyncStatus("error");
+            setUploadProgress(0);
             setErrorMessage(err?.response?.data?.title?.[0] || err?.response?.data?.message || "Failed to initialize course core records.");
-            setCourse(previousCourse);
+            // setCourse(previousCourse);
             throw err;
-        } 
+        }
     };
 
     const deleteCourse = async () => {
@@ -96,7 +137,7 @@ export function useCourseBuilder(initialData: CourseData) {
         try {
             await apiClient.delete(`/courses/${course.id}`);
             // Redirect logic would go here, e.g., router.push('/dashboard')
-            window.location.href = "/dashboard"; 
+            window.location.href = "/dashboard";
         } catch (error) {
             console.error("Failed to delete course", error);
             setSyncStatus("error");
@@ -115,7 +156,7 @@ export function useCourseBuilder(initialData: CourseData) {
         try {
             const formData = new FormData();
             formData.append("thumbnail", file);
-            
+
             const { data } = await apiClient.patch(`/courses/${targetId}/`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 onUploadProgress: (progressEvent) => {
@@ -123,7 +164,7 @@ export function useCourseBuilder(initialData: CourseData) {
                     setUploadProgress(percent);
                 }
             });
-            
+
             setCourse(prev => ({ ...prev, thumbnail: data.thumbnail }));
             setSyncStatus("idle");
             setUploadProgress(0);
@@ -142,8 +183,8 @@ export function useCourseBuilder(initialData: CourseData) {
         setErrorMessage(null);
         try {
             // 1. Create on backend first (or let backend handle creation)
-            const response = await syncToBackend(() => 
-                apiClient.post(`/courses/${course.id}/modules`, { title: "New Section" })
+            const response = await syncToBackend(() =>
+                apiClient.post(`/courses/${course.id}/modules/`, { title: "New Section", isOpen:false })
             );
             const newModule = response.data;
 
@@ -162,8 +203,8 @@ export function useCourseBuilder(initialData: CourseData) {
             modules: prev.modules.filter(m => m.id !== moduleId)
         }));
 
-        await syncToBackend(() => 
-            apiClient.delete(`/courses/${course.id}/modules/${moduleId}`)
+        await syncToBackend(() =>
+            apiClient.delete(`/courses/${course.id}/modules/${moduleId}/`)
         );
     };
 
@@ -173,10 +214,10 @@ export function useCourseBuilder(initialData: CourseData) {
             ...prev,
             modules: prev.modules.map(m => m.id === moduleId ? { ...m, ...fields } : m)
         }));
-        await syncToBackend(() => apiClient.patch(`/modules/${moduleId}`, fields));
+        await syncToBackend(() => apiClient.patch(`/courses/${course.id}/modules/${moduleId}/`, fields));
     };
 
-    
+
 
     // --- 3. LESSON UPDATES (Renaming, Content, Quiz Data) ---
     // --- LESSON ACTIONS ---
@@ -189,9 +230,9 @@ export function useCourseBuilder(initialData: CourseData) {
         if (type === "quiz") defaultTitle = "Untitled Quiz";
 
         try {
-            const response = await syncToBackend(() => 
-                apiClient.post(`/modules/${moduleId}/lessons`, { 
-                    title: defaultTitle, 
+            const response = await syncToBackend(() =>
+                apiClient.post(`/modules/${moduleId}/lessons/`, {
+                    title: defaultTitle,
                     type,
                     isPublished: false
                 })
@@ -200,7 +241,7 @@ export function useCourseBuilder(initialData: CourseData) {
 
             setCourse(prev => ({
                 ...prev,
-                modules: prev.modules.map(m => 
+                modules: prev.modules.map(m =>
                     m.id === moduleId ? { ...m, lessons: [...m.lessons, newLesson] } : m
                 )
             }));
@@ -214,15 +255,15 @@ export function useCourseBuilder(initialData: CourseData) {
     const deleteLesson = async (moduleId: string, lessonId: string) => {
         setCourse(prev => ({
             ...prev,
-            modules: prev.modules.map(m => 
-                m.id === moduleId 
-                    ? { ...m, lessons: m.lessons.filter(l => l.id !== lessonId) } 
+            modules: prev.modules.map(m =>
+                m.id === moduleId
+                    ? { ...m, lessons: m.lessons.filter(l => l.id !== lessonId) }
                     : m
             )
         }));
 
-        await syncToBackend(() => 
-            apiClient.delete(`/modules/${moduleId}/lessons/${lessonId}`)
+        await syncToBackend(() =>
+            apiClient.delete(`/modules/${moduleId}/lessons/${lessonId}/`)
         );
     };
 
@@ -230,7 +271,7 @@ export function useCourseBuilder(initialData: CourseData) {
         const previousCourse = { ...course };
         setCourse(prev => ({
             ...prev,
-            modules: prev.modules.map(m => 
+            modules: prev.modules.map(m =>
                 m.id === moduleId ? {
                     ...m,
                     lessons: m.lessons.map(l => l.id === lessonId ? { ...l, ...fields } : l)
@@ -238,7 +279,7 @@ export function useCourseBuilder(initialData: CourseData) {
             )
         }));
         const response = await syncToBackend(
-            () => apiClient.patch(`/lessons/${lessonId}`, fields),
+            () => apiClient.patch(`/modules/${moduleId}/lessons/${lessonId}/`, fields),
             () => setCourse(previousCourse)
         );
         return response.data;
@@ -249,15 +290,15 @@ export function useCourseBuilder(initialData: CourseData) {
         // 1. Optimistic Update
         setCourse(prev => ({
             ...prev,
-            modules: prev.modules.map(m => 
+            modules: prev.modules.map(m =>
                 m.id === moduleId ? { ...m, lessons: newLessons } : m
             )
         }));
 
         // 2. Sync to Backend (Send just IDs to save bandwidth)
         const lessonIds = newLessons.map(l => l.id);
-        await syncToBackend(() => 
-            apiClient.put(`/modules/${moduleId}/reorder`, { lessonIds })
+        await syncToBackend(() =>
+            apiClient.put(`/modules/${moduleId}/reorder/`, { lessonIds })
         );
     };
 
@@ -290,7 +331,7 @@ export function useCourseBuilder(initialData: CourseData) {
             // the returned lesson from server (with IDs) is what we have in state.
             setCourse(prev => ({
                 ...prev,
-                modules: prev.modules.map(m => 
+                modules: prev.modules.map(m =>
                     m.id === moduleId ? {
                         ...m,
                         lessons: m.lessons.map(l => l.id === lessonId ? updatedLesson : l)
@@ -307,7 +348,7 @@ export function useCourseBuilder(initialData: CourseData) {
     const uploadVideo = async (moduleId: string, lessonId: string, file: File) => {
         setSyncStatus("saving");
         setUploadProgress(10);
-        
+
         try {
             // 1. Get Duration Client-Side for instant metadata
             const duration = await getVideoDuration(file);
@@ -318,7 +359,7 @@ export function useCourseBuilder(initialData: CourseData) {
             formData.append("duration", duration.toString());
 
             // 3. Upload with progress
-            const { data } = await apiClient.post(`/lessons/${lessonId}/upload`, formData, {
+            const { data } = await apiClient.post(`/modules/${moduleId}/lessons/${lessonId}/upload/`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 onUploadProgress: (progressEvent) => {
                     const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
@@ -329,12 +370,12 @@ export function useCourseBuilder(initialData: CourseData) {
             // 4. Update State
             setCourse(prev => ({
                 ...prev,
-                modules: prev.modules.map(m => 
+                modules: prev.modules.map(m =>
                     m.id === moduleId ? {
                         ...m,
-                        lessons: m.lessons.map(l => 
-                            l.id === lessonId 
-                                ? { ...l, videoUrl: data.video_url, duration: duration } 
+                        lessons: m.lessons.map(l =>
+                            l.id === lessonId
+                                ? { ...l, videoUrl: data.video_url, duration: duration }
                                 : l
                         )
                     } : m
@@ -354,18 +395,20 @@ export function useCourseBuilder(initialData: CourseData) {
         setErrorMessage(null);
         setSyncStatus("saving");
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("url", file);
 
         try {
-            const response = await apiClient.post(`/lessons/${lessonId}/resources`, formData);
+            const response = await apiClient.post(`/lessons/${lessonId}/resources/`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }}
+            );
             const newResource = response.data;
 
             setCourse(prev => ({
                 ...prev,
-                modules: prev.modules.map(m => 
+                modules: prev.modules.map(m =>
                     m.id === moduleId ? {
                         ...m,
-                        lessons: m.lessons.map(l => 
+                        lessons: m.lessons.map(l =>
                             l.id === lessonId ? { ...l, resources: [...l.resources, newResource] } : l
                         )
                     } : m
@@ -383,46 +426,47 @@ export function useCourseBuilder(initialData: CourseData) {
     const deleteResource = async (moduleId: string, lessonId: string, resourceId: string) => {
         setCourse(prev => ({
             ...prev,
-            modules: prev.modules.map(m => 
+            modules: prev.modules.map(m =>
                 m.id === moduleId ? {
                     ...m,
-                    lessons: m.lessons.map(l => 
-                        l.id === lessonId 
-                            ? { ...l, resources: l.resources.filter(r => r.id !== resourceId) } 
+                    lessons: m.lessons.map(l =>
+                        l.id === lessonId
+                            ? { ...l, resources: l.resources.filter(r => r.id !== resourceId) }
                             : l
                     )
                 } : m
             )
         }));
 
-        await syncToBackend(() => 
+        await syncToBackend(() =>
             apiClient.delete(`/lessons/${lessonId}/resources/${resourceId}`)
         );
     };
 
-    return { 
-    course, 
-    syncStatus,
-    errorMessage,
-    uploadProgress,
-    isReady, 
-    setErrorMessage, // Allow manual clearing if needed
-    loadCourse,
-    updateCourse,
-    deleteCourse,  
-    uploadCourseThumbnail,
-    updateModule,
-    updateLesson,
-    reorderLessons,
-    addQuizQuestion, 
-    addModule, 
-    deleteModule, 
-    addLesson, 
-    deleteLesson,
-    uploadVideo,
-    addResource,
-    deleteResource
-};
+    return {
+        course,
+        categories,
+        syncStatus,
+        errorMessage,
+        uploadProgress,
+        isReady,
+        setErrorMessage, // Allow manual clearing if needed
+        loadCourse,
+        updateCourse,
+        deleteCourse,
+        uploadCourseThumbnail,
+        updateModule,
+        updateLesson,
+        reorderLessons,
+        addQuizQuestion,
+        addModule,
+        deleteModule,
+        addLesson,
+        deleteLesson,
+        uploadVideo,
+        addResource,
+        deleteResource
+    };
 }
 
 // Utility to get video duration

@@ -3,6 +3,7 @@ from uuid import uuid4
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.db.models import Sum, Avg
+from datetime import timedelta
 
 
 from .fields import OrderField
@@ -39,7 +40,6 @@ class Course(models.Model):
     description = models.TextField()
     thumbnail = models.ImageField(upload_to=f"course thumbnail", height_field=None, width_field=None, max_length=None)
     price = models.DecimalField( max_digits=10, decimal_places=2)
-    duration = models.DurationField(null=True, blank=True)
     category = models.ForeignKey(Category, related_name="courses", on_delete=models.CASCADE)
     language = models.CharField(max_length=50, default='English')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICE, default=DIFFICULTY_CHOICE[0][0])
@@ -50,8 +50,9 @@ class Course(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(f"{self.title} {self.instructor.fullname}")
-        self.duration = self.modules.aggregate(total_duration=models.Sum('lessons__duration'))['total_duration'] or 0
         return super().save(*args, **kwargs)
+
+
     
     class Meta:
         ordering = ['-created_at']
@@ -62,6 +63,12 @@ class Course(models.Model):
     def rating(self):
         avg_rating = self.reviews.aggregate(avg=Avg('rating'))['avg']
         return round(avg_rating, 1) if avg_rating else None
+
+    @property
+    def duration(self):
+        # Calculate total duration from lessons within modules
+        total_seconds = self.modules.aggregate(total=Sum('lessons__duration'))['total'] or 0
+        return str(timedelta(seconds=total_seconds))
 
 class Module(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -91,7 +98,8 @@ class Lesson(models.Model):
 
     
     # Type-specific fields
-    video_url = models.FileField(upload_to="videos", max_length=100)
+    video_url = models.FileField(upload_to="videos", max_length=100, blank=True, null=True)
+
     duration = models.PositiveIntegerField(help_text="Duration in seconds", blank=True, null=True)
     content = models.TextField(help_text="Markdown or HTML content", blank=True, null=True)
     quiz_time_limit = models.PositiveIntegerField(help_text="In minutes", blank=True, null=True)
@@ -101,10 +109,10 @@ class Lesson(models.Model):
 
 
 class Resource(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     lesson = models.ForeignKey(Lesson, related_name='resources', on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
     url = models.FileField(upload_to="resources", max_length=100)
-    size = models.CharField(max_length=50) # e.g., "1.2MB"
+
 
 class QuizQuestion(models.Model):
     lesson = models.ForeignKey(

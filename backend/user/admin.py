@@ -1,12 +1,31 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from .models import User, Notification, Achievement, UserAchievement, AdminSetting
+from .forms import CustomUserCreationForm, CustomUserChangeForm
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class UsersAdmin(UserAdmin):
+    add_form = CustomUserCreationForm
+    form = CustomUserChangeForm
     list_display = ('email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff', 'date_joined')
     list_filter = ('role', 'is_active', 'is_staff', 'date_joined')
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('-date_joined',)
+    fieldsets = (
+        (None, {"fields": ("email", "password")}),
+        ("Personal Details",{"fields":("first_name", "last_name", "phone",)}),
+        ("Permissions", {"fields": ("role", "is_staff", "is_active", "is_superuser", "groups", "user_permissions")}),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
+    )
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": (
+                "email", "password1", "password2", "is_staff",
+                "is_active", "groups", "user_permissions", "role"
+            )}
+        ),
+    )
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
