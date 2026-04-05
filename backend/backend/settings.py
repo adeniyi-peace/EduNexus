@@ -29,8 +29,10 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 
@@ -39,6 +41,10 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'nexus-access-token',
     'JWT_AUTH_REFRESH_COOKIE': 'nexus-refresh-token',
     'JWT_AUTH_HTTPONLY': True,
+    'JWT_AUTH_SECURE': False, # Set to True in production
+    'JWT_AUTH_SAMESITE': 'Lax', # Set to none when deploying frontend and backend to seperate server
+    'JWT_AUTH_COOKIE_USE_CSRF': True,
+    'SESSION_LOGIN': False,
     'TOKEN_MODEL': None,  # Disable default token model
     'JWT_TOKEN_CLAIMS_SERIALIZER': 'authentication.serializers.CustomTokenClaimsSerializer',
     'USER_DETAILS_SERIALIZER': 'authentication.serializers.UserSerializer', # Use your app name
@@ -205,9 +211,14 @@ FRONTEND_URL = 'http://localhost:5173'
 
 CORS_ALLOWED_ORIGINS = [
     FRONTEND_URL,
-    "http://127.0.0.1:5173",
+    "http://localhost:5173"
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    FRONTEND_URL,
+    "http://localhost:5173"
+]
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
