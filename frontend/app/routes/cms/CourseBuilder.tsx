@@ -11,6 +11,8 @@ import { useCourseBuilder } from "~/hooks/useCourseBuilder";
 import { type CourseData } from "~/types/course";
 import { InitializationOverlay } from "~/components/cms/builder/InitializationOverlay";
 import { SettingsModal } from "~/components/cms/builder/SettingsModal";
+import { CertificateEditor } from "~/components/cms/builder/CertificateEditor";
+import { Award } from "lucide-react";
 
 const INITIAL_DATA: CourseData = { 
     id: "new-course", 
@@ -45,7 +47,8 @@ export default function CourseBuilderLayout() {
         uploadCourseThumbnail,
         updateQuizQuestion,
         deleteQuizQuestion,
-        updateQuizOption
+        updateQuizOption,
+        updateCertificateConfig
     } = useCourseBuilder(INITIAL_DATA);
 
     // Load existing course if ID exists
@@ -148,6 +151,7 @@ export default function CourseBuilderLayout() {
     const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
     const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
     const [mobileView, setMobileView] = useState<'structure' | 'workbench' | 'properties'>('workbench');
+    const [viewMode, setViewMode] = useState<'editor' | 'certification'>('editor');
     const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
     const activeModule = course.modules?.find(m => m.id === activeModuleId);
@@ -180,6 +184,24 @@ export default function CourseBuilderLayout() {
 
                     <div className="hidden lg:block">
                         <SyncStatus status={syncStatus} />
+                    </div>
+
+                    <div className="h-8 w-px bg-base-content/5 mx-2 hidden lg:block" />
+
+                    <div className="flex bg-base-300/40 rounded-xl p-0.5 border border-base-content/5 hidden lg:flex">
+                        <button 
+                            onClick={() => setViewMode('editor')}
+                            className={`px-4 h-7 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'editor' ? 'bg-base-100 text-primary shadow-sm shadow-black/5 border border-base-content/5' : 'text-base-content/40 hover:text-base-content'}`}
+                        >
+                            Curriculum
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('certification')}
+                            className={`px-4 h-7 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'certification' ? 'bg-base-100 text-primary shadow-sm shadow-black/5 border border-base-content/5' : 'text-base-content/40 hover:text-base-content'}`}
+                        >
+                            <Award size={12} />
+                            Certification
+                        </button>
                     </div>
                 </div>
                 
@@ -275,88 +297,101 @@ export default function CourseBuilderLayout() {
                 ${!isReady ? "opacity-30 pointer-events-none grayscale blur-sm" : "opacity-100"}
             `}>
                 
-                {/* LEFT PANEL: STRUCTURE */}
-                <aside className={`
-                    absolute inset-0 z-20 bg-base-100 lg:static lg:bg-transparent lg:z-auto lg:w-80 lg:shrink-0 lg:border-r border-base-content/5
-                    ${mobileView === 'structure' ? 'block' : 'hidden lg:block'}
-                `}>
-                    <StructurePanel 
-                        modules={course.modules || []}
-                        activeLessonId={activeLessonId}
-                        onSelectLesson={(modId, lesId) => {
-                            setActiveModuleId(modId);
-                            setActiveLessonId(lesId);
-                            setMobileView('workbench');
-                        }}
-                        onAddModule={addModule}
-                        onDeleteModule={deleteModule}
-                        onAddLesson={addLesson}
-                        onDeleteLesson={deleteLesson}
-                        onUpdateModule={updateModule} 
-                        onReorderLessons={reorderLessons}
-                    />
-                </aside>
+                {viewMode === 'editor' ? (
+                    <>
+                        {/* LEFT PANEL: STRUCTURE */}
+                        <aside className={`
+                            absolute inset-0 z-20 bg-base-100 lg:static lg:bg-transparent lg:z-auto lg:w-80 lg:shrink-0 lg:border-r border-base-content/5
+                            ${mobileView === 'structure' ? 'block' : 'hidden lg:block'}
+                        `}>
+                            <StructurePanel 
+                                modules={course.modules || []}
+                                activeLessonId={activeLessonId}
+                                onSelectLesson={(modId, lesId) => {
+                                    setActiveModuleId(modId);
+                                    setActiveLessonId(lesId);
+                                    setMobileView('workbench');
+                                }}
+                                onAddModule={addModule}
+                                onDeleteModule={deleteModule}
+                                onAddLesson={addLesson}
+                                onDeleteLesson={deleteLesson}
+                                onUpdateModule={updateModule} 
+                                onReorderLessons={reorderLessons}
+                            />
+                        </aside>
 
-                {/* CENTER PANEL: WORKBENCH */}
-                <section className={`
-                    flex-1 min-w-0 bg-base-200/30
-                    ${mobileView === 'workbench' ? 'block' : 'hidden lg:block'}
-                `}>
-                    <Workbench 
-                        lesson={activeLesson} 
-                        moduleId={activeModuleId || ""}
-                        onUploadVideo={uploadVideo}
-                        onAddResource={addResource}
-                        onUpdateLesson={updateLesson} 
-                        onAddQuizQuestion={addQuizQuestion}
-                        onUpdateQuizQuestion={updateQuizQuestion}
-                        onDeleteQuizQuestion={deleteQuizQuestion}
-                        onUpdateQuizOption={updateQuizOption}
-                        onDeleteResource={deleteResource}
-                        uploadProgress={uploadProgress}
-                    />
-                </section>
+                        {/* CENTER PANEL: WORKBENCH */}
+                        <section className={`
+                            flex-1 min-w-0 bg-base-200/30
+                            ${mobileView === 'workbench' ? 'block' : 'hidden lg:block'}
+                        `}>
+                            <Workbench 
+                                lesson={activeLesson} 
+                                moduleId={activeModuleId || ""}
+                                onUploadVideo={uploadVideo}
+                                onAddResource={addResource}
+                                onUpdateLesson={updateLesson} 
+                                onAddQuizQuestion={addQuizQuestion}
+                                onUpdateQuizQuestion={updateQuizQuestion}
+                                onDeleteQuizQuestion={deleteQuizQuestion}
+                                onUpdateQuizOption={updateQuizOption}
+                                onDeleteResource={deleteResource}
+                                uploadProgress={uploadProgress}
+                            />
+                        </section>
 
-                {/* RIGHT PANEL: PROPERTIES */}
-                <aside className={`
-                    absolute inset-0 z-20 bg-base-100 lg:static lg:bg-transparent lg:z-auto lg:w-80 lg:shrink-0 lg:border-l border-base-content/5
-                    ${mobileView === 'properties' ? 'block' : 'hidden lg:block'}
-                `}>
-                    <PropertiesPanel 
-                        lesson={activeLesson}
-                        onUpdate={(fields) => {
-                            if (activeModuleId && activeLessonId) {
-                                updateLesson(activeModuleId, activeLessonId, fields);
-                            }
-                        }}
+                        {/* RIGHT PANEL: PROPERTIES */}
+                        <aside className={`
+                            absolute inset-0 z-20 bg-base-100 lg:static lg:bg-transparent lg:z-auto lg:w-80 lg:shrink-0 lg:border-l border-base-content/5
+                            ${mobileView === 'properties' ? 'block' : 'hidden lg:block'}
+                        `}>
+                            <PropertiesPanel 
+                                lesson={activeLesson}
+                                onUpdate={(fields) => {
+                                    if (activeModuleId && activeLessonId) {
+                                        updateLesson(activeModuleId, activeLessonId, fields);
+                                    }
+                                }}
+                            />
+                        </aside>
+                    </>
+                ) : (
+                    <CertificateEditor 
+                        config={course.certificateConfig}
+                        courseTitle={course.title}
+                        instructorName={course.instructor?.fullname || ""}
+                        onUpdate={updateCertificateConfig}
                     />
-                </aside>
+                )}
             </main>
 
             {/* --- MOBILE NAV --- */}
-            <nav className="lg:hidden h-16 border-t border-base-content/10 bg-base-200 shrink-0 grid grid-cols-3">
-                <button 
-                    onClick={() => setMobileView('structure')}
-                    className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'structure' ? 'text-primary' : 'text-base-content/30'}`}
-                >
-                    <Layers size={20} />
-                    <span className="text-[9px] font-black uppercase tracking-tighter">Outline</span>
-                </button>
-                <button 
-                    onClick={() => setMobileView('workbench')}
-                    className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'workbench' ? 'text-primary' : 'text-base-content/30'}`}
-                >
-                    <MonitorPlay size={20} />
-                    <span className="text-[9px] font-black uppercase tracking-tighter">Editor</span>
-                </button>
-                <button 
-                    onClick={() => setMobileView('properties')}
-                    className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'properties' ? 'text-primary' : 'text-base-content/30'}`}
-                >
-                    <Settings size={20} />
-                    <span className="text-[9px] font-black uppercase tracking-tighter">Config</span>
-                </button>
-            </nav>
+            {viewMode === 'editor' && (
+                <nav className="lg:hidden h-16 border-t border-base-content/10 bg-base-200 shrink-0 grid grid-cols-3">
+                    <button 
+                        onClick={() => setMobileView('structure')}
+                        className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'structure' ? 'text-primary' : 'text-base-content/30'}`}
+                    >
+                        <Layers size={20} />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">Outline</span>
+                    </button>
+                    <button 
+                        onClick={() => setMobileView('workbench')}
+                        className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'workbench' ? 'text-primary' : 'text-base-content/30'}`}
+                    >
+                        <MonitorPlay size={20} />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">Editor</span>
+                    </button>
+                    <button 
+                        onClick={() => setMobileView('properties')}
+                        className={`flex flex-col items-center justify-center gap-1 transition-colors ${mobileView === 'properties' ? 'text-primary' : 'text-base-content/30'}`}
+                    >
+                        <Settings size={20} />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">Config</span>
+                    </button>
+                </nav>
+            )}
 
             <SettingsModal 
                 isOpen={false} // Managed by DaisyUI modal ID

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import apiClient from "~/utils/api.client";
-import type { CourseData, Module, Lesson, Resource, QuizQuestion, Category } from "~/types/course";
+import type { CourseData, Module, Lesson, Resource, QuizQuestion, Category, CertificateConfig } from "~/types/course";
 import { v4 as uuidv4 } from "uuid";
 
 export type SyncStatus = "idle" | "saving" | "error" | "initializing";
@@ -522,6 +522,44 @@ export function useCourseBuilder(initialData: CourseData) {
         );
     };
 
+    const updateCertificateConfig = async (fields: Partial<CertificateConfig>, signatureFile?: File | null) => {
+        if (course.id === "new-course") return;
+
+        setSyncStatus("saving");
+        setErrorMessage(null);
+
+        try {
+            const formData = new FormData();
+            if (signatureFile) {
+                formData.append("signatorySignature", signatureFile);
+            }
+            // Signatory fields (signatoryName, signatoryTitle)
+            Object.entries(fields).forEach(([key, value]) => {
+                if (value !== undefined && key !== "signatorySignature") {
+                    formData.append(key, value as string);
+                }
+            });
+
+            const response = await apiClient.patch(
+                `/courses/${course.id}/certificate-config/`, 
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+            );
+
+            setCourse(prev => ({
+                ...prev,
+                certificateConfig: response.data
+            }));
+            setSyncStatus("idle");
+            return response.data;
+        } catch (error: any) {
+            console.error("Certificate Config Sync Error:", error);
+            setSyncStatus("error");
+            setErrorMessage(error?.response?.data?.message || "Failed to update certificate configuration.");
+            throw error;
+        }
+    };
+
     return {
         course,
         categories,
@@ -547,8 +585,8 @@ export function useCourseBuilder(initialData: CourseData) {
         deleteResource,
         updateQuizQuestion,
         deleteQuizQuestion,
-        updateQuizOption
-
+        updateQuizOption,
+        updateCertificateConfig
     };
 }
 

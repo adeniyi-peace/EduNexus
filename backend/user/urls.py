@@ -30,7 +30,7 @@ urlpatterns = [
     # --- Instructor (CMS) Endpoints ---
     path("instructor/dashboard/", CMSDashboardView.as_view(), name="instructor-dashboard"),
     path("instructor/analytics/", InstructorAnalyticsView.as_view(), name="instructor-analytics"),
-    path("instructor/course-analytics/<slug:slug>/", CourseAnalyticsView.as_view(), name="course-analytics"),
+    path("instructor/course-analytics/<uuid:course_id>/", CourseAnalyticsView.as_view(), name="course-analytics"),
     path("instructor/courses/<uuid:course_id>/students/", CourseStudentsView.as_view(), name="course-students"),
     path("instructor/courses/<uuid:course_id>/message-all/", MessageAllStudentsView.as_view(), name="message-all-students"),
     path("instructor/message-student/", MessageStudentView.as_view(), name="message-student"),

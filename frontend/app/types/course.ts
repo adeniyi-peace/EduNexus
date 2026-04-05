@@ -8,6 +8,12 @@ export interface Category {
     slug: string;
 }
 
+export interface CertificateConfig {
+    signatoryName: string;
+    signatoryTitle: string;
+    signatorySignature?: string;
+}
+
 export interface CourseData {
     id: string;
     title: string;
@@ -26,6 +32,7 @@ export interface CourseData {
     modules: Module[];
     isEnrolled?: boolean;
     reviews?: Reviews[];
+    certificateConfig?: CertificateConfig;
 }
 
 export interface QuizOption {

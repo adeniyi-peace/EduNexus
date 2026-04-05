@@ -1,4 +1,4 @@
-import type { Route } from "../+types/home";
+import type { Route } from "./+types/home";
 import { Hero } from "~/components/home/Hero";
 import { SectionHeader } from "~/components/ui/SectionHeader";
 import { CourseCard } from "~/components/ui/CourseCard";
@@ -13,9 +13,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 
   try {
     const response = await api.get(`/courses/`);
+    
+    // Handle paginated response: DRF returns { results: [], count: ... }
+    const coursesData = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data.results || []);
 
     return {
-      courses: response.data as CourseData[], 
+      courses: coursesData as CourseData[], 
       response: response
     };
   } catch (err) {

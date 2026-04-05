@@ -145,7 +145,7 @@ class CourseAnalyticsView(APIView):
         responses={200: OpenApiResponse(description="Course analytics data retrieved successfully.")},
         tags=["Instructor Dashboard"]
     )
-    def get(self, request, slug):
+    def get(self, request, course_id):
         instructor = request.user
         
         # Ensure user is an instructor
@@ -153,7 +153,7 @@ class CourseAnalyticsView(APIView):
             return Response({"error": "Only instructors can access course analytics."}, status=403)
 
         try:
-            course = Course.objects.get(slug=slug, instructor=instructor)
+            course = Course.objects.get(id=course_id, instructor=instructor)
         except Course.DoesNotExist:
             return Response({"error": "Course not found or you don't have permission to view it."}, status=404)
 

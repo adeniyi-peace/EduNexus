@@ -1,6 +1,6 @@
 import { Outlet, NavLink, Link, useRouteLoaderData, useNavigation } from "react-router";
 import { ThemeToggle } from "~/components/ThemeToggle";
-import type { Route as RootRoute } from "./+types/root";
+import type { Route as RootRoute } from "../+types/root";
 import { ShoppingCart } from "lucide-react";
 import {  useCart } from "~/hooks/CartContext";
 import { useEffect } from "react";

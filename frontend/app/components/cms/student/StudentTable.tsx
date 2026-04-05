@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MoreVertical, CheckCircle2, Clock, BookOpen, Mail } from "lucide-react";
+import { MoreVertical, CheckCircle2, Clock, BookOpen, Mail, Users } from "lucide-react";
 import type { Student } from "~/types/students";
 
 interface StudentTableProps {
@@ -10,6 +10,26 @@ interface StudentTableProps {
 }
 
 export const StudentTable = ({ students, mode, onSelectStudent, onMessageStudent }: StudentTableProps) => {
+    if (students.length === 0) {
+        return (
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center py-24 px-6 text-center rounded-3xl border-2 border-dashed border-base-content/10 bg-base-200/20 backdrop-blur-sm"
+            >
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6 ring-8 ring-primary/5">
+                    <Users size={40} className="text-primary opacity-80" />
+                </div>
+                <h3 className="text-xl font-black tracking-tight mb-2">No Students Found</h3>
+                <p className="text-sm opacity-60 max-w-sm leading-relaxed">
+                    {mode === 'global' 
+                        ? "Your student roster is empty for now. Once students enroll in any of your courses, they'll show up here with their analytics and progress."
+                        : "No students have enrolled in this course yet. Share your course link to start growing your community!"}
+                </p>
+            </motion.div>
+        );
+    }
+
     return (
         <div className="rounded-2xl border border-base-content/5 shadow-sm overflow-hidden">
             <table className="table w-full">

@@ -9,16 +9,16 @@ import { Search, Filter, SlidersHorizontal, SearchX } from "lucide-react";
 import { CourseCard } from "~/components/ui/CourseCard";
 import { SectionHeader } from "~/components/ui/SectionHeader";
 import { MarketplaceSkeleton } from "~/components/ui/Skeletons";
-import type { Route } from "../+types/courses";
+import type { Route } from "./+types/courses";
 import api from "~/utils/api.client";
 import type { CourseData } from "~/types/course";
 
 // ... loader function stays exactly the same as your logic is perfect ...
 
-export async function loader({ request }: Route.ClientLoaderArgs) {
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     const url = new URL(request.url);
     const search = url.searchParams.get("q") || "";
-    const category = url.searchParams.get("category") || "";
+    const categoryName = url.searchParams.get("category") || "";
     const sort = url.searchParams.get("sort") || "-created_at";
     const page = parseInt(url.searchParams.get("page") || "1", 10);
     const pageSize = 6;
@@ -26,7 +26,9 @@ export async function loader({ request }: Route.ClientLoaderArgs) {
     try {
         const queryParams = new URLSearchParams();
         if (search) queryParams.set("search", search);
-        if (category) queryParams.set("category", category);
+        
+        // Backend filters by category__name (iexact) using the 'category' query param
+        if (categoryName) queryParams.set("category", categoryName);
         
         // Map frontend expected sorting defaults to backend expectations
         let backendSort = sort;
@@ -34,27 +36,46 @@ export async function loader({ request }: Route.ClientLoaderArgs) {
         queryParams.set("ordering", backendSort);
         queryParams.set("page", page.toString());
         
-        const response = await api.get(`/courses/?${queryParams.toString()}`);
+        // Fetch both courses and categories concurrently
+        const [coursesResponse, categoriesResponse] = await Promise.all([
+            api.get(`/courses/?${queryParams.toString()}`),
+            api.get('/categories/')
+        ]);
 
-        const paginatedCourses = response.data.results as CourseData[];
-        const totalCourses = response.data.count as number;
+        const paginatedCourses = coursesResponse.data.results as CourseData[];
+        const totalCourses = coursesResponse.data.count as number;
         const totalPages = Math.ceil(totalCourses / pageSize);
+
+        // DRF return results for categories too if paginated, or a list if not
+        const categories = Array.isArray(categoriesResponse.data) 
+            ? categoriesResponse.data 
+            : (categoriesResponse.data.results || []);
 
         return { 
             courses: paginatedCourses,
+            categories: categories as { id: string, name: string, slug: string }[],
             meta: {
                 totalCourses,
                 totalPages,
                 currentPage: page,
-                hasNextPage: !!response.data.next,
-                hasPrevPage: !!response.data.previous,
+                hasNextPage: !!coursesResponse.data.next,
+                hasPrevPage: !!coursesResponse.data.previous,
             },
-            filters: { search, category, sort }
+            filters: { search, category: categoryName, sort }
         };
     } catch (error) {
-        console.error("Failed to fetch courses:", error);
+        console.error("Failed to fetch data:", error);
+        
+        // Fallback fetch for categories only if the course filter fails
+        let categories: any[] = [];
+        try {
+            const catRes = await api.get('/categories/');
+            categories = Array.isArray(catRes.data) ? catRes.data : (catRes.data.results || []);
+        } catch(e) {}
+
         return {
             courses: [],
+            categories,
             meta: {
                 totalCourses: 0,
                 totalPages: 0,
@@ -62,7 +83,7 @@ export async function loader({ request }: Route.ClientLoaderArgs) {
                 hasNextPage: false,
                 hasPrevPage: false,
             },
-            filters: { search, category, sort }
+            filters: { search, category: categoryName, sort }
         };
     }
 }
@@ -72,12 +93,10 @@ export function HydrateFallback() {
 }
 
 export default function CourseMarketplace() {
-    const { courses, filters, meta } = useLoaderData<typeof loader>();
+    const { courses, categories, filters, meta } = useLoaderData<typeof clientLoader>();
     const [searchParams] = useSearchParams();
     const submit = useSubmit();
     const navigation = useNavigation();
-
-    const categories = ["Web Development", "Data Science", "Design", "Business", "Marketing"];
 
     const handlePageChange = (newPage: number) => {
         const params = new URLSearchParams(searchParams);
@@ -136,8 +155,8 @@ export default function CourseMarketplace() {
                                 </label>
                                 <div className="flex flex-col gap-1">
                                     <CategoryRadio label="All Categories" value="" current={filters.category} />
-                                    {categories.map((cat) => (
-                                        <CategoryRadio key={cat} label={cat} value={cat} current={filters.category} />
+                                    {categories.map((cat: any) => (
+                                        <CategoryRadio key={cat.id} label={cat.name} value={cat.name} current={filters.category} />
                                     ))}
                                 </div>
                             </div>

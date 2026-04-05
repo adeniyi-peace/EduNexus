@@ -13,9 +13,9 @@ from rest_framework.response import Response
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
                           LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer, CategorySerializer,
-                          QuizQuestionSerializer, QuizOptionSerializer
+                          QuizQuestionSerializer, QuizOptionSerializer, CertificateConfigSerializer
                         )
-from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate, Category, QuizQuestion, QuizOption
+from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate, Category, QuizQuestion, QuizOption, CertificateConfig
 
 from user.permissions import  *
 from .utils_telemetry import get_telemetry_data
@@ -77,6 +77,20 @@ class CourseViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(courses, many=True)
         return Response(serializer.data)
 
+
+    @action(detail=True, methods=['patch'], url_path='certificate-config', permission_classes=[IsInstructor, IsCourseOwner])
+    def update_certificate_config(self, request, pk=None):
+        """
+        Custom action to update certificate configuration for a course.
+        """
+        course = self.get_object()
+        config, created = CertificateConfig.objects.get_or_create(course=course)
+        
+        serializer = CertificateConfigSerializer(config, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response(serializer.data)
 
     def get_permissions(self):
         """

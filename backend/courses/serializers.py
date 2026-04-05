@@ -1,7 +1,11 @@
 from rest_framework import serializers
 from django.db.models import Avg
 from authentication.serializers import UserSerializer
-from .models import Category, Course, Module, Lesson, Resource, QuizQuestion, QuizOption, Review, Wishlist, Note, Progress, Enrollment, Certificate
+from .models import (
+    Category, Course, Module, Lesson, Resource, 
+    QuizQuestion, QuizOption, Review, Wishlist, 
+    Note, Progress, Enrollment, Certificate, CertificateConfig
+)
 
 class ProgressSerializer(serializers.ModelSerializer):
     percentage_complete = serializers.IntegerField(read_only=True)
@@ -178,9 +182,20 @@ class ModuleSerializer(serializers.ModelSerializer):
         model = Module
         fields = ['id', 'title', 'isOpen', 'lessons']
 
+class CertificateConfigSerializer(serializers.ModelSerializer):
+    # Mapping snake_case Django fields to camelCase TypeScript fields
+    signatoryName = serializers.CharField(source='signatory_name')
+    signatoryTitle = serializers.CharField(source='signatory_title')
+    signatorySignature = serializers.ImageField(source='signatory_signature', required=False, allow_null=True)
+
+    class Meta:
+        model = CertificateConfig
+        fields = ['signatoryName', 'signatoryTitle', 'signatorySignature']
+
 class CourseSerializer(serializers.ModelSerializer):
     # This nests the modules (and consequently lessons, resources, etc.) inside the course
     modules = ModuleSerializer(many=True, read_only=True)
+    category = serializers.CharField(source='category.name', read_only=True)
     
     # Optional: If you want to return the full category object instead of just the ID
     # category = CategorySerializer(read_only=True) 
@@ -189,6 +204,7 @@ class CourseSerializer(serializers.ModelSerializer):
     reviews = ReviewSerializer(many=True, read_only=True)  # Assuming a related name of 'review' for course reviews
     rating = serializers.SerializerMethodField()
     instructor = InstructorSerializer(read_only=True)  # Assuming you have an instructor field that is a ForeignKey to User
+    certificateConfig = CertificateConfigSerializer(source='certificate_config', read_only=True)
 
     class Meta:
         model = Course
@@ -196,9 +212,9 @@ class CourseSerializer(serializers.ModelSerializer):
             'id', 'title',  'slug', 'description', 
             'thumbnail', 'price', 'duration', 'category', 'language', 
             'difficulty', 'status', 'lastUpdated', 'created_at', 'modules',
-            "students", "isEnrolled", "reviews", "rating", "instructor"
+            "students", "isEnrolled", "reviews", "rating", "instructor", "certificateConfig"
         ]
-        read_only_fields = ["instructor", "students", "isEnrolled", "reviews", "rating",]
+        read_only_fields = ["instructor", "students", "isEnrolled", "reviews", "rating", "certificateConfig"]
 
     def get_isEnrolled(self, obj):
         request = self.context.get('request')
@@ -215,6 +231,17 @@ class CourseSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context["request"].user
         return Course.objects.create(instructor=user, **validated_data)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        
+        # Security: Only show certificateConfig to the instructor or admin
+        user = getattr(request, 'user', None)
+        if not user or not (user.is_staff or instance.instructor == user or user.role=="admin"):
+            data.pop('certificateConfig', None)
+            
+        return data
 
 class ReOrderRequestSerializer(serializers.Serializer):
     # This matches your TS: lessonIds: string[]
