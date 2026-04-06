@@ -97,7 +97,7 @@ export function CourseCard({
                         {difficulty}
                     </span>
                     <span className="text-xs text-base-content/40 font-bold italic">
-                        By {instructor.fullname}
+                        By {instructor?.fullname}
                     </span>
                 </div>
                 

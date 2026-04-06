@@ -381,13 +381,19 @@ class NoteViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'delete']
 
     def get_queryset(self):
-        # Users can only see their own notes
         if self.request.user.is_authenticated:
+            lesson_id = self.kwargs.get('lesson_pk')
+            if lesson_id:
+                return Note.objects.filter(student=self.request.user, lesson_id=lesson_id)
             return Note.objects.filter(student=self.request.user)
         return Note.objects.none()
 
     def perform_create(self, serializer):
-        serializer.save(student=self.request.user)
+        lesson_id = self.kwargs.get('lesson_pk')
+        if lesson_id:
+            serializer.save(student=self.request.user, lesson_id=lesson_id)
+        else:
+            serializer.save(student=self.request.user)
 
 class LessonCompletionView(GenericAPIView):
     serializer_class = LessonCompletionSerializer

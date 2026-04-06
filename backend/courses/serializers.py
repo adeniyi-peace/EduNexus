@@ -96,8 +96,8 @@ class ResourceSerializer(serializers.ModelSerializer):
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
-        fields = ['id', 'student', 'lesson', 'content', 'created_at']
-        read_only_fields = ['id', 'student', 'created_at']
+        fields = ['id', 'student', 'lesson', 'content', 'timestamp', 'is_code', 'created_at']
+        read_only_fields = ['id', 'student', 'lesson', 'created_at']
 
 class QuizOptionSerializer(serializers.ModelSerializer):
     # Mapping snake_case from Django to camelCase for TypeScript
