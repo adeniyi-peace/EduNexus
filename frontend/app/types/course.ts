@@ -88,7 +88,6 @@ interface BasePlayerLessonFields {
     allowDownload: boolean;
     order: number;
     resources: Resource[];
-    notes: Note[];
 }
 
 export interface VideoLesson extends BasePlayerLessonFields {

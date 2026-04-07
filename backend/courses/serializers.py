@@ -4,7 +4,8 @@ from authentication.serializers import UserSerializer
 from .models import (
     Category, Course, Module, Lesson, Resource, 
     QuizQuestion, QuizOption, Review, Wishlist, 
-    Note, Progress, Enrollment, Certificate, CertificateConfig
+    Note, Progress, Enrollment, Certificate, CertificateConfig,
+    Question, Answer
 )
 
 class ProgressSerializer(serializers.ModelSerializer):
@@ -99,6 +100,24 @@ class NoteSerializer(serializers.ModelSerializer):
         fields = ['id', 'student', 'lesson', 'content', 'timestamp', 'is_code', 'created_at']
         read_only_fields = ['id', 'student', 'lesson', 'created_at']
 
+class AnswerSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Answer
+        fields = ['id', 'question', 'user', 'content', 'is_instructor_reply', 'created_at']
+        read_only_fields = ['id', 'question', 'user', 'is_instructor_reply', 'created_at']
+
+class QuestionSerializer(serializers.ModelSerializer):
+    student = UserSerializer(read_only=True)
+    answers = AnswerSerializer(many=True, read_only=True)
+    answers_count = serializers.IntegerField(source='answers.count', read_only=True)
+
+    class Meta:
+        model = Question
+        fields = ['id', 'lesson', 'student', 'title', 'content', 'is_resolved', 'created_at', 'answers', 'answers_count']
+        read_only_fields = ['id', 'lesson', 'student', 'created_at']
+
 class QuizOptionSerializer(serializers.ModelSerializer):
     # Mapping snake_case from Django to camelCase for TypeScript
     isCorrect = serializers.BooleanField(source='is_correct')
@@ -131,7 +150,6 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
 
 class LessonSerializer(serializers.ModelSerializer):
     resources = ResourceSerializer(many=True, read_only=True)
-    notes = NoteSerializer(many=True, read_only=True)  # Assuming a related name of 'notes' on Lesson model
     
     # Mapping snake_case Django fields to camelCase TypeScript fields
     videoUrl = serializers.FileField(source='video_url', required=False, allow_null=True)
@@ -142,9 +160,10 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'type', 'description', 'isPublished', 
             'isPreview', 'isHidden', 'allowDownload', 'order',
-            'videoUrl', 'duration', 'content', 'quiz_time_limit', "resources",
-            "notes"
+            'videoUrl', 'duration', 'content', 'quiz_time_limit', "resources"
         ]
+    
+
 
     def to_representation(self, instance):
         # Start with the standard dictionary of fields

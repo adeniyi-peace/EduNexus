@@ -5,8 +5,7 @@ from .views import (
     CourseViewSet, ModuleViewSet, LessonViewSet, ResourceViewSet, 
     ReOrderView, WishlistViewSet, ReviewViewSet, NoteViewSet, 
     LessonCompletionView, EnrollmentViewSet, CertificateViewSet, CategoryViewSet,
-    QuizQuestionViewSet, QuizOptionViewSet
-
+    QuizQuestionViewSet, QuizOptionViewSet, QuestionViewSet, AnswerViewSet
 )
 
 # Create a router and register our viewset with it.
@@ -41,12 +40,16 @@ lesson_resources_router = routers.NestedSimpleRouter(lesson_sub_router, r'lesson
 lesson_resources_router.register(r'resources', ResourceViewSet, basename='lesson-resources')
 
 quiz_questions_router = routers.NestedSimpleRouter(lesson_sub_router, r'lessons', lookup='lesson')
-quiz_questions_router.register(r'questions', QuizQuestionViewSet, basename='lesson-quiz-questions')
+quiz_questions_router.register(r'quiz-questions', QuizQuestionViewSet, basename='lesson-quiz-questions')
 
-quiz_options_router = routers.NestedSimpleRouter(quiz_questions_router, r'questions', lookup='question')
+quiz_options_router = routers.NestedSimpleRouter(quiz_questions_router, r'quiz-questions', lookup='question')
 quiz_options_router.register(r'options', QuizOptionViewSet, basename='quiz-question-options')
 
+qna_questions_router = routers.NestedSimpleRouter(lesson_sub_router, r'lessons', lookup='lesson')
+qna_questions_router.register(r'questions', QuestionViewSet, basename='lesson-qna-questions')
 
+qna_answers_router = routers.NestedSimpleRouter(qna_questions_router, r'questions', lookup='question')
+qna_answers_router.register(r'answers', AnswerViewSet, basename='qna-question-answers')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -56,6 +59,8 @@ urlpatterns = [
     path("", include(lesson_resources_router.urls)),
     path("", include(quiz_questions_router.urls)),
     path("", include(quiz_options_router.urls)),
+    path("", include(qna_questions_router.urls)),
+    path("", include(qna_answers_router.urls)),
 
 
 

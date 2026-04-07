@@ -6,6 +6,7 @@ import { ArticleViewer } from "~/components/dashboard/course_player/ArticleViewe
 import { QuizContainer } from "~/components/dashboard/quiz/QuizContainer";
 import { ChevronRight, ChevronLeft, Menu, AlertTriangle, RefreshCw } from "lucide-react";
 import { PaywallModal } from "~/components/course/PaywallModal";
+import { CourseCompletionModal } from "~/components/dashboard/course_player/CourseCompletionModal";
 import { useCoursePlayerData, useMarkLessonComplete } from "~/hooks/useCoursePlayerData";
 import type { PlayerLesson } from "~/types/course";
 
@@ -30,6 +31,7 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
     const [currentLesson, setCurrentLesson] = useState<PlayerLesson | null>(null);
     const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
     const [showPaywall, setShowPaywall] = useState(false);
+    const [showCompletionModal, setShowCompletionModal] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
 
@@ -67,7 +69,19 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
         if (moduleId) {
             markComplete.mutate({ moduleId, lessonId: currentLesson.id });
         }
-        setCompletedLessonIds(prev => new Set(prev).add(currentLesson.id));
+        
+        // Use functional state update with callback logic 
+        setCompletedLessonIds(prev => {
+            const updated = new Set(prev).add(currentLesson.id);
+            if (!nextLesson && isEnrolled) {
+                // If it's the very last lesson and user is enrolled, all is done!
+                // Though we should technically check if `updated.size === allLessons.length`
+                if (updated.size === allLessons.length) {
+                    setShowCompletionModal(true);
+                }
+            }
+            return updated;
+        });
 
         if (nextLesson) {
             // Guard clause for preview users hitting a paywall
@@ -78,7 +92,6 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
             setCurrentLesson(nextLesson);
         } else {
             setIsPlaying(false);
-            // Course complete — could show a congratulations screen here
         }
     };
 
@@ -176,6 +189,12 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
                 onClose={() => setShowPaywall(false)}
                 courseTitle={data?.title ?? 'This Course'}
                 price={data?.price ?? 0}
+            />
+
+            <CourseCompletionModal 
+                isOpen={showCompletionModal}
+                onClose={() => setShowCompletionModal(false)}
+                courseTitle={data?.title ?? 'This Course'}
             />
 
             {/* --- LEFT PANE --- */}

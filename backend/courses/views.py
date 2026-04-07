@@ -13,13 +13,16 @@ from rest_framework.response import Response
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
                           LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer, CategorySerializer,
-                          QuizQuestionSerializer, QuizOptionSerializer, CertificateConfigSerializer
+                          QuizQuestionSerializer, QuizOptionSerializer, CertificateConfigSerializer,
+                          QuestionSerializer, AnswerSerializer
                         )
-from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate, Category, QuizQuestion, QuizOption, CertificateConfig
+from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate, Category, QuizQuestion, QuizOption, CertificateConfig, Question, Answer
 
 from user.permissions import  *
 from .utils_telemetry import get_telemetry_data
 from user.permissions import IsInstructor
+
+from user.models import Notification
 
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -547,3 +550,70 @@ class QuizOptionViewSet(viewsets.ModelViewSet):
             serializer.save(question_id=question_pk)
         else:
             raise ValidationError("Question ID is required. Pass it in the URL")
+
+@extend_schema_view(
+    list=extend_schema(summary="List Q&A questions for a lesson", tags=['Q&A']),
+    create=extend_schema(summary="Ask a question on a lesson", tags=['Q&A']),
+    retrieve=extend_schema(summary="Get question details", tags=['Q&A']),
+    update=extend_schema(summary="Update a question", tags=['Q&A']),
+    partial_update=extend_schema(summary="Partial update a question", tags=['Q&A']),
+    destroy=extend_schema(summary="Delete a question", tags=['Q&A']),
+)
+class QuestionViewSet(viewsets.ModelViewSet):
+    serializer_class = QuestionSerializer
+    
+    def get_queryset(self):
+        lesson_id = self.kwargs.get('lesson_pk')
+        if lesson_id:
+            return Question.objects.filter(lesson_id=lesson_id)
+        return Question.objects.all()
+
+    def perform_create(self, serializer):
+        lesson_id = self.kwargs.get('lesson_pk')
+        if lesson_id:
+            question = serializer.save(student=self.request.user, lesson_id=lesson_id)
+            instructor = question.lesson.module.course.instructor
+            if instructor != self.request.user:
+                 Notification.objects.create(
+                     receiver=instructor,
+                     sender=self.request.user,
+                     notification_type="mentor_reply", # or an existing type
+                     title=f"New Question in {question.lesson.title}",
+                     message=f"{self.request.user.fullname} asked: {question.title}",
+                 )
+        else:
+            raise ValidationError("Lesson ID is required.")
+
+@extend_schema_view(
+    list=extend_schema(summary="List answers for a question", tags=['Q&A']),
+    create=extend_schema(summary="Answer a question", tags=['Q&A']),
+    retrieve=extend_schema(summary="Get answer details", tags=['Q&A']),
+    update=extend_schema(summary="Update an answer", tags=['Q&A']),
+    partial_update=extend_schema(summary="Partial update an answer", tags=['Q&A']),
+    destroy=extend_schema(summary="Delete an answer", tags=['Q&A']),
+)
+class AnswerViewSet(viewsets.ModelViewSet):
+    serializer_class = AnswerSerializer
+    
+    def get_queryset(self):
+        question_id = self.kwargs.get('question_pk')
+        if question_id:
+            return Answer.objects.filter(question_id=question_id)
+        return Answer.objects.all()
+
+    def perform_create(self, serializer):
+        question_id = self.kwargs.get('question_pk')
+        if question_id:
+            question = get_object_or_404(Question, id=question_id)
+            is_instructor = self.request.user == question.lesson.module.course.instructor
+            answer = serializer.save(user=self.request.user, question_id=question_id, is_instructor_reply=is_instructor)
+            if question.student != self.request.user:
+                 Notification.objects.create(
+                     receiver=question.student,
+                     sender=self.request.user,
+                     notification_type="mentor_reply" if is_instructor else "system",
+                     title=f"Reply to your question",
+                     message=f"{self.request.user.fullname} replied to: {question.title}",
+                 )
+        else:
+            raise ValidationError("Question ID is required.")

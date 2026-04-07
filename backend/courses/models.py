@@ -239,3 +239,31 @@ class Certificate(models.Model):
     def __str__(self):
         return f"Certificate - {self.student.fullname} - {self.course.title}"
 
+class Question(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    lesson = models.ForeignKey(Lesson, related_name='questions', on_delete=models.CASCADE)
+    student = models.ForeignKey(User, related_name='questions', on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    is_resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} by {self.student.fullname}"
+
+class Answer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    question = models.ForeignKey(Question, related_name='answers', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='answers', on_delete=models.CASCADE)
+    content = models.TextField()
+    is_instructor_reply = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Answer by {self.user.fullname} on {self.question.title}"
