@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Edit3, Trash2, MoreVertical, ShoppingCart, Check } from "lucide-react";
 import type { CourseData } from "~/types/course";
 import { useCart } from "~/hooks/CartContext";
+import { useFreeEnrollment } from "~/hooks/useFreeEnrollment";
 
 interface CourseCardProps {
     course: CourseData;
@@ -31,6 +32,9 @@ export function CourseCard({
     // 1. Hook into the Zustand store
     const { cart, addToCart } = useCart();
     
+    // Use the free enrollment hook
+    const { handleEnrollment, isEnrolling } = useFreeEnrollment();
+
     // 2. Check if this specific course is already in the cart
     const isInCart = cart.some((item: CourseData) => item.id === id);
 
@@ -167,8 +171,20 @@ export function CourseCard({
                                     Details
                                 </Link>
 
-                                {isInCart ? (
-                                    <Link to="/cart" className="btn btn-success btn-sm rounded-xl px-4 animate-fade-in shadow-lg shadow-success/20">
+                                {(price == 0 || !price) ? (
+                                    <button 
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleEnrollment(id.toString(), price as any);
+                                        }}
+                                        disabled={isEnrolling}
+                                        className="btn btn-primary btn-sm rounded-xl px-4 hover:scale-105 transition-transform shadow-lg shadow-primary/20"
+                                    >
+                                        {isEnrolling ? "..." : "Enroll"}
+                                    </button>
+                                ) : isInCart ? (
+                                    <Link to="/cart" onClick={(e) => e.stopPropagation()} className="btn btn-success btn-sm rounded-xl px-4 animate-fade-in shadow-lg shadow-success/20">
                                         <Check size={16} className="text-white" />
                                     </Link>
                                 ) : (

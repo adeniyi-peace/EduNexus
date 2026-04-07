@@ -121,7 +121,7 @@ export default function CheckoutPage() {
                                     <div className="flex-1">
                                         <p className="text-sm font-black truncate max-w-50">{item.title}</p>
                                         <p className="text-[10px] font-bold opacity-40 uppercase">
-                                            {typeof item.instructor === 'string' ? item.instructor : item.instructor.fullname}
+                                            {typeof item.instructor === 'string' ? item.instructor : item.instructor?.fullname}
                                         </p>
                                     </div>
                                     <p className="font-black text-sm text-primary">${item.price}</p>

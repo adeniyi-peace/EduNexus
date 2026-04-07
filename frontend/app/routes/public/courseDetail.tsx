@@ -39,11 +39,11 @@ export default function CourseLandingPage() {
                         <div className="flex flex-wrap gap-6 items-center text-sm font-medium">
                             <div className="flex items-center gap-1">
                                 <span className="text-warning text-lg">★</span>
-                                <span className="font-bold">{course.rating}</span>
-                                <span className="opacity-60">(428 ratings)</span>
+                                <span className="font-bold">{course.rating || 0}</span>
+                                <span className="opacity-60">ratings</span>
                             </div>
                             <div>{course.students?.toLocaleString()} students</div>
-                            <div>Created by <span className="text-secondary link link-hover">{course.instructor.fullname}</span></div>
+                            <div>Created by <span className="text-secondary link link-hover">{course.instructor?.fullname}</span></div>
                         </div>
                     </div>
                 </div>
@@ -75,7 +75,7 @@ export default function CourseLandingPage() {
                     {/* Only show enrollment card if NOT enrolled */}
                     {!course.isEnrolled && (
                         <aside className="w-full lg:w-[400px]">
-                            <EnrollmentCard price={course.price ?? 0} courseId={course.id} />
+                            <EnrollmentCard course={course} />
                         </aside>
                     )}
 

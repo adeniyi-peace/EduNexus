@@ -257,7 +257,7 @@ class CourseSerializer(serializers.ModelSerializer):
         
         # Security: Only show certificateConfig to the instructor or admin
         user = getattr(request, 'user', None)
-        if not user or not (user.is_staff or instance.instructor == user or user.role=="admin"):
+        if not user or not (user.is_staff or instance.instructor == user):
             data.pop('certificateConfig', None)
             
         return data
