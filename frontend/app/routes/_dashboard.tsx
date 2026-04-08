@@ -1,7 +1,10 @@
-import { Outlet, NavLink, Link, useLocation } from "react-router";
+import { Outlet, NavLink, Link, useLocation, useRouteLoaderData } from "react-router";
 import { useState, useEffect } from "react";
 import ProtectedRoute from "~/components/ProtectedRoute";
 import { useUserContext } from "~/hooks/useUserContext";
+import UserProfileDropdown from "~/components/ui/userProfileDropdown";
+import { ThemeToggle } from "~/components/ThemeToggle";
+import type { Route as RootRoute } from "../+types/root";
 
 // --- SVG ICON COMPONENTS ---
 const Icons = {
@@ -41,7 +44,10 @@ export default function DashboardLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const location = useLocation();
-    const { user, logout } = useUserContext();
+
+    const rootData = useRouteLoaderData("root") as RootRoute.ComponentProps["loaderData"];
+    // Ensure we fall back to a valid theme name
+    const currentTheme = rootData?.theme ?? "edunexus"
 
     // Auto-close mobile drawer when navigating
     useEffect(() => {
@@ -160,6 +166,9 @@ export default function DashboardLayout() {
                             </span>
                         </div>
 
+                        {/* --- Theme Toggle Button --- */}
+                        <ThemeToggle currentTheme={currentTheme} />
+
                         {/* Notifications */}
                         <Link to="/dashboard/notification" aria-label="View notifications">
                             <button className="btn btn-ghost btn-circle btn-sm relative hover:bg-primary/10 hover:text-primary transition-colors">
@@ -169,31 +178,7 @@ export default function DashboardLayout() {
                         </Link>
 
                         {/* User Profile Dropdown */}
-                        <div className="dropdown dropdown-end">
-                            <label tabIndex={0} className="btn btn-ghost btn-circle avatar hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer">
-                                <div className="w-9 lg:w-10 rounded-xl ring-2 ring-primary/20 ring-offset-base-100 ring-offset-2">
-                                    <img src="https://i.pravatar.cc/150?u=user" alt={user?.first_name || "User profile"} />
-                                </div>
-                            </label>
-                            <ul tabIndex={0} className="mt-4 z-50 p-3 shadow-2xl menu menu-sm dropdown-content bg-base-100 rounded-3xl w-60 border border-base-content/5 space-y-1">
-                                <li className="menu-title text-[10px] font-black uppercase opacity-30 px-4 py-2">
-                                    Account Node
-                                </li>
-                                <li>
-                                    <Link className="rounded-xl py-2.5 font-bold" to="/dashboard/profile">Profile</Link>
-                                </li>
-                                <li>
-                                    <Link className="rounded-xl py-2.5 font-bold" to="/dashboard/settings">Account Settings</Link>
-                                </li>
-                                {/* Corrected valid HTML for divider inside a list */}
-                                <li role="separator">
-                                    <div className="divider opacity-5 my-0 py-1" />
-                                </li>
-                                <li>
-                                    <button onClick={() => logout()} className="text-error font-black rounded-xl py-2.5 text-left w-full">Log Out</button>
-                                </li>
-                            </ul>
-                        </div>
+                        <UserProfileDropdown />
                     </div>
                 </header>
 

@@ -10,6 +10,7 @@ import {
     LibraryBig
 } from "lucide-react";
 import { NavLink } from "react-router";
+import { useUserContext } from "~/hooks/useUserContext";
 
 const ADMIN_LINKS = [
     { label: "Overview", href: "/admin", icon: LayoutDashboard },
@@ -23,6 +24,7 @@ const ADMIN_LINKS = [
 ];
 
 export const AdminSidebar = () => {
+    const { user, logout } = useUserContext();
     return (
         <div className="flex flex-col h-full bg-base-100 border-r border-base-content/5 w-64">
             {/* Logo Area */}
@@ -64,10 +66,10 @@ export const AdminSidebar = () => {
                         </div>
                     </div>
                     <div className="flex-1 overflow-hidden">
-                        <p className="text-xs font-black truncate">Super Admin</p>
-                        <p className="text-[10px] opacity-50 truncate">admin@edunexus.com</p>
+                        <p className="text-xs font-black truncate">{ user?.last_name + " " + user?.first_name }</p>
+                        <p className="text-[10px] opacity-50 truncate">{ user?.email }</p>
                     </div>
-                    <button className="btn btn-ghost btn-xs btn-square text-error">
+                    <button onClick={() => logout()} className="btn btn-ghost btn-xs btn-square text-error">
                         <LogOut size={14} />
                     </button>
                 </div>

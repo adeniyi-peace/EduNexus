@@ -20,6 +20,7 @@ import { ThemeToggle } from "~/components/ThemeToggle";
 import ProtectedRoute from "~/components/ProtectedRoute";
 
 import { useUserContext } from "~/hooks/useUserContext";
+import UserProfileDropdown from "~/components/ui/userProfileDropdown";
 
 export default function CMSLayout() {
     const { user } = useUserContext();
@@ -150,14 +151,7 @@ export default function CMSLayout() {
                             <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
                         </button>
 
-                        <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-accent p-px">
-                            <div className="w-full h-full bg-base-100 rounded-[11px] flex items-center justify-center overflow-hidden">
-                                <img 
-                                    src={user?.profile_picture || `https://i.pravatar.cc/150?u=${user?.id || 'admin'}`} 
-                                    alt={user?.first_name || "Instructor"} 
-                                />
-                            </div>
-                        </div>
+                        <UserProfileDropdown />
                     </div>
                 </header>
 
