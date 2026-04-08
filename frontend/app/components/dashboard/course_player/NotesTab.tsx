@@ -81,6 +81,7 @@ export const NotesTab = ({ lessonId, isEnrolled, videoRef, onJumpToTime, hasVide
                             <textarea
                                 value={noteText}
                                 onChange={(e) => setNoteText(e.target.value)}
+                                onKeyDown={(e) => e.stopPropagation()}
                                 className={`w-full bg-transparent p-4 text-sm resize-none h-28 focus:outline-none text-base-content placeholder:text-base-content/30 ${isCodeMode ? 'font-mono text-xs bg-base-300/30 rounded-xl' : ''}`}
                                 placeholder={isCodeMode ? "// Paste your snippet here..." : hasVideo ? "Jot down a thought... (pinned to the current video time)" : "Jot down a thought..."}
                                 disabled={createNote.isPending}

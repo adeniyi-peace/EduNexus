@@ -56,7 +56,7 @@ export function useCreateAnswer(questionId: string, lessonId: string) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (content: string) =>
-            api.post(`/questions/${questionId}/answers/`, { content }),
+            api.post(`/lessons/${lessonId}/questions/${questionId}/answers/`, { content }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['lesson-questions', lessonId] });
         },

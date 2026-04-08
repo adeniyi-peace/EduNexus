@@ -64,11 +64,9 @@ export default function CourseLandingPage() {
 
                         <InstructorBio instructor={course.instructor} />
 
-                        {course.reviews && course.reviews.length > 0 ? (
-                            <ReviewSection reviews={course.reviews} courseId={course.id} isEnrolled={!!course.isEnrolled} />
-                        ) : (
-                            <p>No reviews yet</p>
-                        )}
+                        
+                        <ReviewSection reviews={course.reviews || []} courseId={course.id} isEnrolled={!!course.isEnrolled} />
+                        
                     </div>  
 
                     {/* Right Column: Sticky Enrollment Card */}

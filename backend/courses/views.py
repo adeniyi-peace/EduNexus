@@ -9,18 +9,20 @@ from django.utils import timezone
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 
 from .serializers import (CourseSerializer, LessonSerializer, ModuleSerializer, ResourceSerializer, 
                           ReOrderRequestSerializer, WishlistSerializer, ReviewSerializer, NoteSerializer, 
                           LessonCompletionSerializer, EnrollmentSerializer, CertificateSerializer, CategorySerializer,
                           QuizQuestionSerializer, QuizOptionSerializer, CertificateConfigSerializer,
-                          QuestionSerializer, AnswerSerializer
+                          QuestionSerializer, AnswerSerializer, ProgressSerializer
                         )
 from . models import Course, Module, Lesson, Resource, Wishlist, Review, Enrollment, Note, Certificate, Category, QuizQuestion, QuizOption, CertificateConfig, Question, Answer
 
 from user.permissions import  *
 from .utils_telemetry import get_telemetry_data
 from user.permissions import IsInstructor
+from .utils import generate_certificate_pdf
 
 from user.models import Notification
 
@@ -62,7 +64,9 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Annotate course with average rating so we can sort by it via 'annotated_rating'
-        queryset = Course.objects.annotate(annotated_rating=Avg('reviews__rating'))
+        queryset = Course.objects.select_related('instructor', 'category', 'certificate_config').prefetch_related(
+            'modules__lessons__resources', 'reviews', 'enrollments'
+        ).annotate(annotated_rating=Avg('reviews__rating'))
             
         return queryset
 
@@ -414,30 +418,39 @@ class LessonCompletionView(GenericAPIView):
             ),
         ],
         request=LessonCompletionSerializer,
-        responses={200: {"detail": "Lesson marked as completed."}}
+        responses={200: ProgressSerializer}
     )
     def post(self, request, *args, **kwargs):
         course_id = self.kwargs['course_pk']
         lesson_id = request.data.get('lesson_id')
-        module_id = request.data.get('module_id')  # Optional, if you want to validate the lesson belongs to a specific module
+        module_id = self.kwargs['module_pk']   # Optional, if you want to validate the lesson belongs to a specific module
 
         context = self.get_serializer_context()
         context['course_id'] = course_id
         context["module_id"] = module_id
         serializer = self.get_serializer(data={'lesson_id': lesson_id}, context=context)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"detail": "Lesson marked as completed."}, status=status.HTTP_200_OK)
+        progress = serializer.save()
+        return Response(ProgressSerializer(progress).data, status=status.HTTP_200_OK)
 
 @extend_schema_view(
     list=extend_schema(summary="List user enrollments", tags=['Students']),
     retrieve=extend_schema(summary="Get enrollment details", tags=['Students']),
+    by_course=extend_schema(summary="Get course enrollment details", tags=['Students']),
 )
 class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializer
     
     # Exclude PUT/DELETE as enrollments are typically final (or handled elsewhere)
     http_method_names = ['get', 'post', 'options', 'head']
+
+    @action(detail=False, methods=['get'], url_path='course/(?P<course_id>[^/.]+)')
+    def by_course(self, request, course_id=None):
+        enrollment = self.get_queryset().filter(course_id=course_id).first()
+        if not enrollment:
+            raise NotFound("Enrollment not found for this course.")
+        serializer = self.get_serializer(enrollment)
+        return Response(serializer.data)
 
     def get_queryset(self):
         # Users can only see their own enrollments
@@ -483,8 +496,6 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['get'])
     def download(self, request, pk=None):
         certificate = self.get_object()
-        from .utils import generate_certificate_pdf
-        
         buffer = generate_certificate_pdf(certificate)
         
         return FileResponse(

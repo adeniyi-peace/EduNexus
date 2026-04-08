@@ -52,10 +52,10 @@ def check_for_achievements(sender, instance, action, **kwargs):
         enrollments = Enrollment.objects.filter(student=user).select_related('course')
         completed_courses_count = 0
         for enrollment in enrollments:
-            total_lessons = enrollment.course.lessons.count()
-            if total_lessons > 0:
+            total_lessons = enrollment.course.modules.aggregate(lessons_count=Count("lessons"))
+            if total_lessons['lessons_count'] > 0:
                 completed_count = enrollment.progress.completed_lessons.count()
-                if completed_count >= total_lessons:
+                if completed_count >= total_lessons['lessons_count']:
                     completed_courses_count += 1
 
         course_milestones = {

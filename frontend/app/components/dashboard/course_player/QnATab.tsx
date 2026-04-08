@@ -139,6 +139,7 @@ export const QnATab = ({ lessonId, isEnrolled }: QnATabProps) => {
                                 placeholder="e.g. How does the middleware function work?"
                                 value={newTitle}
                                 onChange={(e) => setNewTitle(e.target.value)}
+                                onKeyDown={(e) => e.stopPropagation()}
                                 required
                             />
                         </div>
@@ -149,6 +150,7 @@ export const QnATab = ({ lessonId, isEnrolled }: QnATabProps) => {
                                 placeholder="Provide more context or code snippets..."
                                 value={newContent}
                                 onChange={(e) => setNewContent(e.target.value)}
+                                onKeyDown={(e) => e.stopPropagation()}
                                 required
                             />
                         </div>
@@ -275,6 +277,7 @@ const ThreadView = ({ question, lessonId }: { question: QnAQuestion, lessonId: s
                 <textarea 
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
                     className="flex-1 bg-transparent py-3 text-sm focus:outline-none resize-none max-h-32 min-h-[48px] custom-scrollbar placeholder:text-base-content/30"
                     placeholder="Write a reply..."
                     disabled={createAnswer.isPending}

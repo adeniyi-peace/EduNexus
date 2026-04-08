@@ -4,6 +4,7 @@ import type { Route as RootRoute } from "../+types/root";
 import { ShoppingCart } from "lucide-react";
 import {  useCart } from "~/hooks/CartContext";
 import { useEffect } from "react";
+import { useUserContext } from "~/hooks/useUserContext";
 
 export default function PublicLayout() {
     const rootData = useRouteLoaderData("root") as RootRoute.ComponentProps["loaderData"];
@@ -13,6 +14,7 @@ export default function PublicLayout() {
 
     // In a real app, get this from your Cart Context or Zustand store
     const {cart} = useCart()
+    const { user } = useUserContext();
     
     const isNavigating = navigation.state === "loading";
 
@@ -86,19 +88,27 @@ export default function PublicLayout() {
 
                         <ThemeToggle currentTheme={currentTheme} /> 
                         
-                        <div className="hidden sm:flex items-center gap-1">
-                            <Link 
-                                to="/login" 
-                                className="btn btn-ghost btn-sm px-5 rounded-full text-base-content/80 hover:text-base-content transition-all"
-                            >
-                                Log in
-                            </Link>
-                            <Link 
-                                to="/register" 
-                                className="btn btn-primary btn-sm px-6 rounded-full text-primary-content shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                            >
-                                Join Now
-                            </Link>
+                        <div className="flex items-center gap-1">
+                            {user ? (
+                                <Link to={user.role === 'admin' ? '/admin' : user.role === 'instructor' ? '/cms' : '/dashboard'} className="btn btn-primary btn-sm px-4 md:px-6 rounded-full text-primary-content shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                                    Dashboard
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link 
+                                        to="/login" 
+                                        className="btn btn-ghost mx-2 btn-sm px-2 md:px-5 rounded-full text-base-content/80 hover:text-base-content transition-all"
+                                    >
+                                        Log in
+                                    </Link>
+                                    <Link 
+                                        to="/register" 
+                                        className="btn btn-primary btn-sm px-4 md:px-6 rounded-full text-primary-content shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                                    >
+                                        Join Now
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
                 </nav>

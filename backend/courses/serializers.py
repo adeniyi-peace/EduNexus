@@ -10,10 +10,13 @@ from .models import (
 
 class ProgressSerializer(serializers.ModelSerializer):
     percentage_complete = serializers.IntegerField(read_only=True)
+    completed_lessons = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True
+    )
 
     class Meta:
         model = Progress
-        fields = ['percentage_complete', 'last_accessed']
+        fields = ['percentage_complete', 'last_accessed', 'completed_lessons']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -293,7 +296,7 @@ class LessonCompletionSerializer(serializers.Serializer):
         # Here you would add logic to mark the lesson as completed for the user
         # This might involve creating/updating a Progress model instance, etc.
         try:
-            progress = Progress.objects.get(enrollment__user=user, enrollment__course_id=course_id)
+            progress = Progress.objects.get(enrollment__student=user, enrollment__course_id=course_id)
             lesson = Lesson.objects.get(id=lesson_id, module=module_id, module__course_id=course_id)  # Validate lesson belongs to the course (and optionally module)
             progress.completed_lessons.add(lesson)
         except Progress.DoesNotExist:
@@ -303,19 +306,15 @@ class LessonCompletionSerializer(serializers.Serializer):
         except Exception as e:
             raise serializers.ValidationError(str(e))
 
-        
-        return {
-            "message": f"Lesson {lesson_id} marked as completed for user {user.username} in course {course_id}."
-        }
+        return progress
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    course_details = CourseSerializer(source='course', read_only=True)
     progress = ProgressSerializer(read_only=True)
     
     class Meta:
         model = Enrollment
         fields = [
-            'id', 'course', 'course_details', 'progress', 'enrolled_at', 
+            'id', 'course', 'progress', 'enrolled_at', 
             'device_type', 'traffic_source', 'country_code'
         ]
         read_only_fields = [

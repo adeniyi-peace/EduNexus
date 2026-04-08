@@ -1,4 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import api from "~/utils/api.client";
 import { CurriculumSidebar } from "~/components/dashboard/course_player/CurriculumSidebar";
 import { TabSystem } from "~/components/dashboard/course_player/TabSystem";
 import { VideoTheater } from "~/components/dashboard/course_player/VideoTheater";
@@ -7,7 +9,8 @@ import { QuizContainer } from "~/components/dashboard/quiz/QuizContainer";
 import { ChevronRight, ChevronLeft, Menu, AlertTriangle, RefreshCw } from "lucide-react";
 import { PaywallModal } from "~/components/course/PaywallModal";
 import { CourseCompletionModal } from "~/components/dashboard/course_player/CourseCompletionModal";
-import { useCoursePlayerData, useMarkLessonComplete } from "~/hooks/useCoursePlayerData";
+import { useCoursePlayerData, useMarkLessonComplete, useEnrollmentData } from "~/hooks/useCoursePlayerData";
+import { useUserContext } from "~/hooks/useUserContext";
 import type { PlayerLesson } from "~/types/course";
 
 interface CoursePlayerProps {
@@ -19,17 +22,17 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
     // ---- DATA FETCHING ----
     const { data, isLoading, isError, refetch } = useCoursePlayerData(courseId);
     const markComplete = useMarkLessonComplete(courseId);
+    const { user } = useUserContext();
 
     // Flatten all lessons across modules for sequential navigation
     const allLessons = useMemo(() =>
         data?.modules.flatMap(m => m.lessons) ?? [],
     [data]);
 
-    const isEnrolled = data?.isEnrolled ?? false;
+    const isEnrolled = data?.isEnrolled || (user && data?.instructor?.id === user.id) || false;
 
     // ---- LESSON STATE ----
     const [currentLesson, setCurrentLesson] = useState<PlayerLesson | null>(null);
-    const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
     const [showPaywall, setShowPaywall] = useState(false);
     const [showCompletionModal, setShowCompletionModal] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -38,6 +41,12 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
     // UI States
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isTabExpanded, setIsTabExpanded] = useState(false);
+    
+    const { data: enrollmentData } = useEnrollmentData(courseId, !!isEnrolled);
+
+    const completedLessonIds = useMemo(() => {
+        return new Set(enrollmentData?.progress?.completed_lessons || []);
+    }, [enrollmentData?.progress?.completed_lessons]);
 
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -67,21 +76,19 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
         // Mark current lesson as complete
         const moduleId = getModuleForLesson(currentLesson);
         if (moduleId) {
-            markComplete.mutate({ moduleId, lessonId: currentLesson.id });
-        }
-        
-        // Use functional state update with callback logic 
-        setCompletedLessonIds(prev => {
-            const updated = new Set(prev).add(currentLesson.id);
-            if (!nextLesson && isEnrolled) {
-                // If it's the very last lesson and user is enrolled, all is done!
-                // Though we should technically check if `updated.size === allLessons.length`
-                if (updated.size === allLessons.length) {
-                    setShowCompletionModal(true);
+            markComplete.mutate(
+                { moduleId, lessonId: currentLesson.id },
+                {
+                    onSuccess: (updatedProgress) => {
+                        if (!nextLesson && isEnrolled) {
+                            if (updatedProgress.completed_lessons.length === allLessons.length) {
+                                setShowCompletionModal(true);
+                            }
+                        }
+                    }
                 }
-            }
-            return updated;
-        });
+            );
+        }
 
         if (nextLesson) {
             // Guard clause for preview users hitting a paywall
@@ -123,11 +130,6 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
     };
 
     const handleArticleComplete = (lessonId: string) => {
-        const moduleId = currentLesson ? getModuleForLesson(currentLesson) : null;
-        if (moduleId) {
-            markComplete.mutate({ moduleId, lessonId });
-        }
-        setCompletedLessonIds(prev => new Set(prev).add(lessonId));
         playNextLesson();
     };
 
@@ -205,9 +207,7 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
                     ${isTabExpanded ? 'h-0 overflow-hidden' : ''}
                     ${currentLesson.type === 'quiz'
                         ? 'flex-1 overflow-y-auto'
-                        : currentLesson.type === 'article'
-                            ? 'flex-1 overflow-y-auto'
-                            : 'aspect-video max-h-[70vh] lg:flex-1 lg:max-h-[60vh] xl:max-h-[70vh]'
+                        : `aspect-video max-h-[70vh] lg:flex-1 lg:max-h-[60vh] xl:max-h-[70vh] `
                     }`}>
 
                     {currentLesson.type === 'quiz' ? (
@@ -261,7 +261,7 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
                 <CurriculumSidebar
                     modules={data!.modules}
                     allLessons={allLessons}
-                    currentLesson={currentLesson}
+                    currentLesson={currentLesson}                
                     completedLessonIds={completedLessonIds}
                     courseTitle={data!.title}
                     isEnrolled={isEnrolled}

@@ -2,7 +2,7 @@ from django.db import models
 from uuid import uuid4
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
-from django.db.models import Sum, Avg
+from django.db.models import Sum, Avg, Count
 from datetime import timedelta
 
 
@@ -155,11 +155,11 @@ class Progress(models.Model):
 
     @property
     def percentage_complete(self):
-        total_lessons = self.enrollment.course.lessons.count()
-        if total_lessons == 0:
+        total_lessons = self.enrollment.course.modules.aggregate(lessons_count=Count("lessons"))
+        if total_lessons['lessons_count'] == 0:
             return 0
         done_count = self.completed_lessons.count()
-        return (done_count / total_lessons) * 100
+        return (done_count / total_lessons['lessons_count']) * 100
 
 class Review(models.Model):
     student = models.ForeignKey(User, related_name='reviews', on_delete=models.CASCADE)

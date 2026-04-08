@@ -93,7 +93,7 @@ export function ReviewSection({ reviews: initialReviews, courseId, isEnrolled }:
                 </div>
             )}
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-16 items-start">
                 {/* Rating Summary Card */}
                 <div className="lg:col-span-1 space-y-6 sticky top-28">
                     <div className="bg-base-200/50 p-8 rounded-[2.5rem] border border-base-content/5 text-center shadow-inner">
@@ -138,17 +138,24 @@ export function ReviewSection({ reviews: initialReviews, courseId, isEnrolled }:
                 </div>
 
                 {/* Individual Reviews Feed */}
-                <div className="lg:col-span-2 space-y-10">
-                    {reviews.map((review) => (
+                <div className="lg:col-span-2 space-y-10 min-w-0">
+                    {reviews.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center p-8 lg:p-16 bg-base-200/30 rounded-3xl border border-base-content/10 text-center text-base-content/50">
+                            <MessageSquarePlus size={48} className="mb-4 opacity-40" />
+                            <h3 className="text-xl font-bold mb-2">No Reviews Yet</h3>
+                            <p className="max-w-xs text-sm">Be the first to share your learning experience! Your feedback helps others.</p>
+                        </div>
+                    ) : (
+                        reviews.map((review) => (
                         <div key={review.id} className="group">
                             <div className="flex gap-5 items-start mb-4">
                                 <div className="avatar placeholder">
-                                    <div className="bg-neutral text-neutral-content rounded-2xl w-14 shadow-lg group-hover:rotate-3 transition-transform">
-                                        <span className="text-xl font-bold">{review.student.fullName ? review.student.fullName[0] : 'U'}</span>
+                                    <div className="bg-neutral text-neutral-content rounded-2xl w-14 shadow-lg group-hover:rotate-3 transition-transform flex">
+                                        <span className="text-xl font-bold items-center justify-center">{review.student.fullname ? review.student.fullname[0] : 'U'}</span>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <div className="font-black text-lg">{review.student.fullName || "Anonymous"}</div>
+                                    <div className="font-black text-lg">{review.student.fullname || "Anonymous"}</div>
                                     <div className="rating rating-xs">
                                         {[...Array(5)].map((_, i) => (
                                             <input 
@@ -168,13 +175,13 @@ export function ReviewSection({ reviews: initialReviews, courseId, isEnrolled }:
                             <p className="text-base-content/80 leading-relaxed text-lg border-l-4 border-primary/20 pl-6 italic">
                                 "{review.comment}"
                             </p>
-                            <div className="flex items-center gap-4 mt-6 ml-10">
+                            <div className="flex items-center gap-4 mt-6 ml-10 flex-wrap">
                                 <span className="text-xs opacity-40">Was this helpful?</span>
-                                <button className="btn btn-xs btn-ghost border border-base-content/10">Yes</button>
-                                <button className="btn btn-xs btn-ghost border border-base-content/10">No</button>
+                                <button className="btn btn-xs btn-ghost border border-base-content/10 flex-1 sm:flex-none">Yes</button>
+                                <button className="btn btn-xs btn-ghost border border-base-content/10 flex-1 sm:flex-none">No</button>
                             </div>
                         </div>
-                    ))}
+                    )))}
                     
                     {reviews.length > 5 && (
                         <button className="btn btn-block btn-outline border-2 mt-8">

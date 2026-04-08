@@ -94,6 +94,7 @@ export interface UserProfileData {
     id: string;
     firstName: string;
     lastName: string;
+    fullname: string;
     role: "student" | "instructor" | "admin";
     location: string;
     joinedDate: string;

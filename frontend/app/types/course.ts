@@ -1,6 +1,7 @@
 // types/course.ts
 
 import type { User } from "~/utils/db.server";
+import type { UserProfileData } from "./user";
 
 export interface Category {
     id: string;
@@ -136,9 +137,23 @@ export interface Instructor {
     premium_courses_count: string;
 }
 
+export interface EnrollmentData {
+    id: string;
+    course: number;
+    progress?: {
+        percentage_complete: number;
+        last_accessed: string | null;
+        completed_lessons: string[];
+    };
+    enrolled_at: string;
+    device_type?: string;
+    traffic_source?: string;
+    country_code?: string;
+}
+
 export interface Reviews {
     id: number;
-    student: User;
+    student: UserProfileData;
     rating: number;
     comment: string;
     created_at: string;
