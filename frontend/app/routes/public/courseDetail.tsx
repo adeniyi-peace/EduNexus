@@ -65,31 +65,18 @@ export default function CourseLandingPage() {
                         <InstructorBio instructor={course.instructor} />
 
                         
-                        <ReviewSection reviews={course.reviews || []} courseId={course.id} isEnrolled={!!course.isEnrolled} />
                         
                     </div>  
 
                     {/* Right Column: Sticky Enrollment Card */}
-                    {/* Only show enrollment card if NOT enrolled */}
-                    {!course.isEnrolled && (
-                        <aside className="w-full lg:w-[400px]">
-                            <EnrollmentCard course={course} />
-                        </aside>
-                    )}
-
-                    {/* If enrolled, show a progress or "Resume" sidebar */}
-                    {course.isEnrolled && (
-                        <aside className="w-full lg:w-[400px]">
-                            <div className="sticky top-28 card bg-primary text-primary-content shadow-2xl p-8 rounded-3xl">
-                                <h3 className="text-2xl font-black mb-4">Welcome Back!</h3>
-                                <p className="opacity-80 mb-6 font-medium">You are currently enrolled in this course. Continue where you left off.</p>
-                                <Link to={`/courses/${course.id}/learn`} className="btn btn-secondary btn-block shadow-lg">
-                                    Resume Learning
-                                </Link>
-                            </div>
-                        </aside>
-                    )}
+                    <aside className="w-full lg:w-[400px]">
+                        <EnrollmentCard course={course} />
+                    </aside>
                 </div>
+            </div>
+
+            <div className="mx-auto px-4 lg:px-8 mt-12">
+                <ReviewSection reviews={course.reviews || []} courseId={course.id} isEnrolled={!!course.isEnrolled} />
             </div>
         </div>
     );

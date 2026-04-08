@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router";
 import api from "~/utils/api.client";
 import { Heart, Play, FileText, Globe, Award, Infinity, Smartphone } from "lucide-react";
 import { useUserContext } from "~/hooks/useUserContext";
@@ -81,20 +82,31 @@ export function EnrollmentCard({ course }: { course: CourseData }) {
                 </div>
 
                 <div className="space-y-4">
-                    <button 
-                        onClick={() => handleEnrollment(courseId, price)}
-                        disabled={isEnrolling}
-                        className="btn btn-primary btn-lg w-full shadow-lg shadow-primary/20 font-black rounded-2xl h-16"
-                    >
-                        {isEnrolling ? "Processing..." : (price == 0 || !price) ? "Enroll for Free" : "Buy Now"}
-                    </button>
-                    <button
-                        onClick={toggleWishlist}
-                        className={`btn btn-lg w-full gap-3 h-16 rounded-2xl border-2 ${isWishlisted ? 'btn-secondary text-secondary-content' : 'btn-outline'}`}
-                    >
-                        <Heart className={isWishlisted ? "fill-current" : ""} size={20} />
-                        {isWishlisted ? "In Wishlist" : "Add to Wishlist"}
-                    </button>
+                    {course.isEnrolled ? (
+                        <Link 
+                            to={`/dashboard/courses/${courseId}/player`}
+                            className="btn btn-primary btn-lg w-full shadow-lg shadow-primary/20 font-black rounded-2xl h-16"
+                        >
+                            Resume Course
+                        </Link>
+                    ) : (
+                        <>
+                            <button 
+                                onClick={() => handleEnrollment(courseId, price)}
+                                disabled={isEnrolling}
+                                className="btn btn-primary btn-lg w-full shadow-lg shadow-primary/20 font-black rounded-2xl h-16"
+                            >
+                                {isEnrolling ? "Processing..." : (price == 0 || !price) ? "Enroll for Free" : "Buy Now"}
+                            </button>
+                            <button
+                                onClick={toggleWishlist}
+                                className={`btn btn-lg w-full gap-3 h-16 rounded-2xl border-2 ${isWishlisted ? 'btn-secondary text-secondary-content' : 'btn-outline'}`}
+                            >
+                                <Heart className={isWishlisted ? "fill-current" : ""} size={20} />
+                                {isWishlisted ? "In Wishlist" : "Add to Wishlist"}
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 <div className="mt-8 space-y-4">
