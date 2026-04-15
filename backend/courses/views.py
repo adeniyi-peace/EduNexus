@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from drf_spectacular.types import OpenApiTypes
 from django.http import FileResponse
 from django.utils import timezone
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
@@ -118,7 +118,7 @@ class CourseViewSet(viewsets.ModelViewSet):
             permission_classes = [IsInstructor, IsCourseOwner]
         else:
             # Fallback for any other actions
-            permission_classes = [permissions.IsAuthenticated]
+            permission_classes = [IsAuthenticated]
 
         return [permission() for permission in permission_classes]
 
@@ -132,6 +132,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete course module", tags=['Instructor Actions']),
 )
 class ModuleViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsInstructorOrReadOnly, IsCourseOwner]
     serializer_class = ModuleSerializer
     queryset = Module.objects.all()
 
@@ -159,6 +160,7 @@ class ModuleViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete module lesson", tags=['Instructor Actions']),
 )
 class LessonViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsInstructorOrReadOnly, IsCourseOwner]
     serializer_class = LessonSerializer
     
 
@@ -205,6 +207,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 
 
 class ReOrderView(GenericAPIView):
+    permission_classes = [IsInstructor]
     serializer_class= LessonSerializer
     queryset = Lesson.objects.all()
 
@@ -274,6 +277,7 @@ class ReOrderView(GenericAPIView):
     destroy=extend_schema(summary="Delete lesson resource", tags=['Instructor Actions']),
 )
 class ResourceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsInstructorOrReadOnly, IsCourseOwner]
     serializer_class = ResourceSerializer
     queryset = Resource.objects.all()
 
@@ -309,6 +313,7 @@ class ResourceViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Remove course from wishlist", tags=['Students']),
 )
 class WishlistViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsStudent]
     serializer_class = WishlistSerializer
     http_method_names = ['get', 'post', 'delete']
 
@@ -328,6 +333,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
     create=extend_schema(summary="Add a review for a course", tags=['Students']),
 )
 class ReviewViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = ReviewSerializer
     http_method_names = ['get', 'post', 'patch']
 
@@ -384,6 +390,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete a note", tags=['Students']),
 )
 class NoteViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsStudent]
     serializer_class = NoteSerializer
     http_method_names = ['get', 'post', 'put', 'delete']
 
@@ -403,6 +410,7 @@ class NoteViewSet(viewsets.ModelViewSet):
             serializer.save(student=self.request.user)
 
 class LessonCompletionView(GenericAPIView):
+    permission_classes = [IsStudent]
     serializer_class = LessonCompletionSerializer
 
     @extend_schema(
@@ -439,6 +447,7 @@ class LessonCompletionView(GenericAPIView):
     by_course=extend_schema(summary="Get course enrollment details", tags=['Students']),
 )
 class EnrollmentViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsStudent]
     serializer_class = EnrollmentSerializer
     
     # Exclude PUT/DELETE as enrollments are typically final (or handled elsewhere)
@@ -485,6 +494,7 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
     download=extend_schema(summary="Download certificate", tags=['Students']),
 )
 class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsStudent]
     serializer_class = CertificateSerializer
 
     def get_queryset(self):
@@ -521,6 +531,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     destroy=extend_schema(summary="Delete quiz question", tags=['Instructor Actions']),
 )
 class QuizQuestionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsInstructorOrReadOnly, IsCourseOwner]
     serializer_class = QuizQuestionSerializer
     queryset = QuizQuestion.objects.all()
 
@@ -546,6 +557,7 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete quiz option", tags=['Instructor Actions']),
 )
 class QuizOptionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsInstructorOrReadOnly, IsCourseOwner]
     serializer_class = QuizOptionSerializer
     queryset = QuizOption.objects.all()
 
@@ -571,6 +583,7 @@ class QuizOptionViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete a question", tags=['Q&A']),
 )
 class QuestionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = QuestionSerializer
     
     def get_queryset(self):
@@ -604,6 +617,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete an answer", tags=['Q&A']),
 )
 class AnswerViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AnswerSerializer
     
     def get_queryset(self):

@@ -23,18 +23,24 @@ class IsInstructorOrReadOnly(permissions.BasePermission):
 class IsCourseOwner(permissions.BasePermission):
     """
     Object-level permission to only allow instructors to edit THEIR OWN courses.
+    Handles Courses, Modules, Lessons, Resources, QuizQuestions, and QuizOptions.
     """
     def has_object_permission(self, request, view, obj):
         # SAFE_METHODS are GET, HEAD or OPTIONS.
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Check if the object is a Course or has a course attribute
-        # This handles Courses, Modules, and Lessons
         if hasattr(obj, 'instructor'):
             return obj.instructor == request.user
         if hasattr(obj, 'course'):
             return obj.course.instructor == request.user
+        if hasattr(obj, 'module'):
+            return obj.module.course.instructor == request.user
+        if hasattr(obj, 'lesson'):
+            return obj.lesson.module.course.instructor == request.user
+        if hasattr(obj, 'question'):
+            if hasattr(obj.question, 'lesson'): # QuizOption or Answer
+                return obj.question.lesson.module.course.instructor == request.user
             
         return False
 

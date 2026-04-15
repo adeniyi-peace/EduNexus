@@ -5,14 +5,14 @@ from .models import Notification, Achievement, UserAchievement
 from .serializers import NotificationSerializer, AchievementSerializer, UserAchievementSerializer
 from courses.models import Certificate, Enrollment
 from drf_spectacular.utils import extend_schema, extend_schema_view
-
+from .permissions import IsStudent
 
 class StudentDashboardView(APIView):
     """
     Aggregated student dashboard endpoint.
     Returns notifications, achievements, and computed stats for the authenticated student.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsStudent]
 
     @extend_schema(
         summary="Get student dashboard data",
@@ -74,7 +74,7 @@ class AchievementViewSet(viewsets.ReadOnlyModelViewSet):
 )
 class UserAchievementViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserAchievementSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsStudent]
 
     def get_queryset(self):
         return UserAchievement.objects.filter(user=self.request.user)
