@@ -1,24 +1,35 @@
+// app/components/chat/ChatContainer.tsx
 import { useState } from "react";
+import { Menu } from "lucide-react";
 import { ChatSidebar } from "./ChatSidebar";
 import { ChatWindow } from "./ChatWindow";
+import type { ActiveRoom } from "~/types/chat";
 
 export const ChatContainer = () => {
-    const [activeRoom, setActiveRoom] = useState("course-general");
-    const [chatTitle, setChatTitle] = useState("Global Course Discussion");
+    const [activeRoom, setActiveRoom] = useState<ActiveRoom | null>(null);
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-full bg-slate-950 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-            {/* Sidebar: Navigation */}
-            <ChatSidebar 
-                activeRoom={activeRoom} 
-                onSelect={(id, title) => {
-                    setActiveRoom(id);
-                    setChatTitle(title);
-                }} 
+        <div className="flex h-[calc(100vh-6rem)] bg-base-100 border border-base-content/5 rounded-2xl overflow-hidden shadow-xl">
+            {/* Mobile sidebar toggle */}
+            <button
+                onClick={() => setIsMobileSidebarOpen(true)}
+                className="lg:hidden fixed bottom-6 left-6 z-30 btn btn-primary btn-circle shadow-xl"
+                aria-label="Open chat sidebar"
+            >
+                <Menu size={20} />
+            </button>
+
+            {/* Sidebar */}
+            <ChatSidebar
+                activeRoom={activeRoom}
+                onSelect={setActiveRoom}
+                isMobileOpen={isMobileSidebarOpen}
+                onMobileClose={() => setIsMobileSidebarOpen(false)}
             />
 
-            {/* Main Content: The Chat Stream */}
-            <ChatWindow roomName={activeRoom} title={chatTitle} />
+            {/* Chat Window */}
+            <ChatWindow activeRoom={activeRoom} />
         </div>
     );
 };

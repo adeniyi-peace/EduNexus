@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-b)ai68p7bb_^@8j%uvsmkmf^fg(-4td-!2hw)#gx6debam3-(@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':(
@@ -82,6 +82,7 @@ SPECTACULAR_SETTINGS = {
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',  # Must be first — patches runserver to use ASGI
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -111,13 +112,19 @@ INSTALLED_APPS = [
 
     "phonenumber_field",
 
+    'channels',
+
     "authentication",
     "courses",
     "user",
     "payments",
+    "chat",
 
     # for site telemetry
     'django_user_agents',
+
+    # for file removal after changes
+    "django_cleanup.apps.CleanupConfig",
 ]
 
 SITE_ID = 1
@@ -158,6 +165,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+ASGI_APPLICATION = 'backend.asgi.application'
+
+# Channel Layers — use InMemoryChannelLayer for development
+# For production, switch to Redis:
+#   pip install channels_redis
+#   CHANNEL_LAYERS = { 'default': { 'BACKEND': 'channels_redis.core.RedisChannelLayer', 'CONFIG': { 'hosts': [('127.0.0.1', 6379)] } } }
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
+}
 
 
 # Database

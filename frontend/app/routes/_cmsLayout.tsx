@@ -14,7 +14,8 @@ import {
     Eye,
     PlusCircle,
     Sun,
-    Moon
+    Moon,
+    MessageSquare
 } from "lucide-react";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import ProtectedRoute from "~/components/ProtectedRoute";
@@ -42,6 +43,7 @@ export default function CMSLayout() {
         { to: "/cms/builder", label: "Course Builder", icon: <Layers size={20} /> },
         { to: "/cms/library", label: "Asset Library", icon: <FolderKanban size={20} /> },
         { to: "/cms/students", label: "User Engine", icon: <Users size={20} /> },
+        { to: "/cms/chat", label: "Messages", icon: <MessageSquare size={20} /> },
         { to: "/cms/analytics", label: "Performance", icon: <BarChart3 size={20} /> },
     ];
 

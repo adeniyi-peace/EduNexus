@@ -57,10 +57,11 @@ export default function DashboardLayout() {
     const navLinks = [
         { to: "/dashboard", label: "Overview", icon: <Icons.Overview /> },
         { to: "/dashboard/courses", label: "My Courses", icon: <Icons.Courses /> },
+        { to: "/dashboard/chat", label: "Messages", icon: <Icons.Forum /> },
         { to: "/dashboard/achievements", label: "Achievements", icon: <Icons.Achievements /> },
         { to: "/dashboard/certificates", label: "Certificates", icon: <Icons.Certificates /> },
         { to: "/dashboard/wishlist", label: "My Wishlist", icon: <Icons.Wishlist /> },
-        { to: "/dashboard/community", label: "Nexus Forum", icon: <Icons.Forum /> },
+        { to: "/dashboard/community", label: "Nexus Forum", icon: <Icons.Overview /> },
     ];
 
     const SidebarContent = () => (

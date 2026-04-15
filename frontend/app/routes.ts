@@ -46,6 +46,7 @@ export default [
         route("dashboard/community", "routes/dashboard/CommunityHub.tsx"),
         route("/dashboard/achievements", "routes/dashboard/AchievementsPage.tsx"),
         route("dashboard/certificates", "routes/dashboard/certificates.tsx"),
+        route("dashboard/chat", "routes/dashboard/ChatPage.tsx"),
 
 
         // Shared components with Unique IDs
@@ -65,6 +66,7 @@ export default [
         route("/cms/course/:id/reviews", "routes/cms/CourseReviewsPage.tsx"),
         route("/cms/reviews", "routes/cms/AllCourseReviewsPage.tsx"),
         route("/cms/analytics", "routes/cms/InstructorAnalyticsPage.tsx"),
+        route("/cms/chat", "routes/cms/CMSChatPage.tsx"),
 
         // Shared components with Unique IDs
         route("cms/profile", "routes/user/ProfilePage.tsx", { id: "cms-profile" }),
