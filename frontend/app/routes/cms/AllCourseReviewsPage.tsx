@@ -2,6 +2,13 @@ import { Link } from "react-router";
 import { ChevronLeft, Star, MessageSquare, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 import { useAllCourseReviews } from "~/hooks/instructor/useAllCourseReviews";
 
+export const meta = () => {
+  return [
+    { title: "All Course Reviews | EduNexus" },
+    { name: "description", content: "All Course Reviews Page" },
+  ];
+};
+
 export default function AllCourseReviewsPage() {
     const { data, isLoading, isError, refetch } = useAllCourseReviews();
     const courses = data?.courses || [];

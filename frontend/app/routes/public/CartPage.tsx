@@ -4,6 +4,13 @@ import { CartItem } from "~/components/cart/CartItem";
 import { CartSummary } from "~/components/cart/CartSummary";
 import { useCart } from "~/hooks/CartContext";
 
+export const meta = () => {
+  return [
+    { title: "Cart | EduNexus" },
+    { name: "description", content: "Cart Page" },
+  ];
+};
+
 export default function CartPage() {
     const { cart, removeFromCart, clearCart, getTotalPrice } = useCart();
     const totalPrice = getTotalPrice();

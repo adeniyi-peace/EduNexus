@@ -6,6 +6,13 @@ import { Link, useLoaderData } from "react-router";
 import api from "~/utils/api.client";
 import type { CourseData } from "~/types/course";
 
+export const meta = () => {
+  return [
+    { title: "EduNexus" },
+    { name: "description", content: "Welcome to EduNexus, the best place to learn." },
+  ];
+};
+
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("search") || "";

@@ -15,6 +15,13 @@ import {
 import { useUserContext } from "~/hooks/useUserContext";
 import { useSocialAuth } from "~/hooks/useSocialAuth";
 
+export const meta = () => {
+  return [
+    { title: "Register | EduNexus" },
+    { name: "description", content: "Register Page" },
+  ];
+};
+
 const registerSchema = z.object({
     firstName: z.string()
         .min(2, "First name is too short.")

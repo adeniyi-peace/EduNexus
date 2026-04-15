@@ -3,6 +3,13 @@ import { useParams, Link, useNavigate } from "react-router";
 import { useUserContext } from "~/hooks/useUserContext";
 import api from "~/utils/api.client";
 
+export const meta = () => {
+  return [
+    { title: "Activate Account | EduNexus" },
+    { name: "description", content: "Activate Account Page" },
+  ];
+};
+
 export default function ActivateAccount() {
     const { uid, token } = useParams();
     const navigate = useNavigate();

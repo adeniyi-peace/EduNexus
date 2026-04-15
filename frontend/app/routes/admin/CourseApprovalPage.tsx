@@ -7,6 +7,13 @@ import { usePendingApprovals, useApproveCourse, useRejectCourse } from "~/hooks/
 import { AdminTableSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
 import { ShieldCheck } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Course Approval | EduNexus" },
+    { name: "description", content: "Course Approval Page" },
+  ];
+};
+
 export default function CourseApprovalPage() {
     const { data, isLoading, isError, refetch } = usePendingApprovals();
     const approveMutation = useApproveCourse();

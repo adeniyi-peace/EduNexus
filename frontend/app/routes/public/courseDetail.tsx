@@ -7,6 +7,13 @@ import { ReviewSection } from "~/components/course/ReviewSection";
 import { EnrollmentCard } from "~/components/course/EnrollmentCard";
 import type { CourseData } from "~/types/course";
 
+export const meta = () => {
+  return [
+    { title: "Course Detail | EduNexus" },
+    { name: "description", content: "Course Detail Page" },
+  ];
+};
+
 export async function clientLoader({ params }: { params: { id: string } }) {
     try {
         // Placeholder for future Django API call

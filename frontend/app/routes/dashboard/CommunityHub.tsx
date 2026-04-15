@@ -1,5 +1,12 @@
 import { ChatContainer } from "~/components/chat/ChatContainer";
 
+export const meta = () => {
+  return [
+    { title: "Community Hub | EduNexus" },
+    { name: "description", content: "Community Hub Page" },
+  ];
+};
+
 export default function CommunityPage() {
     return (
         // Max height of the screen minus the navbar height (80px)

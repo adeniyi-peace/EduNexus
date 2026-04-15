@@ -15,6 +15,13 @@ import {
 import { useInstructorDashboard } from "~/hooks/instructor/useInstructorDashboard";
 import type { InstructorDashboardData } from "~/types/instructor";
 
+export const meta = () => {
+  return [
+    { title: "Instructor Dashboard | EduNexus" },
+    { name: "description", content: "Instructor Dashboard Page" },
+  ];
+};
+
 const IconMap: Record<string, React.ReactNode> = {
     DollarSign: <DollarSign size={18} />,
     Users: <Users size={18} />,

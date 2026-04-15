@@ -17,6 +17,13 @@ import { StudentDrawer } from "~/components/cms/student/StudentDrawer";
 import { useCourseStudents } from "~/hooks/instructor/useCourseStudents";
 import { useMessageAllStudents, useMessageStudent } from "~/hooks/instructor/useMessageStudents";
 
+export const meta = () => {
+  return [
+    { title: "Students | EduNexus" },
+    { name: "description", content: "Students Page" },
+  ];
+};
+
 export default function CourseStudentManager() {
     const { id: courseId } = useParams();
     const navigate = useNavigate();

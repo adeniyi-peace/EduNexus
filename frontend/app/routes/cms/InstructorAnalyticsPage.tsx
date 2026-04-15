@@ -28,6 +28,13 @@ const EMPTY_QUICK_STATS = {
     completionRate: 0,
 };
 
+export const meta = () => {
+  return [
+    { title: "Instructor Analytics | EduNexus" },
+    { name: "description", content: "Instructor Analytics Page" },
+  ];
+};
+
 export default function InstructorAnalyticsPage() {
     const { data, isLoading, isError, refetch } = useInstructorAnalytics();
 

@@ -8,6 +8,13 @@ import { AdminStatSkeleton, AdminTableSkeleton, AdminErrorState } from "~/compon
 import { DeviceStats } from "~/components/admin/analytics/DeviceStats";
 import { TrafficSources } from "~/components/admin/analytics/TrafficSources";
 
+export const meta = () => {
+  return [
+    { title: "Analytics | EduNexus" },
+    { name: "description", content: "Analytics Page" },
+  ];
+};
+
 export default function AnalyticsPage() {
     const { data, isLoading, isError, refetch } = useAdminAnalytics();
 

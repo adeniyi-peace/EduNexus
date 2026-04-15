@@ -6,6 +6,13 @@ import { TransactionHistory } from "~/components/admin/revenue/TransactionHistor
 import { useAdminFinance } from "~/hooks/admin/useAdminFinance";
 import { AdminStatSkeleton, AdminTableSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
 
+export const meta = () => {
+  return [
+    { title: "Finance | EduNexus" },
+    { name: "description", content: "Finance Page" },
+  ];
+};
+
 export default function FinancePage() {
     const [txPage, setTxPage] = useState(1);
     const { data, isLoading, isError, refetch } = useAdminFinance({ page: txPage, page_size: 10 });

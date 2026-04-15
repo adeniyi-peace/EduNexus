@@ -23,6 +23,13 @@ const transformNotification = (data: any): NotificationItem => ({
     }
 });
 
+export const meta = () => {
+  return [
+    { title: "Notifications | EduNexus" },
+    { name: "description", content: "Notifications Page" },
+  ];
+};
+
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [filter, setFilter] = useState<NotificationType | 'all'>('all');

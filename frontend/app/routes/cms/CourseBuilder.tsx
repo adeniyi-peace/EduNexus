@@ -14,6 +14,13 @@ import { SettingsModal } from "~/components/cms/builder/SettingsModal";
 import { CertificateEditor } from "~/components/cms/builder/CertificateEditor";
 import { Award } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Course Builder | EduNexus" },
+    { name: "description", content: "Course Builder Page" },
+  ];
+};
+
 const INITIAL_DATA: CourseData = { 
     id: "new-course", 
     title: "New Course Shell", 

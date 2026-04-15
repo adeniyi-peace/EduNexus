@@ -5,6 +5,13 @@ import { useStudentDashboard } from "~/hooks/student/useStudentDashboard";
 import { useUserContext } from "~/hooks/useUserContext";
 import type { DashboardNotification, DashboardAchievement, DashboardStats } from "~/types/students";
 
+export const meta = () => {
+  return [
+    { title: "Dashboard | EduNexus" },
+    { name: "description", content: "Dashboard Page" },
+  ];
+};
+
 // --- SVG COMPONENTS ---
 const DashboardIcons = {
     Mentor: () => (

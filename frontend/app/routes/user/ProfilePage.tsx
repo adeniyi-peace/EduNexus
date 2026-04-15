@@ -4,6 +4,13 @@ import { BioSection } from "~/components/user/profile/BioSection";
 import { SocialLinks } from "~/components/user/profile/SocialLinks";
 import { Save, Loader2 } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Profile | EduNexus" },
+    { name: "description", content: "Profile Page" },
+  ];
+};
+
 export default function ProfilePage() {
     // Initial State (Mocking data from loader)
     const [isLoading, setIsLoading] = useState(false);

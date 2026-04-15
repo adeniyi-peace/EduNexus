@@ -3,6 +3,13 @@ import { useSearchParams, Link } from "react-router";
 import { Check, ArrowRight, Download, PlayCircle, ShieldCheck } from "lucide-react";
 import confetti from "canvas-confetti";
 
+export const meta = () => {
+  return [
+    { title: "Checkout Success | EduNexus" },
+    { name: "description", content: "Checkout Success Page" },
+  ];
+};
+
 export default function CheckoutSuccessPage() {
     const [searchParams] = useSearchParams();
     const reference = searchParams.get("reference") || "N/A";

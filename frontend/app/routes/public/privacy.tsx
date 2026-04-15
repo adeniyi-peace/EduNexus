@@ -11,6 +11,13 @@ import {
     ArrowRight
 } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Privacy Policy | EduNexus" },
+    { name: "description", content: "Privacy Policy Page" },
+  ];
+};
+
 export default function PrivacyPolicy() {
     return (
         <div className="bg-base-100 min-h-screen">

@@ -13,6 +13,13 @@ import type { Route } from "./+types/courses";
 import api from "~/utils/api.client";
 import type { CourseData } from "~/types/course";
 
+export const meta = () => {
+  return [
+    { title: "Courses | EduNexus" },
+    { name: "description", content: "Courses Page" },
+  ];
+};
+
 // ... loader function stays exactly the same as your logic is perfect ...
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {

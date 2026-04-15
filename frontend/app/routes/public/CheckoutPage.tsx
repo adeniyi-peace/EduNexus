@@ -6,6 +6,13 @@ import { PaystackTrigger } from "~/components/cart/PaystackButton";
 import ProtectedRoute from "~/components/ProtectedRoute";
 import { useUserContext } from "~/hooks/useUserContext";
 
+export const meta = () => {
+  return [
+    { title: "Checkout | EduNexus" },
+    { name: "description", content: "Checkout Page" },
+  ];
+};
+
 export default function CheckoutPage() {
     const { cart, clearCart, getTotalPrice } = useCart();
     const { user } = useUserContext();

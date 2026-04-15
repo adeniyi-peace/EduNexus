@@ -12,6 +12,13 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "~/components/ui/SectionHeader";
 
+export const meta = () => {
+  return [
+    { title: "Support | EduNexus" },
+    { name: "description", content: "Support Page" },
+  ];
+};
+
 export default function SupportPage() {
     const [searchQuery, setSearchQuery] = useState("");
 

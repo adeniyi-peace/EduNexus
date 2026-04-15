@@ -3,6 +3,13 @@ import { AchievementGallery } from "~/components/dashboard/achievement/Achieveme
 import { useStudentAchievements, useStudentCertificates } from "~/hooks/student/useStudentAchievements";
 import { useStudentDashboard } from "~/hooks/student/useStudentDashboard";
 
+export const meta = () => {
+  return [
+    { title: "Achievements | EduNexus" },
+    { name: "description", content: "Achievements Page" },
+  ];
+};
+
 export default function AchievementsPage() {
     const { data: achievements = [], isLoading: achLoading } = useStudentAchievements();
     const { data: certificates = [], isLoading: certLoading } = useStudentCertificates();

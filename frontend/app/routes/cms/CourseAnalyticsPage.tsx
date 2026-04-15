@@ -16,6 +16,13 @@ import { StudentDistribution } from "~/components/cms/analytics/StudentDistribut
 import { RatingAnalysis } from "~/components/cms/analytics/RatingAnalysis";
 import { useCourseAnalytics } from "~/hooks/instructor/useCourseAnalytics";
 
+export const meta = () => {
+  return [
+    { title: "Course Analytics | EduNexus" },
+    { name: "description", content: "Course Analytics Page" },
+  ];
+};
+
 export default function CourseAnalyticsPage() {
     const { id } = useParams();
     const { data, isLoading, isError, refetch } = useCourseAnalytics(id);

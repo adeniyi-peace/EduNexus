@@ -8,6 +8,13 @@ import { CourseRow } from "~/components/cms/library/CourseRow";
 import { useInstructorLibrary, useDeleteCourse } from "~/hooks/instructor/useInstructorLibrary";
 import type { InstructorLibraryCourse } from "~/types/instructor";
 
+export const meta = () => {
+  return [
+    { title: "My Assets | EduNexus" },
+    { name: "description", content: "My Assets Page" },
+  ];
+};
+
 export default function InstructorLibrary() {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");

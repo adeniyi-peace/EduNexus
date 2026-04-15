@@ -5,6 +5,13 @@ import { StudentTable } from "~/components/cms/student/StudentTable";
 import { StudentDrawer } from "~/components/cms/student/StudentDrawer";
 import { useGlobalStudents } from "~/hooks/instructor/useGlobalStudents";
 
+export const meta = () => {
+  return [
+    { title: "All Students | EduNexus" },
+    { name: "description", content: "All Students Page" },
+  ];
+};
+
 export default function GlobalStudentDirectory() {
     const { data: students, isLoading, isError, refetch } = useGlobalStudents();
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);

@@ -3,6 +3,13 @@ import { Link } from "react-router";
 import { z } from "zod";
 import { useUserContext } from "~/hooks/useUserContext";
 
+export const meta = () => {
+  return [
+    { title: "Forgot Password | EduNexus" },
+    { name: "description", content: "Forgot Password Page" },
+  ];
+};
+
 // --- VALIDATION SCHEMA ---
 const forgotPasswordSchema = z.object({
     email: z.string().email("Please enter a valid recovery address."),

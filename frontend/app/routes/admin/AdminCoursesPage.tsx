@@ -6,6 +6,13 @@ import { BulkActionBar } from "~/components/admin/courses/BulkActionBar";
 import { useAdminCourses, useDeleteCourse, type CourseFilters } from "~/hooks/admin/useAdminCourses";
 import { AdminTableSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
 
+export const meta = () => {
+  return [
+    { title: "Admin Courses | EduNexus" },
+    { name: "description", content: "Admin Courses Page" },
+  ];
+};
+
 export default function AdminCoursesPage() {
     const [selectedCount, setSelectedCount] = useState(0);
     const [filters, setFilters] = useState<CourseFilters>({ page: 1, page_size: 15 });

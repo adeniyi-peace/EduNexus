@@ -10,6 +10,13 @@ import {
     ShieldCheck
 } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Contact Us | EduNexus" },
+    { name: "description", content: "Contact Page" },
+  ];
+};
+
 export default function ContactPage() {
     const navigation = useNavigation();
     const isSubmitting = navigation.state === "submitting";

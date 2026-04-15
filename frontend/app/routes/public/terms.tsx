@@ -8,6 +8,13 @@ import {
     ExternalLink
 } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Terms of Service | EduNexus" },
+    { name: "description", content: "Terms of Service Page" },
+  ];
+};
+
 export default function TermsOfService() {
     const sections = [
         { id: "acceptance", title: "1. Acceptance of Terms", icon: <Gavel size={14} /> },

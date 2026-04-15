@@ -1,5 +1,12 @@
 import { Hammer, Clock, ArrowRight } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Maintenance | EduNexus" },
+    { name: "description", content: "Maintenance Page" },
+  ];
+};
+
 export default function MaintenancePage() {
     return (
         <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-6 text-center">

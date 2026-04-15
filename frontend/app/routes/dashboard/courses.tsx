@@ -4,6 +4,13 @@ import { CourseCard } from "~/components/ui/CourseCard";
 import { CourseFilters } from "~/components/course/CourseFilters";
 import api from "~/utils/api.client";
 
+export const meta = () => {
+  return [
+    { title: "My Courses | EduNexus" },
+    { name: "description", content: "My Courses Page" },
+  ];
+};
+
 interface PaginatedResponse {
     count: number;
     next: string | null;

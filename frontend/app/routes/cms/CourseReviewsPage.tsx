@@ -2,6 +2,13 @@ import { useParams, Link } from "react-router";
 import { ChevronLeft, Star, MessageSquare, Filter, MoreHorizontal, Reply, Loader2, RefreshCw } from "lucide-react";
 import { useCourseReviews } from "~/hooks/instructor/useCourseReviews";
 
+export const meta = () => {
+  return [
+    { title: "Course Reviews | EduNexus" },
+    { name: "description", content: "Course Reviews Page" },
+  ];
+};
+
 export default function CourseReviewsPage() {
     const { id } = useParams();
     const { data, isLoading, isError, refetch } = useCourseReviews(id);

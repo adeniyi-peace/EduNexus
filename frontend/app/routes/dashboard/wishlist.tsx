@@ -4,6 +4,13 @@ import api from "~/utils/api.client";
 import { CourseCard } from "~/components/ui/CourseCard";
 import { Heart, BookOpen, ArrowRight } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "My Wishlist | EduNexus" },
+    { name: "description", content: "My Wishlist Page" },
+  ];
+};
+
 export default function WishlistPage() {
     const [wishlistItems, setWishlistItems] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);

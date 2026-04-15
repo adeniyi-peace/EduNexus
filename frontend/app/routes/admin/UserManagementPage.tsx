@@ -5,6 +5,13 @@ import { UserTable } from "~/components/admin/user_management/UserTable";
 import { useAdminUsers, useUpdateUser, type UserFilters } from "~/hooks/admin/useAdminUsers";
 import { AdminTableSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
 
+export const meta = () => {
+  return [
+    { title: "User Management | EduNexus" },
+    { name: "description", content: "User Management Page" },
+  ];
+};
+
 export default function UserManagementPage() {
     const [filters, setFilters] = useState<UserFilters>({
         page: 1,

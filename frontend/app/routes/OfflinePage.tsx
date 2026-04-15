@@ -1,5 +1,12 @@
 import { WifiOff, RefreshCw } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Offline | EduNexus" },
+    { name: "description", content: "Offline Page" },
+  ];
+};
+
 export default function OfflinePage() {
     return (
         <div className="min-h-screen bg-base-100 flex flex-col items-center justify-center p-6 text-center">

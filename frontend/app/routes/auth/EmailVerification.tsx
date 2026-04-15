@@ -3,6 +3,13 @@ import { Link } from "react-router";
 import { useUserContext } from "~/hooks/useUserContext";
 import { Mail, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
 
+export const meta = () => {
+  return [
+    { title: "Resend Activation | EduNexus" },
+    { name: "description", content: "Resend Activation Page" },
+  ];
+};
+
 export default function ResendActivation() {
     const { resendActivation, isLoading, error, clearError } = useUserContext();
     const [email, setEmail] = useState("");

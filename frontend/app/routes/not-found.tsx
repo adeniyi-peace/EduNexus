@@ -1,5 +1,12 @@
 import { ErrorLayout } from "~/components/ui/ErrorLayout";
 
+export const meta = () => {
+  return [
+    { title: "Not Found | EduNexus" },
+    { name: "description", content: "Not Found Page" },
+  ];
+};
+
 export default function NotFound() {
     return (
         <ErrorLayout 

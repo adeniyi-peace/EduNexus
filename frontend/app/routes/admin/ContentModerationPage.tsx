@@ -7,6 +7,13 @@ import { ModerationCard } from "~/components/admin/moderation/ModerationCard";
 import { useContentReports, useDismissReport, useRemoveReview } from "~/hooks/admin/useContentReports";
 import { AdminTableSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
 
+export const meta = () => {
+  return [
+    { title: "Content Moderation | EduNexus" },
+    { name: "description", content: "Content Moderation Page" },
+  ];
+};
+
 export default function ContentModerationPage() {
     const { data, isLoading, isError, refetch } = useContentReports();
     const dismissMutation = useDismissReport();

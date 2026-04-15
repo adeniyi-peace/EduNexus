@@ -5,6 +5,13 @@ import type { Certificate } from "~/types/course";
 import { format } from "date-fns";
 import { Link } from "react-router";
 
+export const meta = () => {
+  return [
+    { title: "Certificates | EduNexus" },
+    { name: "description", content: "Certificates Page" },
+  ];
+};
+
 export default function CertificatesPage() {
     const [certificates, setCertificates] = useState<Certificate[]>([]);
     const [isLoading, setIsLoading] = useState(true);

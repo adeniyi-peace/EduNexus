@@ -3,6 +3,13 @@ import { Link, useSearchParams } from "react-router";
 import { z } from "zod";
 import { useUserContext } from "~/hooks/useUserContext";
 
+export const meta = () => {
+  return [
+    { title: "Reset Password | EduNexus" },
+    { name: "description", content: "Reset Password Page" },
+  ];
+};
+
 // --- VALIDATION SCHEMA ---
 const resetSchema = z.object({
     password: z.string()

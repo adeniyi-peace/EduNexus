@@ -9,6 +9,13 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "~/components/ui/SectionHeader";
 
+export const meta = () => {
+  return [
+    { title: "About Us | EduNexus" },
+    { name: "description", content: "About Page" },
+  ];
+};
+
 export default function AboutPage() {
     const values = [
         {

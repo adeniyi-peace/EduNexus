@@ -7,6 +7,13 @@ import { SiteConfig } from "~/components/admin/settings/SiteConfig";
 import { useAdminSettings, useSaveAdminSettings } from "~/hooks/admin/useAdminSettings";
 import { AdminTableSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
 
+export const meta = () => {
+  return [
+    { title: "Settings | EduNexus" },
+    { name: "description", content: "Settings Page" },
+  ];
+};
+
 export default function AdminSettingsPage() {
     const { data, isLoading, isError, refetch } = useAdminSettings();
     const saveMutation = useSaveAdminSettings();

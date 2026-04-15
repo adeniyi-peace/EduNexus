@@ -10,6 +10,13 @@ import {
 import { SectionHeader } from "~/components/ui/SectionHeader";
 import { Link } from "react-router";
 
+export const meta = () => {
+  return [
+    { title: "How It Works | EduNexus" },
+    { name: "description", content: "How It Works Page" },
+  ];
+};
+
 export default function HowItWorks() {
     const steps = [
         { 

@@ -4,6 +4,13 @@ import { z } from "zod";
 import { useUserContext } from "~/hooks/useUserContext";
 import { useSocialAuth } from "~/hooks/useSocialAuth";
 
+export const meta = () => {
+  return [
+    { title: "Login | EduNexus" },
+    { name: "description", content: "Login Page" },
+  ];
+};
+
 // --- LOGIN SCHEMA ---
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid network address."),

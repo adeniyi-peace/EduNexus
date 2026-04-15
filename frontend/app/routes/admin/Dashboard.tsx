@@ -6,6 +6,13 @@ import { StatCard } from "~/components/admin/dashboard/StatCard";
 import { useAdminDashboard } from "~/hooks/admin/useAdminDashboard";
 import { AdminStatSkeleton, AdminErrorState } from "~/components/admin/shared/AdminTableSkeleton";
 
+export const meta = () => {
+  return [
+    { title: "Admin Dashboard | EduNexus" },
+    { name: "description", content: "Admin Dashboard Page" },
+  ];
+};
+
 const STAT_ICONS = [Users, DollarSign, GraduationCap, BookCheck];
 
 export default function AdminDashboard() {

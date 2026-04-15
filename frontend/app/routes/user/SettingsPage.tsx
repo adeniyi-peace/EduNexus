@@ -5,6 +5,13 @@ import { ThemeSettings } from "~/components/user/settings/ThemeSettings";
 import { NotificationSettings } from "~/components/user/settings/NotificationSettings";
 import { SecuritySettings } from "~/components/user/settings/SecuritySettings";
 
+export const meta = () => {
+  return [
+    { title: "Settings | EduNexus" },
+    { name: "description", content: "Settings Page" },
+  ];
+};
+
 // Define the shape of your root loader data
 interface RootLoaderData {
     theme: string;
