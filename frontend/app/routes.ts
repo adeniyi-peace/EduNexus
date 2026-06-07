@@ -52,7 +52,7 @@ export default [
         // Shared components with Unique IDs
         route("dashboard/profile", "routes/user/ProfilePage.tsx", { id: "student-profile" }),
         route("dashboard/settings", "routes/user/SettingsPage.tsx", { id: "student-settings" }),
-        route("/dashboard/notification", "routes/user/NotificationsPage.tsx", { id: "student-notifications" }),
+        route("/dashboard/notifications", "routes/user/NotificationsPage.tsx", { id: "student-notifications" }),
     ]),
 
     // --- CMS (INSTRUCTOR) DASHBOARD ---
@@ -71,7 +71,7 @@ export default [
         // Shared components with Unique IDs
         route("cms/profile", "routes/user/ProfilePage.tsx", { id: "cms-profile" }),
         route("/cms/settings", "routes/user/SettingsPage.tsx", { id: "cms-settings" }),
-        route("/cms/notification", "routes/user/NotificationsPage.tsx", { id: "cms-notifications" }),
+        route("/cms/notifications", "routes/user/NotificationsPage.tsx", { id: "cms-notifications" }),
     ]),
 
     // --- ADMIN DASHBOARD ---
@@ -88,7 +88,7 @@ export default [
         // Shared components with Unique IDs
         route("admin/profile", "routes/user/ProfilePage.tsx", { id: "admin-profile" }),
         route("/admin/settings", "routes/user/SettingsPage.tsx", { id: "admin-settings" }),
-        route("/admin/notification", "routes/user/NotificationsPage.tsx", { id: "admin-notifications" }),
+        route("/admin/notifications", "routes/user/NotificationsPage.tsx", { id: "admin-notifications" }),
     ]),
 
 

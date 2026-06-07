@@ -2,10 +2,14 @@ import { Outlet, useRouteLoaderData } from "react-router";
 import { AdminSidebar } from "~/components/admin/AdminSidebar";
 import { AdminTopNav } from "~/components/admin/AdminTopNav";
 import ProtectedRoute from "~/components/ProtectedRoute";
+import { useNotificationSocket } from "~/hooks/useNotificationSocket";
 
 export default function AdminLayout() {
     // Get the theme from your root loader (defined in root.tsx)
     const { theme } = useRouteLoaderData("root") as { theme: string };
+
+    // Initialize the WebSocket connection for notifications
+    useNotificationSocket();
 
     return (
         <ProtectedRoute allowedRoles={["admin"]}>

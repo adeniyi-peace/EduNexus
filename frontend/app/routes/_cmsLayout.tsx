@@ -22,12 +22,17 @@ import ProtectedRoute from "~/components/ProtectedRoute";
 
 import { useUserContext } from "~/hooks/useUserContext";
 import UserProfileDropdown from "~/components/ui/userProfileDropdown";
+import { NotificationBell } from "~/components/ui/NotificationBell";
+import { useNotificationSocket } from "~/hooks/useNotificationSocket";
 
 export default function CMSLayout() {
     const { user } = useUserContext();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const location = useLocation();
+
+    // Initialize the WebSocket connection for notifications
+    useNotificationSocket();
 
     const rootData = useRouteLoaderData("root") as RootRoute.ComponentProps["loaderData"];
     // Ensure we fall back to a valid theme name
@@ -68,10 +73,10 @@ export default function CMSLayout() {
 
             {/* Quick Action: New Course */}
             <div className="px-4 mb-4">
-                <button className={`btn btn-primary btn-block rounded-2xl gap-2 ${!isSidebarOpen ? 'px-0' : ''}`}>
+                {/* <button className={`btn btn-primary btn-block rounded-2xl gap-2 ${!isSidebarOpen ? 'px-0' : ''}`}>
                     <PlusCircle size={18} />
                     {isSidebarOpen && <span className="text-xs font-black uppercase">New Project</span>}
-                </button>
+                </button> */}
             </div>
 
             <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
@@ -98,10 +103,10 @@ export default function CMSLayout() {
 
             {/* Sidebar Bottom Actions */}
             <div className="p-4 space-y-2 border-t border-base-content/10">
-                <Link to="/dashboard" className="btn btn-ghost btn-sm btn-block justify-start gap-4 rounded-xl text-primary hover:bg-primary/10">
+                {/* <Link to="/dashboard" className="btn btn-ghost btn-sm btn-block justify-start gap-4 rounded-xl text-primary hover:bg-primary/10">
                     <Eye size={16} />
                     {isSidebarOpen && <span className="text-[10px] font-black uppercase tracking-widest">Student View</span>}
-                </Link>
+                </Link> */}
                 <button 
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="btn btn-ghost btn-sm btn-block justify-start gap-4 rounded-xl opacity-50 hover:opacity-100 hidden lg:flex text-base-content"
@@ -148,10 +153,7 @@ export default function CMSLayout() {
                         {/* --- Theme Toggle Button --- */}
                         <ThemeToggle currentTheme={currentTheme} />
 
-                        <button className="btn btn-ghost btn-circle btn-sm relative text-base-content/70 hover:text-primary">
-                            <Bell size={18} />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
-                        </button>
+                        <NotificationBell />
 
                         <UserProfileDropdown />
                     </div>

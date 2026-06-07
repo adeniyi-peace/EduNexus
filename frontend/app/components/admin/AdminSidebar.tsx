@@ -20,7 +20,8 @@ const ADMIN_LINKS = [
     { label: "Content Moderation", href: "/admin/moderation", icon: ShieldAlert },
     { label: "Revenue & Payouts", href: "/admin/finance", icon: CreditCard },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { label: "System Settings", href: "/admin/settings", icon: Settings },
+    { label: "System Settings", href: "/admin/system-settings", icon: Settings },
+     { label: "Personal Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export const AdminSidebar = () => {

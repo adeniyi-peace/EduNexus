@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Notification, Achievement, UserAchievement
@@ -90,3 +91,23 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         # Users can only see their own notifications
         return Notification.objects.filter(receiver=self.request.user)
+
+    @extend_schema(description="Mark a notification as read", tags=["Notifications"])
+    @action(detail=True, methods=['patch'])
+    def mark_read(self, request, pk=None):
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({"status": "Notification marked as read"})
+
+    @extend_schema(description="Mark all notifications as read", tags=["Notifications"])
+    @action(detail=False, methods=['patch'])
+    def mark_all_read(self, request):
+        updated_count = self.get_queryset().filter(is_read=False).update(is_read=True)
+        return Response({"status": f"{updated_count} notifications marked as read"})
+
+    @extend_schema(description="Get unread notification count", tags=["Notifications"])
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        count = self.get_queryset().filter(is_read=False).count()
+        return Response({"unread_count": count})

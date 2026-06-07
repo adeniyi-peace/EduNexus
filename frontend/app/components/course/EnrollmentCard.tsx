@@ -84,7 +84,7 @@ export function EnrollmentCard({ course }: { course: CourseData }) {
                 <div className="space-y-4">
                     {course.isEnrolled ? (
                         <Link 
-                            to={`/dashboard/courses/${courseId}/player`}
+                            to={`/courses/${courseId}/learn`}
                             className="btn btn-primary btn-lg w-full shadow-lg shadow-primary/20 font-black rounded-2xl h-16"
                         >
                             Resume Course

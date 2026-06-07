@@ -4,6 +4,8 @@ import ProtectedRoute from "~/components/ProtectedRoute";
 import { useUserContext } from "~/hooks/useUserContext";
 import UserProfileDropdown from "~/components/ui/userProfileDropdown";
 import { ThemeToggle } from "~/components/ThemeToggle";
+import { NotificationBell } from "~/components/ui/NotificationBell";
+import { useNotificationSocket } from "~/hooks/useNotificationSocket";
 import type { Route as RootRoute } from "../+types/root";
 
 // --- SVG ICON COMPONENTS ---
@@ -44,6 +46,9 @@ export default function DashboardLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const location = useLocation();
+
+    // Initialize the WebSocket connection for notifications
+    useNotificationSocket();
 
     const rootData = useRouteLoaderData("root") as RootRoute.ComponentProps["loaderData"];
     // Ensure we fall back to a valid theme name
@@ -171,12 +176,7 @@ export default function DashboardLayout() {
                         <ThemeToggle currentTheme={currentTheme} />
 
                         {/* Notifications */}
-                        <Link to="/dashboard/notification" aria-label="View notifications">
-                            <button className="btn btn-ghost btn-circle btn-sm relative hover:bg-primary/10 hover:text-primary transition-colors">
-                                <Icons.Bell />
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full ring-2 ring-base-100" />
-                            </button>
-                        </Link>
+                        <NotificationBell />
 
                         {/* User Profile Dropdown */}
                         <UserProfileDropdown />

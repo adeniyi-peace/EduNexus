@@ -8,7 +8,7 @@ from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 
 from .models import ChatRoom, DirectMessageRoom, Message
-
+from user.models import Notification
 
 class ChatConsumer(AsyncWebsocketConsumer):
     """
@@ -135,6 +135,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
+        # Create notifications for other participants in the room
+        await self.create_chat_notifications(content, sender_info)
+
     async def handle_typing(self, data):
         """Broadcast typing indicator to other users in the room."""
         await self.channel_layer.group_send(
@@ -248,3 +251,45 @@ class ChatConsumer(AsyncWebsocketConsumer):
         ).exclude(
             sender=self.user
         ).update(is_read=True)
+
+    @database_sync_to_async
+    def create_chat_notifications(self, content, sender_info):
+        """
+        Create a Notification for each participant in the room (except the sender).
+        The Notification post_save signal handles WebSocket push automatically.
+        """
+
+        # Get participants based on room type
+        if self.room_type == 'room':
+            room = ChatRoom.objects.get(id=self.room_id)
+            participants = room.participants.exclude(id=self.user.id)
+            room_label = room.course.title if room.course else "Group Chat"
+            link = f"/dashboard/chat"
+        else:
+            room = DirectMessageRoom.objects.get(id=self.room_id)
+            participants = room.participants.exclude(id=self.user.id)
+            room_label = "Direct Message"
+            link = f"/dashboard/chat"
+
+        sender_name = sender_info.get('fullname', 'Someone')
+        preview = content[:60] + ('...' if len(content) > 60 else '') if content else '[attachment]'
+
+        notifications = []
+        for participant in participants:
+            notifications.append(
+                Notification(
+                    sender=self.user,
+                    receiver=participant,
+                    notification_type="chat_message",
+                    title=f"New message from {sender_name}",
+                    message=f"{sender_name} in {room_label}: {preview}",
+                    link=link,
+                )
+            )
+
+        if notifications:
+            # Use bulk_create but trigger signals by saving individually
+            # (bulk_create doesn't fire post_save signals)
+            for notification in notifications:
+                notification.save()
+

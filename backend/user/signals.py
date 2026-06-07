@@ -1,8 +1,11 @@
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.db.models import Count
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from courses.models import Progress, Enrollment, Certificate
 from .models import Achievement, UserAchievement, Notification
+
 
 @receiver(m2m_changed, sender=Progress.completed_lessons.through)
 def check_for_achievements(sender, instance, action, **kwargs):
@@ -116,3 +119,41 @@ def issue_certificate(user, course):
             message=f"Congratulations! You have earned a certificate for: {course.title}.",
             link=f"/dashboard/certificates"
         )
+
+
+# ─── Real-Time WebSocket Push on Notification Creation ───
+
+@receiver(post_save, sender=Notification)
+def push_notification_via_websocket(sender, instance, created, **kwargs):
+    """
+    When a Notification is created, push it to the user's personal
+    WebSocket channel for real-time delivery.
+    """
+    if not created:
+        return
+
+    channel_layer = get_channel_layer()
+    if not channel_layer:
+        return
+
+    group_name = f"notifications_user_{instance.receiver.id}"
+
+    # Build notification payload matching the serializer output
+    notification_data = {
+        'id': instance.id,
+        'type': instance.notification_type,
+        'title': instance.title,
+        'text': instance.message,
+        'is_read': instance.is_read,
+        'link': instance.link or '',
+        'time': instance.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        'sender_name': instance.sender.fullname if instance.sender else 'System',
+    }
+
+    async_to_sync(channel_layer.group_send)(
+        group_name,
+        {
+            'type': 'new_notification',
+            'notification': notification_data,
+        }
+    )

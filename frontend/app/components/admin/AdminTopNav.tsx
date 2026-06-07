@@ -1,5 +1,6 @@
-import { Search, Bell, Menu } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { ThemeToggle } from "~/components/ThemeToggle";
+import { NotificationBell } from "~/components/ui/NotificationBell";
 
 interface AdminTopNavProps {
     currentTheme: string;
@@ -28,10 +29,7 @@ export const AdminTopNav = ({ currentTheme }: AdminTopNavProps) => {
             <div className="flex items-center gap-2">
                 <ThemeToggle currentTheme={currentTheme} />
                 
-                <button className="btn btn-ghost btn-circle relative">
-                    <Bell size={20} />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full ring-2 ring-base-100"></span>
-                </button>
+                <NotificationBell />
                 
                 <div className="divider divider-horizontal mx-1"></div>
                 

@@ -46,7 +46,7 @@ export const useChatSocket = ({ roomId, roomType, onMessage }: UseChatSocketOpti
         // Determine the WebSocket base URL from the API host
         const apiHost = import.meta.env.VITE_BACKEND_API_HOST || "http://localhost:8000";
         const wsProtocol = apiHost.startsWith("https") ? "wss" : "ws";
-        const wsHost = apiHost.replace(/^https?:\/\//, "");
+        const wsHost = apiHost.replace(/^https?:\/\//, "").replace(/\/$/, "");
         const wsUrl = `${wsProtocol}://${wsHost}/ws/chat/${roomType}/${roomId}/?token=${token}`;
 
         setConnectionStatus("connecting");

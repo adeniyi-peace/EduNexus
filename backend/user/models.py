@@ -126,6 +126,7 @@ class Notification(models.Model):
         MENTOR_REPLY = "mentor_reply", _("Mentor Reply")
         DEADLINE = "deadline", _("Deadline")
         CERTIFICATE = "certificate", _("Certificate")
+        CHAT_MESSAGE = "chat_message", _("Chat Message")
 
     # The user who triggered the notification (optional, e.g., an instructor)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_notifications", null=True, blank=True)

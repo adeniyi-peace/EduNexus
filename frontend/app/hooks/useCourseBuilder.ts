@@ -307,7 +307,7 @@ export function useCourseBuilder(initialData: CourseData) {
     const addQuizQuestion = async (moduleId: string, lessonId: string) => {
         setSyncStatus("saving");
         try {
-            const response = await apiClient.post(`/lessons/${lessonId}/questions/`, {
+            const response = await apiClient.post(`/lessons/${lessonId}/quiz-questions/`, {
                 text: "New Question",
                 options: [
                     { text: "Option A", isCorrect: true },
@@ -365,7 +365,7 @@ export function useCourseBuilder(initialData: CourseData) {
         }));
 
         await syncToBackend(() => 
-            apiClient.patch(`/lessons/${lessonId}/questions/${questionId}/`, fields)
+            apiClient.patch(`/lessons/${lessonId}/quiz-questions/${questionId}/`, fields)
         );
     };
 
@@ -389,7 +389,7 @@ export function useCourseBuilder(initialData: CourseData) {
         }));
 
         await syncToBackend(() => 
-            apiClient.delete(`/lessons/${lessonId}/questions/${questionId}/`)
+            apiClient.delete(`/lessons/${lessonId}/quiz-questions/${questionId}/`)
         );
     };
 
@@ -417,7 +417,7 @@ export function useCourseBuilder(initialData: CourseData) {
         }));
 
         await syncToBackend(() => 
-            apiClient.patch(`/lessons/${lessonId}/questions/${questionId}/options/${optionId}/`, fields)
+            apiClient.patch(`/lessons/${lessonId}/quiz-questions/${questionId}/options/${optionId}/`, fields)
         );
     };
 
