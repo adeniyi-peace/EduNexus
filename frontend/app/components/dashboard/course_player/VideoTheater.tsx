@@ -4,6 +4,8 @@ import {
     Volume2, Volume1, VolumeX, SkipForward, Loader2
 } from "lucide-react";
 import type { VideoLesson } from "~/types/course";
+import { useToast } from "~/hooks/useToast";
+
 
 interface VideoTheaterProps {
     currentLesson: VideoLesson;
@@ -13,11 +15,13 @@ interface VideoTheaterProps {
     onVideoEnd: () => void;
     setIsPlaying: (val: boolean) => void;
     videoRef: RefObject<HTMLVideoElement | null>;
+    autoplay?: boolean;
 }
 
 export const VideoTheater = ({
-    currentLesson, isPlaying, hasInteracted, onPlayAction, onVideoEnd, setIsPlaying, videoRef
+    currentLesson, isPlaying, hasInteracted, onPlayAction, onVideoEnd, setIsPlaying, videoRef, autoplay = true
 }: VideoTheaterProps) => {
+    const { showToast } = useToast();
 
     // UI States
     const [progress, setProgress] = useState(0);
@@ -50,6 +54,14 @@ export const VideoTheater = ({
             const current = videoRef.current.currentTime;
             const total = videoRef.current.duration;
             setProgress((current / total) * 100 || 0);
+
+            // Save progress periodically (throttled/simple condition)
+            if (current > 2 && Math.abs(current - total) > 5) {
+                localStorage.setItem(`edunexus_progress_${currentLesson.id}`, current.toString());
+            } else if (Math.abs(current - total) <= 5) {
+                // Remove when finished
+                localStorage.removeItem(`edunexus_progress_${currentLesson.id}`);
+            }
         }
     };
 
@@ -123,16 +135,36 @@ export const VideoTheater = ({
         return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
     }, []);
 
-    // Auto-load Logic
+    // Auto-load Logic with Resume Playback
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.pause();
             videoRef.current.load();
+
+            const savedTime = localStorage.getItem(`edunexus_progress_${currentLesson.id}`);
+            
+            const handleResume = () => {
+                if (savedTime && videoRef.current) {
+                    const time = parseFloat(savedTime);
+                    if (time > 2 && time < videoRef.current.duration - 5) {
+                        videoRef.current.currentTime = time;
+                        showToast("Resumed from where you left off", "success", 3000);
+                    }
+                }
+            };
+
+            const videoElement = videoRef.current;
+            videoElement.addEventListener("loadedmetadata", handleResume);
+
             if (hasInteracted) {
                 videoRef.current.play().catch(() => console.log("Autoplay blocked"));
             }
+
+            return () => {
+                videoElement.removeEventListener("loadedmetadata", handleResume);
+            };
         }
-    }, [currentLesson, hasInteracted, videoRef]);
+    }, [currentLesson, hasInteracted, videoRef, showToast]);
 
     // Determine appropriate volume icon
     const VolumeIcon = isMuted || volume === 0
@@ -167,7 +199,13 @@ export const VideoTheater = ({
                 onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
-                onEnded={onVideoEnd}
+                onEnded={() => {
+                    if (autoplay) {
+                        onVideoEnd();
+                    } else {
+                        setIsPlaying(false);
+                    }
+                }}
                 onClick={togglePlay}
                 poster="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=80"
             >

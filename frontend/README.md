@@ -1,201 +1,148 @@
-# EduNexus Frontend
+# EduNexus — Frontend
 
-## Introduction
-
-**EduNexus** is a modern Learning Management System (LMS) designed to simplify online education by providing a platform where students, instructors, and administrators can manage courses, assignments, and learning materials efficiently.
-
-This repository contains the **frontend application** of EduNexus built using **React.js**. It provides an interactive user interface for course management, enrollment, assignments, and user authentication.
+Modern, responsive Single Page Application (SPA) for the EduNexus learning management platform.
 
 ---
 
-## Table of Contents
+## 🏗️ Tech Stack
 
-* Introduction
-* Features
-* Tech Stack
-* Project Structure
-* Installation
-* Usage
-* Configuration
-* API Integration
-* Troubleshooting
-* Contributors
-* License
-
----
-
-## Features
-
-### User Authentication
-
-* Login and registration system
-* Secure authentication
-* Role-based access (Student, Instructor, Admin)
-
-### Course Management
-
-* View available courses
-* Enroll in courses
-* Access course materials
-
-### Instructor Tools
-
-* Create and manage courses
-* Upload learning materials
-* Manage assignments
-
-### Student Tools
-
-* Submit assignments
-* Track learning progress
-* Access course content
-
-### Admin Panel
-
-* Manage users
-* Monitor courses
-* System configuration
+| Component         | Technology                                                                 |
+| ----------------- | -------------------------------------------------------------------------- |
+| Framework         | React 19, React Router 7 (Vite-based)                                      |
+| Language          | TypeScript                                                                 |
+| Styling           | Tailwind CSS v4, DaisyUI v5                                                |
+| State Management  | Zustand (global UI state), React Context (Auth/Cart)                       |
+| Data Fetching     | TanStack Query v5 (React Query), Axios                                     |
+| UI / Components   | Framer Motion (animations), Lucide React (icons), Recharts (data viz)      |
+| Drag & Drop       | @dnd-kit/core (for Course Builder)                                         |
+| Payments          | @paystack/inline-js                                                        |
 
 ---
 
-## Tech Stack
-
-### Frontend
-
-* React.js
-* React Router
-* Axios
-* Redux (state management)
-* Material UI
-
-### Development Tools
-
-* Node.js
-* npm
-
----
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 frontend/
-│
-├── public/                 # Static files
-├── src/
-│   ├── components/         # Reusable UI components
-│   ├── pages/              # Page-level components
-│   ├── services/           # API calls
-│   ├── store/              # Redux store
-│   ├── utils/              # Helper functions
-│   ├── App.js              # Main app component
-│   └── index.js            # Entry point
-│
+├── app/
+│   ├── components/      # Reusable UI components
+│   │   ├── admin/       # Admin-specific components
+│   │   ├── cart/        # Shopping cart components
+│   │   ├── chat/        # Real-time chat interfaces
+│   │   ├── cms/         # Instructor/course builder components
+│   │   ├── course/      # Course player and cards
+│   │   ├── dashboard/   # Dashboard widgets and layouts
+│   │   ├── home/        # Landing page sections
+│   │   └── ui/          # Generic UI components (buttons, modals, etc.)
+│   ├── hooks/           # Custom React hooks (auth, websockets, API)
+│   ├── routes/          # Page-level route components (file-based routing via react-router)
+│   │   ├── admin/       # Admin views
+│   │   ├── auth/        # Login, register, password reset
+│   │   ├── cms/         # Instructor views
+│   │   ├── dashboard/   # Student dashboard views
+│   │   ├── public/      # Landing, about, course marketplace
+│   │   └── user/        # Shared user profile/settings
+│   ├── types/           # TypeScript interfaces and types
+│   ├── utils/           # API client setup, constants, helper functions
+│   ├── app.css          # Global styles and Tailwind configuration
+│   ├── root.tsx         # Root application layout
+│   └── routes.ts        # Route configuration definitions
+├── public/              # Static assets (images, icons)
+├── Dockerfile           # Multi-stage production build configuration
 ├── package.json
-└── README.md
+└── vite.config.ts       # Vite and React Router configuration
 ```
 
 ---
 
-## Installation
+## 🔧 Setup & Local Development
 
-### 1. Clone the Repository
+### Prerequisites
+- Node.js 20+
+- npm 10+
 
-```bash
-git clone https://github.com/adeniyi-peace/EduNexus.git
-```
-
-### 2. Navigate to the Frontend Folder
+### Installation
 
 ```bash
-cd EduNexus/frontend
-```
-
-### 3. Install Dependencies
-
-```bash
+# Install dependencies
 npm install
 ```
 
-### 4. Start the Development Server
+### Environment Variables
+
+Create a `.env` file in the `frontend` root directory:
+
+```env
+# The base URL of your Django backend API
+VITE_API_URL=http://localhost:8000
+```
+
+### Development Server
+
+Start the Vite development server:
 
 ```bash
-npm start
+npm run dev
 ```
 
-The app will run at:
-
-```
-http://localhost:3000
-```
+The application will be available at `http://localhost:5173`.
 
 ---
 
-## Usage
+## 🛠️ Key Architectural Decisions
 
-1. Register or log in as a user.
-2. Browse available courses.
-3. Enroll in courses.
-4. Access course materials and assignments.
-5. Track progress and submit coursework.
+1. **Routing Strategy**: We use React Router 7's new layout and file-based routing features (`app/routes.ts` configures layouts mapping to `app/routes/` components). The app is divided into layouts:
+   - `_public.tsx`: Marketing and marketplace pages
+   - `_auth.tsx`: Authentication flows
+   - `_dashboard.tsx`: Student portal
+   - `_cmsLayout.tsx`: Instructor portal
+   - `_admin.tsx`: Admin portal
 
----
+2. **API Client Strategy**: We use a centralized `axios` instance (`utils/api.client.ts`) that automatically handles attaching JWT cookies, handling 401 Unauthorized errors, and retrying requests seamlessly.
 
-## Configuration
+3. **Data Fetching**: TanStack Query is used for almost all remote data fetching. It provides built-in caching, revalidation, and loading/error states. 
 
-Create a `.env` file in the frontend root directory.
+4. **Real-time WebSockets**: Custom hooks like `useNotificationSocket.ts` connect directly to the Django Channels backend to push real-time alerts and chat messages to the UI without polling.
 
-Example:
-
-```
-REACT_APP_API_URL=http://127.0.0.1:8000/api
-```
-
-This variable connects the frontend to the backend API.
+5. **Course Builder**: Instructors use a drag-and-drop interface powered by `@dnd-kit/core` to build course modules and lessons visually.
 
 ---
 
-## API Integration
+## 📦 Build & Production
 
-The frontend communicates with the backend via REST APIs.
-
-Example endpoints:
-
-```
-POST /api/auth/login
-POST /api/auth/register
-GET /api/courses
-POST /api/courses
-```
-
----
-
-## Troubleshooting
-
-### Node Modules Error
-
-Delete `node_modules` and reinstall dependencies.
+### Standard Build
 
 ```bash
-rm -rf node_modules
-npm install
+# Create production build
+npm run build
+
+# Preview production build locally
+npm run start
 ```
 
-### Port Already in Use
+### Docker Build (Recommended for Production)
 
-Run:
+The included `Dockerfile` uses a multi-stage build to ensure a small, optimized production image.
 
 ```bash
-npm start -- --port 3001
+# Build the Docker image
+docker build -t edunexus-frontend .
+
+# Run the Docker container
+docker run -p 3000:3000 edunexus-frontend
 ```
 
 ---
 
-## Contributors
+## 🚀 Deployment
 
-* Adeniyi Peace
+The frontend can be deployed easily to any static hosting service or containerized platform.
 
----
+**For Vercel / Netlify:**
+- Build Command: `npm run build`
+- Output Directory: `build/client`
+- Install Command: `npm install`
 
-## License
+**For Render / Railway:**
+- Use the provided `Dockerfile` as the build source.
 
-This project is licensed under the **MIT License**.
+Make sure to set the `VITE_API_URL` environment variable in your production hosting environment to point to your live backend domain (e.g., `https://api.yourdomain.com`).

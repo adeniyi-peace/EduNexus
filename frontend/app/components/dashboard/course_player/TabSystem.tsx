@@ -11,9 +11,11 @@ interface TabSystemProps {
     isExpanded: boolean;
     onToggleExpand: () => void;
     isEnrolled: boolean;
+    autoplay: boolean;
+    setAutoplay: (val: boolean) => void;
 }
 
-export const TabSystem = ({ currentLesson, videoRef, onJumpToTime, isExpanded, onToggleExpand, isEnrolled }: TabSystemProps) => {
+export const TabSystem = ({ currentLesson, videoRef, onJumpToTime, isExpanded, onToggleExpand, isEnrolled, autoplay, setAutoplay }: TabSystemProps) => {
     const [activeTab, setActiveTab] = useState("resources");
 
     // Reset active tab when lesson changes
@@ -51,6 +53,20 @@ export const TabSystem = ({ currentLesson, videoRef, onJumpToTime, isExpanded, o
                             )}
                         </button>
                     ))}
+                </div>
+                
+                <div className="flex items-center gap-4">
+                    {/* Autoplay Toggle */}
+                    <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
+                        <span>Autoplay</span>
+                        <input
+                            type="checkbox"
+                            className="toggle toggle-primary toggle-xs"
+                            checked={autoplay}
+                            onChange={(e) => setAutoplay(e.target.checked)}
+                            aria-label="Autoplay lessons"
+                        />
+                    </div>
                 </div>
 
                 {/* Expand/Collapse Button */}

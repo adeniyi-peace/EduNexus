@@ -21,6 +21,7 @@ export const meta = () => {
 
 export default function SupportPage() {
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
     const categories = [
         { title: "Account & Billing", icon: <CreditCard size={28} />, count: 12, color: "text-blue-500" },
@@ -52,10 +53,12 @@ export default function SupportPage() {
         }
     ];
 
-    const filteredFaqs = faqs.filter(f => 
-        f.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        f.cat.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredFaqs = faqs.filter(f => {
+        const matchesSearch = f.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            f.cat.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory ? f.cat === selectedCategory : true;
+        return matchesSearch && matchesCategory;
+    });
 
     return (
         <div className="pb-24 bg-base-100">
@@ -94,31 +97,47 @@ export default function SupportPage() {
             {/* --- CATEGORY GRID --- */}
             <section className="container mx-auto px-4 -mt-16 relative z-20">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {categories.map((cat) => (
-                        <div key={cat.title} className="group card bg-base-100 shadow-2xl border border-base-content/5 hover:border-primary/40 transition-all cursor-pointer overflow-hidden">
-                            <div className="card-body p-8 relative">
-                                <div className={`mb-6 transition-transform group-hover:scale-110 duration-500 ${cat.color}`}>
-                                    {cat.icon}
-                                </div>
-                                <h3 className="font-black text-xl tracking-tight">{cat.title}</h3>
-                                <div className="flex items-center justify-between mt-4">
-                                    <p className="text-[10px] opacity-40 font-black uppercase tracking-widest">{cat.count} Docs</p>
-                                    <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-primary" />
+                    {categories.map((cat) => {
+                        const isActive = selectedCategory === cat.title;
+                        return (
+                            <div 
+                                key={cat.title} 
+                                onClick={() => setSelectedCategory(isActive ? null : cat.title)}
+                                className={`group card bg-base-100 shadow-2xl border transition-all cursor-pointer overflow-hidden ${isActive ? "border-primary ring-2 ring-primary/20 scale-[1.02]" : "border-base-content/5 hover:border-primary/40"}`}
+                            >
+                                <div className="card-body p-8 relative">
+                                    <div className={`mb-6 transition-transform group-hover:scale-110 duration-500 ${cat.color}`}>
+                                        {cat.icon}
+                                    </div>
+                                    <h3 className="font-black text-xl tracking-tight">{cat.title}</h3>
+                                    <div className="flex items-center justify-between mt-4">
+                                        <p className="text-[10px] opacity-40 font-black uppercase tracking-widest">{cat.count} Docs</p>
+                                        <ChevronRight size={14} className={`transition-all text-primary ${isActive ? "opacity-100 rotate-90" : "opacity-0 group-hover:opacity-100 group-hover:translate-x-1"}`} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </section>
 
             {/* --- FAQ SECTION --- */}
             <section className="container mx-auto px-4 py-32 max-w-4xl">
-                <div className="mb-16">
-                    <SectionHeader 
-                        title="Common Inquiries" 
-                        subtitle="Operational details and platform logistics." 
-                        centered
-                    />
+                <div className="mb-16 flex justify-between items-center flex-wrap gap-4">
+                    <div className="flex-1">
+                        <SectionHeader 
+                            title="Common Inquiries" 
+                            subtitle={selectedCategory ? `Filter: ${selectedCategory}` : "Operational details and platform logistics."} 
+                        />
+                    </div>
+                    {selectedCategory && (
+                        <button 
+                            onClick={() => setSelectedCategory(null)}
+                            className="btn btn-outline btn-sm rounded-xl font-bold uppercase tracking-wider text-[10px]"
+                        >
+                            Reset Category
+                        </button>
+                    )}
                 </div>
                 
                 <div className="space-y-4">

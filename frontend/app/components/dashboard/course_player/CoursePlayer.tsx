@@ -41,6 +41,7 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
     // UI States
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isTabExpanded, setIsTabExpanded] = useState(false);
+    const [autoplay, setAutoplay] = useState(true);
     
     const { data: enrollmentData } = useEnrollmentData(courseId, !!isEnrolled);
 
@@ -233,6 +234,7 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
                             onVideoEnd={playNextLesson}
                             setIsPlaying={setIsPlaying}
                             videoRef={videoRef}
+                            autoplay={autoplay}
                         />
                     )}
                 </div>
@@ -247,6 +249,8 @@ export default function CoursePlayer({ courseId, initialLessonId }: CoursePlayer
                             isExpanded={isTabExpanded}
                             onToggleExpand={() => setIsTabExpanded(!isTabExpanded)}
                             isEnrolled={isEnrolled}
+                            autoplay={autoplay}
+                            setAutoplay={setAutoplay}
                         />
                     </div>
                 )}

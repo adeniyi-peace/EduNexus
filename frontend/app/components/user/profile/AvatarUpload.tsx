@@ -1,29 +1,41 @@
-import { Camera, User, Loader2 } from "lucide-react";
+import { Camera, User } from "lucide-react";
 import { useState, useRef } from "react";
 
 interface Props {
     currentAvatar: string | null;
     onFileSelect: (file: File) => void;
+    onPresetSelect: (url: string) => void;
 }
 
-export const AvatarUpload = ({ currentAvatar, onFileSelect }: Props) => {
+const PRESET_AVATARS = [
+    { name: "Cyber", url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=150&auto=format&fit=crop&q=60" },
+    { name: "Aurora", url: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=150&auto=format&fit=crop&q=60" },
+    { name: "Sunset", url: "https://images.unsplash.com/photo-1557683316-973673baf926?w=150&auto=format&fit=crop&q=60" },
+    { name: "Flare", url: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=150&auto=format&fit=crop&q=60" },
+    { name: "Matrix", url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=150&auto=format&fit=crop&q=60" },
+    { name: "Vector", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=60" }
+];
+
+export const AvatarUpload = ({ currentAvatar, onFileSelect, onPresetSelect }: Props) => {
     const [preview, setPreview] = useState<string | null>(currentAvatar);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // 1. Generate local preview immediately
             const objectUrl = URL.createObjectURL(file);
             setPreview(objectUrl);
-            
-            // 2. Pass file up to parent for the actual upload
             onFileSelect(file);
         }
     };
 
+    const handlePresetClick = (url: string) => {
+        setPreview(url);
+        onPresetSelect(url);
+    };
+
     return (
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-6">
             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                 <div className="avatar placeholder ring ring-primary ring-offset-base-100 ring-offset-2 rounded-full overflow-hidden w-32 h-32">
                     {preview ? (
@@ -49,9 +61,24 @@ export const AvatarUpload = ({ currentAvatar, onFileSelect }: Props) => {
                 accept="image/*" 
             />
             
-            <p className="text-xs text-center opacity-50">
-                Click to change.<br/>JPG, GIF or PNG. Max 2MB.
+            <p className="text-[10px] text-center opacity-50 font-black uppercase tracking-wider">
+                Click above to upload<br/>or choose a preset below:
             </p>
+
+            {/* Presets Grid */}
+            <div className="grid grid-cols-3 gap-2 w-full max-w-xs">
+                {PRESET_AVATARS.map((preset) => (
+                    <button
+                        key={preset.name}
+                        onClick={() => handlePresetClick(preset.url)}
+                        type="button"
+                        className={`relative rounded-xl overflow-hidden aspect-square border-2 transition-all hover:scale-105 active:scale-95 ${preview === preset.url ? "border-primary shadow-lg" : "border-transparent opacity-80 hover:opacity-100"}`}
+                        title={preset.name}
+                    >
+                        <img src={preset.url} alt={preset.name} className="object-cover w-full h-full" />
+                    </button>
+                ))}
+            </div>
         </div>
     );
 };

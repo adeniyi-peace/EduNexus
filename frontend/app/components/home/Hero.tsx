@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 export function Hero() {
     return (
-        <section className="relative overflow-hidden bg-base-100 py-8 lg:py-12 border-b border-base-content/5">
+        <section className="relative overflow-hidden bg-base-100 py-8 lg:py-12 border-b border-base-content/5 px-6">
             {/* Animated Blobs */}
             <div className="absolute top-0 -left-20 w-96 h-96 bg-primary/20 rounded-full blur-[100px] animate-pulse" />
             <div className="absolute bottom-0 -right-20 w-125 h-125 bg-secondary/10 rounded-full blur-[120px]" />

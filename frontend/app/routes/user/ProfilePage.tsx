@@ -3,6 +3,8 @@ import { AvatarUpload } from "~/components/user/profile/AvatarUpload";
 import { BioSection } from "~/components/user/profile/BioSection";
 import { SocialLinks } from "~/components/user/profile/SocialLinks";
 import { Save, Loader2 } from "lucide-react";
+import { useToast } from "~/hooks/useToast";
+
 
 export const meta = () => {
   return [
@@ -12,9 +14,11 @@ export const meta = () => {
 };
 
 export default function ProfilePage() {
+    const { showToast } = useToast();
     // Initial State (Mocking data from loader)
     const [isLoading, setIsLoading] = useState(false);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPresetUrl, setAvatarPresetUrl] = useState<string | null>(null);
     const [bio, setBio] = useState("Hi! I'm a passionate instructor teaching React and Django.");
     const [socials, setSocials] = useState({
         twitter: "edunexus_dev",
@@ -37,6 +41,8 @@ export default function ProfilePage() {
         // Only append avatar if it changed
         if (avatarFile) {
             formData.append("avatar", avatarFile); 
+        } else if (avatarPresetUrl) {
+            formData.append("avatar_preset", avatarPresetUrl);
         }
         
         formData.append("bio", bio);
@@ -53,8 +59,9 @@ export default function ProfilePage() {
             
             // Simulate network delay
             await new Promise(r => setTimeout(r, 1000));
-            alert("Profile Updated Successfully!");
+            showToast("Profile Updated Successfully!", "success");
         } catch (err) {
+            showToast("Failed to update profile", "error");
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -85,7 +92,14 @@ export default function ProfilePage() {
                         <h3 className="font-bold text-lg mb-4">Profile Picture</h3>
                         <AvatarUpload 
                             currentAvatar="https://i.pravatar.cc/300" 
-                            onFileSelect={setAvatarFile} 
+                            onFileSelect={(file) => {
+                                setAvatarFile(file);
+                                setAvatarPresetUrl(null);
+                            }}
+                            onPresetSelect={(url) => {
+                                setAvatarPresetUrl(url);
+                                setAvatarFile(null);
+                            }}
                         />
                     </div>
                 </div>

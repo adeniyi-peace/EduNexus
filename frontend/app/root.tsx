@@ -16,6 +16,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { themeCookie } from "./routes/resources.theme";
 import { ErrorLayout } from "./components/ui/ErrorLayout";
+import { ToastProvider } from "./hooks/useToast";
 
 import MaintenancePage from "./routes/MaintenancePage";
 // Mock Utility - Replace with your actual database/auth logic
@@ -150,7 +151,9 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <ToastProvider>
+        <Outlet />
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
