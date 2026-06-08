@@ -91,7 +91,9 @@ SPECTACULAR_SETTINGS = {
 
 INSTALLED_APPS = [
     'daphne',  # Must be first — patches runserver to use ASGI
+    'django_daisy',
     'django.contrib.admin',
+    'django.contrib.humanize',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -230,6 +232,17 @@ if DEBUG == False:
 
 
     # Prevent redirection due to Render proxy SSL termination
+    """
+    This header tells Django: "If the request came through a proxy and has an X-Forwarded-Proto header set to https,
+    then Django should treat the request as if it came through https directly." 
+    This allows Django's SSL-related security features to work correctly even though the request is technically
+    HTTP between your app and Render (Render terminates the SSL and forwards as HTTP).
+    
+    Without this, Django thinks the connection is HTTP, which triggers the SECURE_SSL_REDIRECT in production,
+    leading to the infinite redirect loop you were seeing.
+    
+    With this set, Django correctly sees the "secured" connection and avoids the redirect.
+    """
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
     # Security Headers (Uncomment when deploying to production with SSL)
