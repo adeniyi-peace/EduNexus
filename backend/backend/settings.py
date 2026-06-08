@@ -228,6 +228,10 @@ if DEBUG == False:
     AWS_QUERYSTRING_AUTH = True  # Generates signed URLs for private buckets
     MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
 
+
+    # Prevent redirection due to Render proxy SSL termination
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
     # Security Headers (Uncomment when deploying to production with SSL)
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
