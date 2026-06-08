@@ -35,6 +35,6 @@ application = ProtocolTypeRouter({
         JWTAuthMiddleware(
             URLRouter(chat_ws_patterns + notification_ws_patterns)
         ),
-        settings.ALLOWED_HOSTS
+        [settings.FRONTEND_URL],
     ),
 })
