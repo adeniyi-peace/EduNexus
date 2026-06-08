@@ -217,6 +217,8 @@ if DEBUG == False:
         },
     }
 
+    WHITENOISE_MANIFEST_STRICT = False
+
     AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', default='')
     AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', default='')
     AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', default='')
