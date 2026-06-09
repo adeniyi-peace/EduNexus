@@ -217,7 +217,7 @@ class CertificateConfigSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     # This nests the modules (and consequently lessons, resources, etc.) inside the course
     modules = ModuleSerializer(many=True, read_only=True)
-    category = serializers.CharField(source='category.name', read_only=True)
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     
     # Optional: If you want to return the full category object instead of just the ID
     # category = CategorySerializer(read_only=True) 
@@ -262,6 +262,9 @@ class CourseSerializer(serializers.ModelSerializer):
         user = getattr(request, 'user', None)
         if not user or not (user.is_staff or instance.instructor == user):
             data.pop('certificateConfig', None)
+
+        if instance.category:
+            data['category'] = instance.category.name
             
         return data
 
